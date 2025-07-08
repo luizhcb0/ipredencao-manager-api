@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: 'postgres:16'
+    container_name: db
+    environment:
+      - 'POSTGRES_DB=ipredencao_manager'
+      - 'POSTGRES_PASSWORD=ipredencao_manager'
+      - 'POSTGRES_USER=ipredencao_manager'
+    ports:
+      - '54329:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
+
