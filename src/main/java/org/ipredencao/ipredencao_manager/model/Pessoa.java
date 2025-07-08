@@ -1,30 +1,28 @@
 package org.ipredencao.ipredencao_manager.model;
 
-import java.time.LocalDateTime;
+import org.joda.time.DateTime;
 import java.util.List;
-import org.ipredencao.ipredencao_manager.jooq.tables.records.PessoaRecord;
-import java.sql.Timestamp;
 
 public class Pessoa {
     private Long id;
     private String nome;
     private String sedeCongregacao;
     private String apelido;
-    private LocalDateTime dataNascimento;
+    private DateTime dataNascimento;
     private String telefone;
-    private String estadoCivil;
+    private EstadoCivil estadoCivil;
     private String igrejaAnterior;
     private String situacaoIgrejaAnterior;
     private String tempoNaIpr;
     private String motivosAdmissao;
-    private String tipoBatismo;
-    private LocalDateTime dataBatismo;
+    private TipoBatismo tipoBatismo;
+    private DateTime dataBatismo;
     private String igrejaBatismo;
     private String dadosOficial;
     private String supervisoes;
     private String outrasCategorias;
-    private String estadoPessoa;
-    private String tipoAdmissao;
+    private EstadoPessoa estadoPessoa;
+    private TipoAdmissao tipoAdmissao;
     private String cpf;
     private String rg;
     private String emailAdicional;
@@ -56,12 +54,12 @@ public class Pessoa {
     public void setSedeCongregacao(String sedeCongregacao) { this.sedeCongregacao = sedeCongregacao; }
     public String getApelido() { return apelido; }
     public void setApelido(String apelido) { this.apelido = apelido; }
-    public LocalDateTime getDataNascimento() { return dataNascimento; }
-    public void setDataNascimento(LocalDateTime dataNascimento) { this.dataNascimento = dataNascimento; }
+    public DateTime getDataNascimento() { return dataNascimento; }
+    public void setDataNascimento(DateTime dataNascimento) { this.dataNascimento = dataNascimento; }
     public String getTelefone() { return telefone; }
     public void setTelefone(String telefone) { this.telefone = telefone; }
-    public String getEstadoCivil() { return estadoCivil; }
-    public void setEstadoCivil(String estadoCivil) { this.estadoCivil = estadoCivil; }
+    public EstadoCivil getEstadoCivil() { return estadoCivil; }
+    public void setEstadoCivil(EstadoCivil estadoCivil) { this.estadoCivil = estadoCivil; }
     public String getIgrejaAnterior() { return igrejaAnterior; }
     public void setIgrejaAnterior(String igrejaAnterior) { this.igrejaAnterior = igrejaAnterior; }
     public String getSituacaoIgrejaAnterior() { return situacaoIgrejaAnterior; }
@@ -70,10 +68,10 @@ public class Pessoa {
     public void setTempoNaIpr(String tempoNaIpr) { this.tempoNaIpr = tempoNaIpr; }
     public String getMotivosAdmissao() { return motivosAdmissao; }
     public void setMotivosAdmissao(String motivosAdmissao) { this.motivosAdmissao = motivosAdmissao; }
-    public String getTipoBatismo() { return tipoBatismo; }
-    public void setTipoBatismo(String tipoBatismo) { this.tipoBatismo = tipoBatismo; }
-    public LocalDateTime getDataBatismo() { return dataBatismo; }
-    public void setDataBatismo(LocalDateTime dataBatismo) { this.dataBatismo = dataBatismo; }
+    public TipoBatismo getTipoBatismo() { return tipoBatismo; }
+    public void setTipoBatismo(TipoBatismo tipoBatismo) { this.tipoBatismo = tipoBatismo; }
+    public DateTime getDataBatismo() { return dataBatismo; }
+    public void setDataBatismo(DateTime dataBatismo) { this.dataBatismo = dataBatismo; }
     public String getIgrejaBatismo() { return igrejaBatismo; }
     public void setIgrejaBatismo(String igrejaBatismo) { this.igrejaBatismo = igrejaBatismo; }
     public String getDadosOficial() { return dadosOficial; }
@@ -82,10 +80,10 @@ public class Pessoa {
     public void setSupervisoes(String supervisoes) { this.supervisoes = supervisoes; }
     public String getOutrasCategorias() { return outrasCategorias; }
     public void setOutrasCategorias(String outrasCategorias) { this.outrasCategorias = outrasCategorias; }
-    public String getEstadoPessoa() { return estadoPessoa; }
-    public void setEstadoPessoa(String estadoPessoa) { this.estadoPessoa = estadoPessoa; }
-    public String getTipoAdmissao() { return tipoAdmissao; }
-    public void setTipoAdmissao(String tipoAdmissao) { this.tipoAdmissao = tipoAdmissao; }
+    public EstadoPessoa getEstadoPessoa() { return estadoPessoa; }
+    public void setEstadoPessoa(EstadoPessoa estadoPessoa) { this.estadoPessoa = estadoPessoa; }
+    public TipoAdmissao getTipoAdmissao() { return tipoAdmissao; }
+    public void setTipoAdmissao(TipoAdmissao tipoAdmissao) { this.tipoAdmissao = tipoAdmissao; }
     public String getCpf() { return cpf; }
     public void setCpf(String cpf) { this.cpf = cpf; }
     public String getRg() { return rg; }
