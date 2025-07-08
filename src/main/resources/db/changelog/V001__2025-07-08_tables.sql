@@ -41,4 +41,12 @@ CREATE TABLE IF NOT EXISTS pessoa (
     instagram VARCHAR(100),
     facebook VARCHAR(100),
     pagina_pessoal VARCHAR(255)
+);
+
+-- Tabela de relacionamento qualificado entre pessoas
+CREATE TABLE IF NOT EXISTS pessoa_relacionamento (
+    id BIGSERIAL PRIMARY KEY,
+    pessoa_id BIGINT NOT NULL REFERENCES pessoa(id) ON DELETE CASCADE,
+    pessoa_relacionada_id BIGINT NOT NULL REFERENCES pessoa(id) ON DELETE CASCADE,
+    tipo_relacionamento VARCHAR(50) NOT NULL
 ); 
