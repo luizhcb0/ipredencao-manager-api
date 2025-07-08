@@ -3,6 +3,7 @@ plugins {
 	id 'org.springframework.boot' version '3.5.3'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'nu.studer.jooq' version '8.2'
+	id 'org.liquibase.gradle' version '2.2.0'
 }
 
 group = 'org.ipredencao'
@@ -31,6 +32,9 @@ dependencies {
 	implementation 'org.postgresql:postgresql:42.7.3'
 	jooqGenerator 'org.postgresql:postgresql:42.7.3'
 	implementation 'joda-time:joda-time:2.14.0'
+	liquibaseRuntime 'org.liquibase:liquibase-core:4.27.0'
+	liquibaseRuntime 'org.postgresql:postgresql:42.7.3'
+	liquibaseRuntime 'info.picocli:picocli:4.7.5'
 }
 
 tasks.named('test') {
@@ -64,4 +68,42 @@ jooq {
 			}
 		}
 	}
+}
+
+liquibase {
+	activities {
+		main {
+			changelogFile 'src/main/resources/db/changelog/db.changelog-master.xml'
+			url 'jdbc:postgresql://localhost:54329/ipredencao_manager'
+			username 'ipredencao_manager'
+			password 'ipredencao_manager'
+		}
+	}
+	runList = 'main'
+}
+
+tasks.register('composeUp', Exec) {
+	commandLine 'docker', 'compose', 'up', '-d'
+}
+
+tasks.register('waitForDbHealthy', Exec) {
+	commandLine 'sh', '-c', '''
+		until [ "$(docker inspect -f '{{.State.Health.Status}}' db)" = "healthy" ]; do
+		  echo "Waiting for DB to be ready (status: $(docker inspect -f '{{.State.Health.Status}}' db))...";
+		  sleep 2;
+		done
+	'''
+}
+
+tasks.named('update') {
+	dependsOn composeUp
+	dependsOn waitForDbHealthy
+}
+
+tasks.named('generateJooq') {
+	dependsOn 'update'
+}
+
+tasks.named('build') {
+	dependsOn 'generateJooq'
 }

@@ -190,7 +190,11 @@ public class PessoaRepository {
         pessoaRelacionada.setId(record.getPessoaRelacionadaId());
         rel.setPessoaRelacionada(pessoaRelacionada);
         if (record.getTipoRelacionamento() != null)
-            rel.setTipoRelacionamento(TipoRelacionamento.valueOf(record.getTipoRelacionamento()));
+            rel.setTipoRelacionamento(
+                org.ipredencao.ipredencao_manager.model.TipoRelacionamento.valueOf(
+                    record.getTipoRelacionamento().name()
+                )
+            );
         rel.setInicioRelacionamento(DateTimeHelper.fromDb(record.getInicioRelacionamento()));
         return rel;
     }
@@ -201,7 +205,11 @@ public class PessoaRepository {
         if (relacionamento.getPessoaRelacionada() != null)
             record.setPessoaRelacionadaId(relacionamento.getPessoaRelacionada().getId());
         if (relacionamento.getTipoRelacionamento() != null)
-            record.setTipoRelacionamento(relacionamento.getTipoRelacionamento().name());
+            record.setTipoRelacionamento(
+                org.ipredencao.ipredencao_manager.jooq.enums.TipoRelacionamento.valueOf(
+                    relacionamento.getTipoRelacionamento().name()
+                )
+            );
         record.setInicioRelacionamento(DateTimeHelper.toDb(relacionamento.getInicioRelacionamento()));
         return record;
     }
