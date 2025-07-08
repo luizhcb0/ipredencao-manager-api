@@ -2,6 +2,7 @@ CREATE TYPE estado_civil AS ENUM ('SOLTEIRO', 'CASADO', 'DIVORCIADO', 'VIUVO', '
 CREATE TYPE tipo_batismo AS ENUM ('INFANTIL', 'ADULTO', 'NAO_BATIZADO');
 CREATE TYPE estado_pessoa AS ENUM ('ATIVO', 'INATIVO', 'FALECIDO', 'TRANSFERIDO');
 CREATE TYPE tipo_admissao AS ENUM ('BATISMO', 'PROFISSAO_DE_FE', 'TRANSFERENCIA', 'OUTROS');
+CREATE TYPE tipo_relacionamento AS ENUM ('RESPONSAVEL', 'CONJUGE', 'FILHO', 'PAI', 'MAE', 'OUTRO');
 
 CREATE TABLE IF NOT EXISTS pessoa (
     id BIGSERIAL PRIMARY KEY,
@@ -48,5 +49,6 @@ CREATE TABLE IF NOT EXISTS pessoa_relacionamento (
     id BIGSERIAL PRIMARY KEY,
     pessoa_id BIGINT NOT NULL REFERENCES pessoa(id) ON DELETE CASCADE,
     pessoa_relacionada_id BIGINT NOT NULL REFERENCES pessoa(id) ON DELETE CASCADE,
-    tipo_relacionamento VARCHAR(50) NOT NULL
+    tipo_relacionamento tipo_relacionamento NOT NULL,
+    inicio_relacionamento TIMESTAMP
 ); 

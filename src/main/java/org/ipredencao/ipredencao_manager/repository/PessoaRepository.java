@@ -11,6 +11,12 @@ import org.ipredencao.ipredencao_manager.jooq.tables.records.PessoaRecord;
 import org.ipredencao.ipredencao_manager.jooq.tables.records.PessoaRelacionamentoRecord;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
+import org.ipredencao.ipredencao_manager.model.TipoRelacionamento;
+import org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil;
+import org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo;
+import org.ipredencao.ipredencao_manager.jooq.enums.EstadoPessoa;
+import org.ipredencao.ipredencao_manager.jooq.enums.TipoAdmissao;
 
 @Repository
 public class PessoaRepository {
@@ -26,21 +32,25 @@ public class PessoaRepository {
         p.setNome(record.getNome());
         p.setSedeCongregacao(record.getSedeCongregacao());
         p.setApelido(record.getApelido());
-        p.setDataNascimento(record.getDataNascimento());
+        p.setDataNascimento(DateTimeHelper.fromDb(record.getDataNascimento()));
         p.setTelefone(record.getTelefone());
-        p.setEstadoCivil(record.getEstadoCivil() != null ? record.getEstadoCivil().getLiteral() : null);
+        if (record.getEstadoCivil() != null)
+            p.setEstadoCivil(org.ipredencao.ipredencao_manager.model.EstadoCivil.valueOf(record.getEstadoCivil().name()));
         p.setIgrejaAnterior(record.getIgrejaAnterior());
         p.setSituacaoIgrejaAnterior(record.getSituacaoIgrejaAnterior());
         p.setTempoNaIpr(record.getTempoNaIpr());
         p.setMotivosAdmissao(record.getMotivosAdmissao());
-        p.setTipoBatismo(record.getTipoBatismo() != null ? record.getTipoBatismo().getLiteral() : null);
-        p.setDataBatismo(record.getDataBatismo());
+        if (record.getTipoBatismo() != null)
+            p.setTipoBatismo(org.ipredencao.ipredencao_manager.model.TipoBatismo.valueOf(record.getTipoBatismo().name()));
+        p.setDataBatismo(DateTimeHelper.fromDb(record.getDataBatismo()));
         p.setIgrejaBatismo(record.getIgrejaBatismo());
         p.setDadosOficial(record.getDadosOficial());
         p.setSupervisoes(record.getSupervisoes());
         p.setOutrasCategorias(record.getOutrasCategorias());
-        p.setEstadoPessoa(record.getEstadoPessoa() != null ? record.getEstadoPessoa().getLiteral() : null);
-        p.setTipoAdmissao(record.getTipoAdmissao() != null ? record.getTipoAdmissao().getLiteral() : null);
+        if (record.getEstadoPessoa() != null)
+            p.setEstadoPessoa(org.ipredencao.ipredencao_manager.model.EstadoPessoa.valueOf(record.getEstadoPessoa().name()));
+        if (record.getTipoAdmissao() != null)
+            p.setTipoAdmissao(org.ipredencao.ipredencao_manager.model.TipoAdmissao.valueOf(record.getTipoAdmissao().name()));
         p.setCpf(record.getCpf());
         p.setRg(record.getRg());
         p.setEmailAdicional(record.getEmailAdicional());
@@ -132,18 +142,25 @@ public class PessoaRepository {
         record.setNome(pessoa.getNome());
         record.setSedeCongregacao(pessoa.getSedeCongregacao());
         record.setApelido(pessoa.getApelido());
-        if (pessoa.getDataNascimento() != null) record.setDataNascimento(pessoa.getDataNascimento());
+        record.setDataNascimento(DateTimeHelper.toDb(pessoa.getDataNascimento()));
         record.setTelefone(pessoa.getTelefone());
-        // enums: estadoCivil, tipoBatismo, estadoPessoa, tipoAdmissao
+        if (pessoa.getEstadoCivil() != null)
+            record.setEstadoCivil(EstadoCivil.valueOf(pessoa.getEstadoCivil().name()));
         record.setIgrejaAnterior(pessoa.getIgrejaAnterior());
         record.setSituacaoIgrejaAnterior(pessoa.getSituacaoIgrejaAnterior());
         record.setTempoNaIpr(pessoa.getTempoNaIpr());
         record.setMotivosAdmissao(pessoa.getMotivosAdmissao());
-        if (pessoa.getDataBatismo() != null) record.setDataBatismo(pessoa.getDataBatismo());
+        if (pessoa.getTipoBatismo() != null)
+            record.setTipoBatismo(TipoBatismo.valueOf(pessoa.getTipoBatismo().name()));
+        record.setDataBatismo(DateTimeHelper.toDb(pessoa.getDataBatismo()));
         record.setIgrejaBatismo(pessoa.getIgrejaBatismo());
         record.setDadosOficial(pessoa.getDadosOficial());
         record.setSupervisoes(pessoa.getSupervisoes());
         record.setOutrasCategorias(pessoa.getOutrasCategorias());
+        if (pessoa.getEstadoPessoa() != null)
+            record.setEstadoPessoa(EstadoPessoa.valueOf(pessoa.getEstadoPessoa().name()));
+        if (pessoa.getTipoAdmissao() != null)
+            record.setTipoAdmissao(TipoAdmissao.valueOf(pessoa.getTipoAdmissao().name()));
         record.setCpf(pessoa.getCpf());
         record.setRg(pessoa.getRg());
         record.setEmailAdicional(pessoa.getEmailAdicional());
@@ -169,11 +186,23 @@ public class PessoaRepository {
         if (record == null) return null;
         RelacionamentoPessoa rel = new RelacionamentoPessoa();
         rel.setId(record.getId());
-        // Apenas o id da pessoa relacionada é retornado, não o objeto completo
         Pessoa pessoaRelacionada = new Pessoa();
         pessoaRelacionada.setId(record.getPessoaRelacionadaId());
         rel.setPessoaRelacionada(pessoaRelacionada);
-        rel.setTipoRelacionamento(record.getTipoRelacionamento());
+        if (record.getTipoRelacionamento() != null)
+            rel.setTipoRelacionamento(TipoRelacionamento.valueOf(record.getTipoRelacionamento()));
+        rel.setInicioRelacionamento(DateTimeHelper.fromDb(record.getInicioRelacionamento()));
         return rel;
+    }
+
+    private static PessoaRelacionamentoRecord toRepository(RelacionamentoPessoa relacionamento) {
+        PessoaRelacionamentoRecord record = new PessoaRelacionamentoRecord();
+        record.setId(relacionamento.getId());
+        if (relacionamento.getPessoaRelacionada() != null)
+            record.setPessoaRelacionadaId(relacionamento.getPessoaRelacionada().getId());
+        if (relacionamento.getTipoRelacionamento() != null)
+            record.setTipoRelacionamento(relacionamento.getTipoRelacionamento().name());
+        record.setInicioRelacionamento(DateTimeHelper.toDb(relacionamento.getInicioRelacionamento()));
+        return record;
     }
 } 
