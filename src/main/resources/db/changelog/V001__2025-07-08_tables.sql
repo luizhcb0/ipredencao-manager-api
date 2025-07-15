@@ -2,7 +2,7 @@ CREATE TYPE estado_civil AS ENUM ('SOLTEIRO', 'CASADO', 'DIVORCIADO', 'VIUVO', '
 CREATE TYPE tipo_batismo AS ENUM ('INFANTIL', 'ADULTO', 'NAO_BATIZADO');
 CREATE TYPE estado_pessoa AS ENUM ('ATIVO', 'INATIVO', 'FALECIDO', 'TRANSFERIDO');
 CREATE TYPE tipo_admissao AS ENUM ('BATISMO', 'PROFISSAO_DE_FE', 'TRANSFERENCIA', 'OUTROS');
-CREATE TYPE tipo_relacionamento AS ENUM ('RESPONSAVEL', 'CONJUGE', 'FILHO', 'PAI', 'MAE', 'OUTRO');
+CREATE TYPE tipo_relacionamento AS ENUM ('CONJUGE', 'FILHO', 'PAI', 'MAE', 'IRMÃO', 'RESPONSAVEL');
 
 CREATE TABLE IF NOT EXISTS pessoa (
     id BIGSERIAL PRIMARY KEY,
@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS pessoa (
     linkedin VARCHAR(100),
     instagram VARCHAR(100),
     facebook VARCHAR(100),
-    pagina_pessoal VARCHAR(255)
+    pagina_pessoal VARCHAR(255),
+    foto_url VARCHAR(500)
 );
 
 -- Tabela de relacionamento qualificado entre pessoas

@@ -41,6 +41,7 @@ public class Pessoa {
     private String instagram;
     private String facebook;
     private String paginaPessoal;
+    private String fotoUrl;
 
     // Relacionamentos qualificados com outras pessoas
     private List<RelacionamentoPessoa> relacionamentos;
@@ -120,6 +121,8 @@ public class Pessoa {
     public void setFacebook(String facebook) { this.facebook = facebook; }
     public String getPaginaPessoal() { return paginaPessoal; }
     public void setPaginaPessoal(String paginaPessoal) { this.paginaPessoal = paginaPessoal; }
+    public String getFotoUrl() { return fotoUrl; }
+    public void setFotoUrl(String fotoUrl) { this.fotoUrl = fotoUrl; }
     public List<RelacionamentoPessoa> getRelacionamentos() { return relacionamentos; }
     public void setRelacionamentos(List<RelacionamentoPessoa> relacionamentos) { this.relacionamentos = relacionamentos; }
 } 

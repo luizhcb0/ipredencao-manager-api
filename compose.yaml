@@ -1,4 +1,14 @@
 services:
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+    volumes:
+      - "./localstack:/var/lib/localstack"
   postgres:
     image: 'postgres:15'
     container_name: db
@@ -18,4 +28,3 @@ services:
       start_period: 5s
 volumes:
   pgdata:
-
