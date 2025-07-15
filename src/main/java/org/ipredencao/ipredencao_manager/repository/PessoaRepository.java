@@ -12,11 +12,18 @@ import org.ipredencao.ipredencao_manager.jooq.tables.records.PessoaRelacionament
 import java.util.List;
 import java.util.stream.Collectors;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
-import org.ipredencao.ipredencao_manager.model.TipoRelacionamento;
 import org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil;
 import org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo;
 import org.ipredencao.ipredencao_manager.jooq.enums.EstadoPessoa;
 import org.ipredencao.ipredencao_manager.jooq.enums.TipoAdmissao;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import org.springframework.web.multipart.MultipartFile;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 @Repository
 public class PessoaRepository {
@@ -24,7 +31,6 @@ public class PessoaRepository {
     private DSLContext dsl;
 
     
-
     private static Pessoa fromRepository(PessoaRecord record) {
         if (record == null) return null;
         Pessoa p = new Pessoa();
@@ -69,6 +75,7 @@ public class PessoaRepository {
         p.setInstagram(record.getInstagram());
         p.setFacebook(record.getFacebook());
         p.setPaginaPessoal(record.getPaginaPessoal());
+        p.setFotoUrl(record.getFotoUrl());
         return p;
     }
 
@@ -138,7 +145,6 @@ public class PessoaRepository {
 
     private static PessoaRecord toRepository(Pessoa pessoa) {
         PessoaRecord record = new PessoaRecord();
-        record.setId(pessoa.getId());
         record.setNome(pessoa.getNome());
         record.setSedeCongregacao(pessoa.getSedeCongregacao());
         record.setApelido(pessoa.getApelido());
@@ -179,6 +185,7 @@ public class PessoaRepository {
         record.setInstagram(pessoa.getInstagram());
         record.setFacebook(pessoa.getFacebook());
         record.setPaginaPessoal(pessoa.getPaginaPessoal());
+        record.setFotoUrl(pessoa.getFotoUrl());
         return record;
     }
 

@@ -38,4 +38,6 @@ application-local.properties
 *.class
 *.jar
 *.war
-*.ear 
+*.ear
+.localstack
+/localstack 
