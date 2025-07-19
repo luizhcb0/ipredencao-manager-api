@@ -25,6 +25,7 @@ public class PessoaRepository {
 
     public Pessoa insert(Pessoa pessoa) {
         PessoaRecord pessoaRecord = toRepository(pessoa);
+        
         PessoaRecord saved = dsl.insertInto(PESSOA)
                 .set(pessoaRecord)
                 .returning()
@@ -151,7 +152,6 @@ public class PessoaRepository {
 
     private static PessoaRecord toRepository(Pessoa pessoa) {
         PessoaRecord pessoaRecord = new PessoaRecord();
-        pessoaRecord.setId(pessoa.getId());
         pessoaRecord.setNome(pessoa.getNome());
         pessoaRecord.setApelido(pessoa.getApelido());
         pessoaRecord.setEmail(pessoa.getEmail());
