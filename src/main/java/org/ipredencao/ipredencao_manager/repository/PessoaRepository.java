@@ -24,13 +24,97 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ipredencao.ipredencao_manager.model.PessoaQuery;
+import org.jooq.Condition;
+import org.jooq.impl.DSL;
 
 @Repository
 public class PessoaRepository {
     @Autowired
     private DSLContext dsl;
 
+
+    public Pessoa insert(Pessoa pessoa) {
+        PessoaRecord record = toRepository(pessoa);
+        PessoaRecord saved = dsl.insertInto(PESSOA)
+                .set(record)
+                .returning()
+                .fetchOne();
+        return fromRepository(saved);
+    }
+
+    public Pessoa update(Pessoa pessoa) {
+        PessoaRecord record = toRepository(pessoa);
+        dsl.update(PESSOA)
+                .set(record)
+                .where(PESSOA.ID.eq(pessoa.getId()))
+                .execute();
+        return pessoa;
+    }
+
+    public List<Pessoa> find(PessoaQuery query) {
+        List<Condition> conditions = buildConditions(query);
+        
+        Condition finalCondition = conditions.stream()
+            .reduce(DSL.noCondition(), (a, b) -> a.and(b));
+        
+        return dsl.selectFrom(PESSOA)
+                .where(finalCondition)
+                .fetch()
+                .stream()
+                .map(PessoaRepository::fromRepository)
+                .collect(Collectors.toList());
+    }
+
+    // CRUD para relacionamentos qualificados
+    public RelacionamentoPessoa inserirRelacionamento(Long pessoaId, RelacionamentoPessoa relacionamento) {
+        PessoaRelacionamentoRecord record = toRepository(relacionamento);
+        record.setPessoaId(pessoaId);
+        PessoaRelacionamentoRecord saved = dsl.insertInto(PESSOA_RELACIONAMENTO)
+                .set(record)
+                .returning()
+                .fetchOne();
+        return fromRepository(saved);
+    }
+
+    public List<RelacionamentoPessoa> listarRelacionamentosPorPessoa(Long pessoaId) {
+        return dsl.selectFrom(PESSOA_RELACIONAMENTO)
+                .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaId))
+                .fetch()
+                .stream()
+                .map(PessoaRepository::fromRepository)
+                .collect(Collectors.toList());
+    }
     
+
+    private List<Condition> buildConditions(PessoaQuery query) {
+        List<Condition> conditions = new java.util.ArrayList<>();
+        
+        query.getId().ifPresent(id -> conditions.add(PESSOA.ID.eq(id)));
+        query.getIds().ifPresent(ids -> conditions.add(PESSOA.ID.in(ids)));
+        query.getNome().ifPresent(nome -> conditions.add(PESSOA.NOME.like("%" + nome + "%")));
+        query.getApelido().ifPresent(apelido -> conditions.add(PESSOA.APELIDO.like("%" + apelido + "%")));
+        query.getEmail().ifPresent(email -> conditions.add(PESSOA.EMAIL.eq(email)));
+        query.getTelefone().ifPresent(telefone -> conditions.add(PESSOA.TELEFONE.eq(telefone)));
+        query.getCpf().ifPresent(cpf -> conditions.add(PESSOA.CPF.eq(cpf)));
+        query.getRg().ifPresent(rg -> conditions.add(PESSOA.RG.eq(rg)));
+        query.getEstadoCivil().ifPresent(estadoCivil -> 
+            conditions.add(PESSOA.ESTADO_CIVIL.eq(org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil.valueOf(estadoCivil.name()))));
+        query.getCampus().ifPresent(campus -> conditions.add(PESSOA.CAMPUS.eq(campus)));
+        query.getRegiao().ifPresent(regiao -> 
+            conditions.add(PESSOA.REGIAO.eq(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(regiao.name()))));
+        query.getStatus().ifPresent(status -> 
+            conditions.add(PESSOA.STATUS.eq(org.ipredencao.ipredencao_manager.jooq.enums.Status.valueOf(status.name()))));
+        query.getDataNascimentoFrom().ifPresent(from -> 
+            conditions.add(PESSOA.DATA_NASCIMENTO.greaterOrEqual(DateTimeHelper.toDb(from))));
+        query.getDataNascimentoTo().ifPresent(to -> 
+            conditions.add(PESSOA.DATA_NASCIMENTO.lessOrEqual(DateTimeHelper.toDb(to))));
+        query.getTipoBatismo().ifPresent(tipoBatismo -> 
+            conditions.add(PESSOA.TIPO_BATISMO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo.valueOf(tipoBatismo.name()))));
+        
+        return conditions;
+    }
+
     private static Pessoa fromRepository(PessoaRecord record) {
         if (record == null) return null;
         Pessoa p = new Pessoa();
@@ -74,70 +158,6 @@ public class PessoaRepository {
         }
         
         return p;
-    }
-
-    public Pessoa inserirPessoa(Pessoa pessoa) {
-        PessoaRecord record = toRepository(pessoa);
-        PessoaRecord saved = dsl.insertInto(PESSOA)
-                .set(record)
-                .returning()
-                .fetchOne();
-        return fromRepository(saved);
-    }
-
-    public Pessoa buscarPorId(Long id) {
-        PessoaRecord record = dsl.selectFrom(PESSOA)
-                .where(PESSOA.ID.eq(id))
-                .fetchOne();
-        return fromRepository(record);
-    }
-
-    public List<Pessoa> listarTodas() {
-        return dsl.selectFrom(PESSOA)
-                .fetch()
-                .stream()
-                .map(PessoaRepository::fromRepository)
-                .collect(Collectors.toList());
-    }
-
-    public int atualizarPessoa(Pessoa pessoa) {
-        PessoaRecord record = toRepository(pessoa);
-        return dsl.update(PESSOA)
-                .set(record)
-                .where(PESSOA.ID.eq(pessoa.getId()))
-                .execute();
-    }
-
-    public int deletarPessoa(Long id) {
-        return dsl.deleteFrom(PESSOA)
-                .where(PESSOA.ID.eq(id))
-                .execute();
-    }
-
-    // CRUD para relacionamentos qualificados
-    public RelacionamentoPessoa inserirRelacionamento(Long pessoaId, RelacionamentoPessoa relacionamento) {
-        PessoaRelacionamentoRecord record = toRepository(relacionamento);
-        record.setPessoaId(pessoaId);
-        PessoaRelacionamentoRecord saved = dsl.insertInto(PESSOA_RELACIONAMENTO)
-                .set(record)
-                .returning()
-                .fetchOne();
-        return fromRepository(saved);
-    }
-
-    public List<RelacionamentoPessoa> listarRelacionamentosPorPessoa(Long pessoaId) {
-        return dsl.selectFrom(PESSOA_RELACIONAMENTO)
-                .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaId))
-                .fetch()
-                .stream()
-                .map(PessoaRepository::fromRepository)
-                .collect(Collectors.toList());
-    }
-
-    public int deletarRelacionamento(Long relacionamentoId) {
-        return dsl.deleteFrom(PESSOA_RELACIONAMENTO)
-                .where(PESSOA_RELACIONAMENTO.ID.eq(relacionamentoId))
-                .execute();
     }
 
     private static PessoaRecord toRepository(Pessoa pessoa) {
