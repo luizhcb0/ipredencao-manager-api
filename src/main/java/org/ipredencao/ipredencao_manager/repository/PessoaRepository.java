@@ -14,8 +14,6 @@ import java.util.stream.Collectors;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
 import org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil;
 import org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo;
-import org.ipredencao.ipredencao_manager.jooq.enums.EstadoPessoa;
-import org.ipredencao.ipredencao_manager.jooq.enums.TipoAdmissao;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +22,8 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Repository
 public class PessoaRepository {
@@ -36,46 +36,43 @@ public class PessoaRepository {
         Pessoa p = new Pessoa();
         p.setId(record.getId());
         p.setNome(record.getNome());
-        p.setSedeCongregacao(record.getSedeCongregacao());
         p.setApelido(record.getApelido());
-        p.setDataNascimento(DateTimeHelper.fromDb(record.getDataNascimento()));
+        p.setEmail(record.getEmail());
         p.setTelefone(record.getTelefone());
+        p.setCampus(record.getCampus());
+        p.setDataNascimento(DateTimeHelper.fromDb(record.getDataNascimento()));
+        p.setCpf(record.getCpf());
+        p.setRg(record.getRg());
         if (record.getEstadoCivil() != null)
             p.setEstadoCivil(org.ipredencao.ipredencao_manager.model.EstadoCivil.valueOf(record.getEstadoCivil().name()));
         p.setIgrejaAnterior(record.getIgrejaAnterior());
         p.setSituacaoIgrejaAnterior(record.getSituacaoIgrejaAnterior());
-        p.setTempoNaIpr(record.getTempoNaIpr());
-        p.setMotivosAdmissao(record.getMotivosAdmissao());
+        p.setTempoNaIgreja(record.getTempoNaIgreja());
+        p.setMotivosParaAdmissao(record.getMotivosParaAdmissao());
         if (record.getTipoBatismo() != null)
             p.setTipoBatismo(org.ipredencao.ipredencao_manager.model.TipoBatismo.valueOf(record.getTipoBatismo().name()));
         p.setDataBatismo(DateTimeHelper.fromDb(record.getDataBatismo()));
+        p.setDataProfissaoDeFe(DateTimeHelper.fromDb(record.getDataProfissaoDeFe()));
         p.setIgrejaBatismo(record.getIgrejaBatismo());
-        p.setDadosOficial(record.getDadosOficial());
-        p.setSupervisoes(record.getSupervisoes());
-        p.setOutrasCategorias(record.getOutrasCategorias());
-        if (record.getEstadoPessoa() != null)
-            p.setEstadoPessoa(org.ipredencao.ipredencao_manager.model.EstadoPessoa.valueOf(record.getEstadoPessoa().name()));
-        if (record.getTipoAdmissao() != null)
-            p.setTipoAdmissao(org.ipredencao.ipredencao_manager.model.TipoAdmissao.valueOf(record.getTipoAdmissao().name()));
-        p.setCpf(record.getCpf());
-        p.setRg(record.getRg());
-        p.setEmailAdicional(record.getEmailAdicional());
-        p.setTelefoneAdicional(record.getTelefoneAdicional());
-        p.setEmailTrabalho(record.getEmailTrabalho());
-        p.setTelefoneTrabalho(record.getTelefoneTrabalho());
         p.setProfissao(record.getProfissao());
         p.setEmpresa(record.getEmpresa());
         p.setEndereco(record.getEndereco());
+        if (record.getRegiao() != null)
+            p.setRegiao(org.ipredencao.ipredencao_manager.model.Regiao.valueOf(record.getRegiao().name()));
         p.setLatitude(record.getLatitude() != null ? record.getLatitude().doubleValue() : null);
         p.setLongitude(record.getLongitude() != null ? record.getLongitude().doubleValue() : null);
-        p.setRegiaoGf(record.getRegiaoGf());
-        p.setSkype(record.getSkype());
-        p.setTwitter(record.getTwitter());
-        p.setLinkedin(record.getLinkedin());
-        p.setInstagram(record.getInstagram());
-        p.setFacebook(record.getFacebook());
-        p.setPaginaPessoal(record.getPaginaPessoal());
         p.setFotoUrl(record.getFotoUrl());
+        if (record.getStatus() != null)
+            p.setStatus(org.ipredencao.ipredencao_manager.model.Status.valueOf(record.getStatus().name()));
+        
+        // Converter arrays do PostgreSQL para List<String>
+        if (record.getEmailsSecundarios() != null) {
+            p.setEmailsSecundarios(java.util.Arrays.asList(record.getEmailsSecundarios()));
+        }
+        if (record.getTelefonesSecundarios() != null) {
+            p.setTelefonesSecundarios(java.util.Arrays.asList(record.getTelefonesSecundarios()));
+        }
+        
         return p;
     }
 
@@ -145,47 +142,45 @@ public class PessoaRepository {
 
     private static PessoaRecord toRepository(Pessoa pessoa) {
         PessoaRecord record = new PessoaRecord();
+        record.setId(pessoa.getId());
         record.setNome(pessoa.getNome());
-        record.setSedeCongregacao(pessoa.getSedeCongregacao());
         record.setApelido(pessoa.getApelido());
-        record.setDataNascimento(DateTimeHelper.toDb(pessoa.getDataNascimento()));
+        record.setEmail(pessoa.getEmail());
         record.setTelefone(pessoa.getTelefone());
+        record.setCampus(pessoa.getCampus());
+        record.setDataNascimento(DateTimeHelper.toDb(pessoa.getDataNascimento()));
+        record.setCpf(pessoa.getCpf());
+        record.setRg(pessoa.getRg());
         if (pessoa.getEstadoCivil() != null)
             record.setEstadoCivil(EstadoCivil.valueOf(pessoa.getEstadoCivil().name()));
         record.setIgrejaAnterior(pessoa.getIgrejaAnterior());
         record.setSituacaoIgrejaAnterior(pessoa.getSituacaoIgrejaAnterior());
-        record.setTempoNaIpr(pessoa.getTempoNaIpr());
-        record.setMotivosAdmissao(pessoa.getMotivosAdmissao());
+        record.setTempoNaIgreja(pessoa.getTempoNaIgreja());
+        record.setMotivosParaAdmissao(pessoa.getMotivosParaAdmissao());
         if (pessoa.getTipoBatismo() != null)
             record.setTipoBatismo(TipoBatismo.valueOf(pessoa.getTipoBatismo().name()));
         record.setDataBatismo(DateTimeHelper.toDb(pessoa.getDataBatismo()));
+        record.setDataProfissaoDeFe(DateTimeHelper.toDb(pessoa.getDataProfissaoDeFe()));
         record.setIgrejaBatismo(pessoa.getIgrejaBatismo());
-        record.setDadosOficial(pessoa.getDadosOficial());
-        record.setSupervisoes(pessoa.getSupervisoes());
-        record.setOutrasCategorias(pessoa.getOutrasCategorias());
-        if (pessoa.getEstadoPessoa() != null)
-            record.setEstadoPessoa(EstadoPessoa.valueOf(pessoa.getEstadoPessoa().name()));
-        if (pessoa.getTipoAdmissao() != null)
-            record.setTipoAdmissao(TipoAdmissao.valueOf(pessoa.getTipoAdmissao().name()));
-        record.setCpf(pessoa.getCpf());
-        record.setRg(pessoa.getRg());
-        record.setEmailAdicional(pessoa.getEmailAdicional());
-        record.setTelefoneAdicional(pessoa.getTelefoneAdicional());
-        record.setEmailTrabalho(pessoa.getEmailTrabalho());
-        record.setTelefoneTrabalho(pessoa.getTelefoneTrabalho());
         record.setProfissao(pessoa.getProfissao());
         record.setEmpresa(pessoa.getEmpresa());
         record.setEndereco(pessoa.getEndereco());
+        if (pessoa.getRegiao() != null)
+            record.setRegiao(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(pessoa.getRegiao().name()));
         if (pessoa.getLatitude() != null) record.setLatitude(java.math.BigDecimal.valueOf(pessoa.getLatitude()));
         if (pessoa.getLongitude() != null) record.setLongitude(java.math.BigDecimal.valueOf(pessoa.getLongitude()));
-        record.setRegiaoGf(pessoa.getRegiaoGf());
-        record.setSkype(pessoa.getSkype());
-        record.setTwitter(pessoa.getTwitter());
-        record.setLinkedin(pessoa.getLinkedin());
-        record.setInstagram(pessoa.getInstagram());
-        record.setFacebook(pessoa.getFacebook());
-        record.setPaginaPessoal(pessoa.getPaginaPessoal());
         record.setFotoUrl(pessoa.getFotoUrl());
+        if (pessoa.getStatus() != null)
+            record.setStatus(org.ipredencao.ipredencao_manager.jooq.enums.Status.valueOf(pessoa.getStatus().name()));
+        
+        // Converter List<String> para arrays do PostgreSQL
+        if (pessoa.getEmailsSecundarios() != null && !pessoa.getEmailsSecundarios().isEmpty()) {
+            record.setEmailsSecundarios(pessoa.getEmailsSecundarios().toArray(new String[0]));
+        }
+        if (pessoa.getTelefonesSecundarios() != null && !pessoa.getTelefonesSecundarios().isEmpty()) {
+            record.setTelefonesSecundarios(pessoa.getTelefonesSecundarios().toArray(new String[0]));
+        }
+        
         return record;
     }
 
