@@ -1,3 +1,4 @@
+CREATE TYPE sexo AS ENUM ('MASCULINO', 'FEMININO');
 CREATE TYPE estado_civil AS ENUM (
     'CASADO',
     'SOLTEIRO_SEM_RELACIONAMENTO',
@@ -27,6 +28,7 @@ CREATE TYPE status AS ENUM ('CADASTRADO', 'VALIDADO');
 CREATE TABLE IF NOT EXISTS pessoa (
     id BIGSERIAL PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
+    sexo sexo NOT NULL,
     apelido VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     emails_secundarios VARCHAR(255)[],
@@ -55,6 +57,7 @@ CREATE TABLE IF NOT EXISTS pessoa (
     latitude NUMERIC(10,8),
     longitude NUMERIC(11,8),
     foto_url VARCHAR(500),
+    chefe_de_familia BIGINT REFERENCES pessoa(id),
     status status NOT NULL DEFAULT 'CADASTRADO'
 );
 
@@ -65,4 +68,4 @@ CREATE TABLE IF NOT EXISTS pessoa_relacionamento (
     pessoa_relacionada_id BIGINT NOT NULL REFERENCES pessoa(id) ON DELETE CASCADE,
     tipo_relacionamento tipo_relacionamento NOT NULL,
     inicio_relacionamento TIMESTAMP
-); 
+);
