@@ -62,8 +62,7 @@ public class PessoaController {
         List<Pessoa> pessoas = pessoaService.find(query);
         return ResponseEntity.ok(pessoas);
     }
-
-//    TODO: Ajustar o método de atualização para aceitar apenas campos modificados. Pesquisar o registro atual antes de atualizar
+    
     @PutMapping("/{id}")
     public ResponseEntity<Pessoa> atualizarPessoa(@PathVariable Long id, @RequestBody Pessoa pessoa) {
         pessoa.setId(id);

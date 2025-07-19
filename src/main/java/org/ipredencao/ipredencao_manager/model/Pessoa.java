@@ -32,6 +32,8 @@ public class Pessoa {
     private Double longitude;
     private String fotoUrl;
     private Status status;
+    private Sexo sexo;
+    private Long chefeDeFamiliaId;
 
     // Relacionamentos qualificados com outras pessoas
     private List<RelacionamentoPessoa> relacionamentos;
@@ -93,6 +95,10 @@ public class Pessoa {
     public void setFotoUrl(String fotoUrl) { this.fotoUrl = fotoUrl; }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
+    public Sexo getSexo() { return sexo; }
+    public void setSexo(Sexo sexo) { this.sexo = sexo; }
+    public Long getChefeDeFamiliaId() { return chefeDeFamiliaId; }
+    public void setChefeDeFamiliaId(Long chefeDeFamiliaId) { this.chefeDeFamiliaId = chefeDeFamiliaId; }
     public List<RelacionamentoPessoa> getRelacionamentos() { return relacionamentos; }
     public void setRelacionamentos(List<RelacionamentoPessoa> relacionamentos) { this.relacionamentos = relacionamentos; }
 } 

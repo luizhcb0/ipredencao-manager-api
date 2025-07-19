@@ -138,6 +138,9 @@ public class PessoaRepository {
         p.setFotoUrl(pessoaRecord.getFotoUrl());
         if (pessoaRecord.getStatus() != null)
             p.setStatus(org.ipredencao.ipredencao_manager.model.Status.valueOf(pessoaRecord.getStatus().name()));
+        if (pessoaRecord.getSexo() != null)
+            p.setSexo(org.ipredencao.ipredencao_manager.model.Sexo.valueOf(pessoaRecord.getSexo().name()));
+        p.setChefeDeFamiliaId(pessoaRecord.getChefeDeFamilia());
         
         // Converter arrays do PostgreSQL para List<String>
         if (pessoaRecord.getEmailsSecundarios() != null) {
@@ -181,6 +184,9 @@ public class PessoaRepository {
         pessoaRecord.setFotoUrl(pessoa.getFotoUrl());
         if (pessoa.getStatus() != null)
             pessoaRecord.setStatus(org.ipredencao.ipredencao_manager.jooq.enums.Status.valueOf(pessoa.getStatus().name()));
+        if (pessoa.getSexo() != null)
+            pessoaRecord.setSexo(org.ipredencao.ipredencao_manager.jooq.enums.Sexo.valueOf(pessoa.getSexo().name()));
+        pessoaRecord.setChefeDeFamilia(pessoa.getChefeDeFamiliaId());
         
         // Converter List<String> para arrays do PostgreSQL
         if (pessoa.getEmailsSecundarios() != null && !pessoa.getEmailsSecundarios().isEmpty()) {
