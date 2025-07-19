@@ -1,21 +1,24 @@
 package org.ipredencao.ipredencao_manager.controller;
 
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.ipredencao.ipredencao_manager.service.PessoaService;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.ipredencao.ipredencao_manager.model.Pessoa;
+import org.ipredencao.ipredencao_manager.model.PessoaQuery;
+import org.ipredencao.ipredencao_manager.service.PessoaService;
+import java.util.List;
 import org.ipredencao.ipredencao_manager.model.RelacionamentoPessoa;
 import java.io.IOException;
-import org.springframework.http.ResponseEntity;
-import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/pessoas")
@@ -25,8 +28,8 @@ public class PessoaController {
     public PessoaController(PessoaService pessoaService) {this.pessoaService = pessoaService;}
 
     @PostMapping
-    public Pessoa criarPessoa(@RequestBody Pessoa pessoa) {
-        return pessoaService.criarPessoa(pessoa);
+    public ResponseEntity<Pessoa> criarPessoa(@RequestBody Pessoa pessoa) {
+        return ResponseEntity.ok(pessoaService.create(pessoa));
     }
 
     @PostMapping("/{id}/foto")
@@ -34,34 +37,36 @@ public class PessoaController {
         @PathVariable Long id,
         @RequestParam("foto") MultipartFile foto
     ) throws IOException {
-        Pessoa pessoa = pessoaService.buscarPorId(id);
+        Pessoa pessoa = pessoaService.findById(id);
         if (pessoa == null) {
             return ResponseEntity.notFound().build();
         }
-        pessoaService.criarPessoaComFoto(id, foto);
-        Pessoa atualizada = pessoaService.buscarPorId(id);
+        pessoaService.savePhoto(pessoa, foto);
+        Pessoa atualizada = pessoaService.findById(id);
         return ResponseEntity.ok(atualizada);
     }
 
     @GetMapping("/{id}")
-    public Pessoa buscarPorId(@PathVariable Long id) {
-        return pessoaService.buscarPorId(id);
+    public ResponseEntity<Object> buscarPorId(@PathVariable Long id) {
+        try {
+            Pessoa pessoa = pessoaService.findById(id);
+            return ResponseEntity.ok(pessoa);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", e.getMessage()));
+        }
     }
 
-    @GetMapping
-    public List<Pessoa> listarTodas() {
-        return pessoaService.listarTodas();
+    @PostMapping("/search")
+    public ResponseEntity<List<Pessoa>> buscarPessoas(@RequestBody PessoaQuery query) {
+        List<Pessoa> pessoas = pessoaService.find(query);
+        return ResponseEntity.ok(pessoas);
     }
 
     @PutMapping("/{id}")
-    public int atualizarPessoa(@PathVariable Long id, @RequestBody Pessoa pessoa) {
+    public ResponseEntity<Pessoa> atualizarPessoa(@PathVariable Long id, @RequestBody Pessoa pessoa) {
         pessoa.setId(id);
-        return pessoaService.atualizarPessoa(pessoa);
-    }
-
-    @DeleteMapping("/{id}")
-    public int deletarPessoa(@PathVariable Long id) {
-        return pessoaService.deletarPessoa(id);
+        return ResponseEntity.ok(pessoaService.update(pessoa));
     }
 
     // Relacionamentos qualificados
@@ -73,10 +78,5 @@ public class PessoaController {
     @GetMapping("/{id}/relacionamentos")
     public List<RelacionamentoPessoa> listarRelacionamentos(@PathVariable Long id) {
         return pessoaService.listarRelacionamentosPorPessoa(id);
-    }
-
-    @DeleteMapping("/relacionamentos/{relacionamentoId}")
-    public int deletarRelacionamento(@PathVariable Long relacionamentoId) {
-        return pessoaService.deletarRelacionamento(relacionamentoId);
     }
 } 
