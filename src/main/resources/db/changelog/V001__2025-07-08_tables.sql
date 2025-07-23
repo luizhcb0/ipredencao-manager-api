@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS pessoa (
     data_nascimento TIMESTAMP NOT NULL,
     cpf VARCHAR(20) NOT NULL,
     rg VARCHAR(20) NOT NULL,
-    estado_civil estado_civil NOT NULL,
+    estado_civil estado_civil,
     igreja_anterior VARCHAR(255),
     situacao_igreja_anterior VARCHAR(255),
 --  Se for cadastramento de pedido de membresia.
