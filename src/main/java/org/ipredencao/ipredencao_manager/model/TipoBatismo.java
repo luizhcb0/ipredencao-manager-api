@@ -4,4 +4,4 @@ public enum TipoBatismo {
     INFANTIL,
     ADULTO,
     NAO_BATIZADO
-} 
+}

@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.ipredencao.ipredencao_manager.model.Pessoa;
 import org.ipredencao.ipredencao_manager.model.PessoaQuery;
+import org.ipredencao.ipredencao_manager.model.SubcategoriaEnum;
 import org.ipredencao.ipredencao_manager.service.PessoaService;
 import java.util.List;
 import org.ipredencao.ipredencao_manager.model.RelacionamentoPessoa;
@@ -79,4 +80,12 @@ public class PessoaController {
     public List<RelacionamentoPessoa> listarRelacionamentos(@PathVariable Long id) {
         return pessoaService.listarRelacionamentosPorPessoa(id);
     }
-} 
+    
+    /**
+     * Lista todas as subcategorias disponíveis
+     */
+    @GetMapping("/subcategorias")
+    public ResponseEntity<SubcategoriaEnum[]> getAllSubcategorias() {
+        return ResponseEntity.ok(pessoaService.getAllSubcategorias());
+    }
+}
