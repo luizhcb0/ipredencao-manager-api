@@ -5,6 +5,7 @@ import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
 import org.ipredencao.ipredencao_manager.model.Pessoa;
 import org.ipredencao.ipredencao_manager.model.RelacionamentoPessoa;
 import org.ipredencao.ipredencao_manager.model.PessoaQuery;
+import org.ipredencao.ipredencao_manager.model.SubcategoriaEnum;
 import java.util.List;
 import java.util.NoSuchElementException;
 import com.amazonaws.services.s3.AmazonS3;
@@ -22,7 +23,9 @@ public class PessoaService {
     private AmazonS3 amazonS3;
     private final String bucketName = "ipredencao-manager-photos";
 
-    public PessoaService(PessoaRepository pessoaRepository) {this.pessoaRepository = pessoaRepository;}
+    public PessoaService(PessoaRepository pessoaRepository) {
+        this.pessoaRepository = pessoaRepository;
+    }
 
     public Pessoa create(Pessoa pessoa) {
         return pessoaRepository.insert(pessoa);
@@ -65,5 +68,31 @@ public class PessoaService {
 
     public List<RelacionamentoPessoa> listarRelacionamentosPorPessoa(Long pessoaId) {
         return pessoaRepository.listarRelacionamentosPorPessoa(pessoaId);
+    }
+    
+    /**
+     * Define a subcategoria de uma pessoa usando o enum
+     */
+    public Pessoa setSubcategoria(Long pessoaId, SubcategoriaEnum subcategoriaEnum) {
+        Pessoa pessoa = findById(pessoaId);
+        pessoa.setSubcategoria(subcategoriaEnum);
+        return pessoaRepository.update(pessoa);
+    }
+    
+    /**
+     * Busca pessoas por subcategoria
+     */
+    public List<Pessoa> findBySubcategoria(SubcategoriaEnum subcategoriaEnum) {
+        // Busca direta no banco usando o ID da subcategoria
+        return pessoaRepository.find(PessoaQuery.builder()
+            .subcategoria(subcategoriaEnum)
+            .build());
+    }
+    
+    /**
+     * Lista todas as subcategorias disponíveis
+     */
+    public SubcategoriaEnum[] getAllSubcategorias() {
+        return SubcategoriaEnum.values();
     }
 } 
