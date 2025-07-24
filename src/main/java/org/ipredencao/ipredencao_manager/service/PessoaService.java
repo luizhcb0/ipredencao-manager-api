@@ -71,28 +71,9 @@ public class PessoaService {
     }
     
     /**
-     * Define a subcategoria de uma pessoa usando o enum
-     */
-    public Pessoa setSubcategoria(Long pessoaId, SubcategoriaEnum subcategoriaEnum) {
-        Pessoa pessoa = findById(pessoaId);
-        pessoa.setSubcategoria(subcategoriaEnum);
-        return pessoaRepository.update(pessoa);
-    }
-    
-    /**
-     * Busca pessoas por subcategoria
-     */
-    public List<Pessoa> findBySubcategoria(SubcategoriaEnum subcategoriaEnum) {
-        // Busca direta no banco usando o ID da subcategoria
-        return pessoaRepository.find(PessoaQuery.builder()
-            .subcategoria(subcategoriaEnum)
-            .build());
-    }
-    
-    /**
      * Lista todas as subcategorias disponíveis
      */
     public SubcategoriaEnum[] getAllSubcategorias() {
         return SubcategoriaEnum.values();
     }
-} 
+}

@@ -11,4 +11,4 @@ public enum EstadoCivil {
     VIUVO_SEM_RELACIONAMENTO,
     VIUVO_NAMORANDO,
     VIUVO_NOIVO
-} 
+}

@@ -1,6 +1,7 @@
 package org.ipredencao.ipredencao_manager.model;
 
 public enum SubcategoriaEnum {
+    CATEGORIA_DESCONHECIDA("-1", "Categoria Desconhecida", -1L),
     // Categoria 00 (Pastores)
     PASTORES_DA_IGREJA("00", "Pastores da Igreja", 1L),
     
@@ -145,6 +146,6 @@ public enum SubcategoriaEnum {
                 return subcategoria;
             }
         }
-        throw new IllegalArgumentException("ID de subcategoria não encontrado: " + id);
+        return CATEGORIA_DESCONHECIDA;
     }
-} 
+}

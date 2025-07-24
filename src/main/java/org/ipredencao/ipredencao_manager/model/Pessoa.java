@@ -104,4 +104,4 @@ public class Pessoa {
     public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
     public List<RelacionamentoPessoa> getRelacionamentos() { return relacionamentos; }
     public void setRelacionamentos(List<RelacionamentoPessoa> relacionamentos) { this.relacionamentos = relacionamentos; }
-} 
+}
