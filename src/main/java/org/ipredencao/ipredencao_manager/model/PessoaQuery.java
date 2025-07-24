@@ -156,4 +156,4 @@ public class PessoaQuery {
     public Optional<DateTime> getDataNascimentoTo() { return dataNascimentoTo; }
     public Optional<TipoBatismo> getTipoBatismo() { return tipoBatismo; }
     public Optional<SubcategoriaEnum> getSubcategoria() { return subcategoria; }
-} 
+}

@@ -17,4 +17,4 @@ public class RelacionamentoPessoa {
     public void setTipoRelacionamento(TipoRelacionamento tipoRelacionamento) { this.tipoRelacionamento = tipoRelacionamento; }
     public DateTime getInicioRelacionamento() { return inicioRelacionamento; }
     public void setInicioRelacionamento(DateTime inicioRelacionamento) { this.inicioRelacionamento = inicioRelacionamento; }
-} 
+}

@@ -142,13 +142,8 @@ public class PessoaRepository {
         if (pessoaRecord.getSexo() != null)
             p.setSexo(org.ipredencao.ipredencao_manager.model.Sexo.valueOf(pessoaRecord.getSexo().name()));
         p.setChefeDeFamiliaId(pessoaRecord.getChefeDeFamilia());
-        if (pessoaRecord.getCategoriaId() != null) {
-            try {
-                p.setSubcategoria(org.ipredencao.ipredencao_manager.model.SubcategoriaEnum.fromId(pessoaRecord.getCategoriaId()));
-            } catch (Exception e) {
-                // Se não conseguir converter, deixar como null
-            }
-        }
+        if (pessoaRecord.getCategoriaId() != null)
+            p.setSubcategoria(org.ipredencao.ipredencao_manager.model.SubcategoriaEnum.fromId(pessoaRecord.getCategoriaId()));
         
         // Converter arrays do PostgreSQL para List<String>
         if (pessoaRecord.getEmailsSecundarios() != null) {

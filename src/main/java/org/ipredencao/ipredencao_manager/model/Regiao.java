@@ -34,4 +34,4 @@ public enum Regiao {
     TAGUATINGA,
     VARJÃO,
     VICENTE_PIRES
-} 
+}
