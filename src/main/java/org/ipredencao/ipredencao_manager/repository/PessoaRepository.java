@@ -22,7 +22,7 @@ public class PessoaRepository {
     @Autowired
     private DSLContext dsl;
 
-
+    
     public Pessoa insert(Pessoa pessoa) {
         PessoaRecord pessoaRecord = toRepository(pessoa);
         
@@ -101,7 +101,8 @@ public class PessoaRepository {
             conditions.add(PESSOA.DATA_NASCIMENTO.lessOrEqual(DateTimeHelper.toDb(to))));
         query.getTipoBatismo().ifPresent(tipoBatismo -> 
             conditions.add(PESSOA.TIPO_BATISMO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo.valueOf(tipoBatismo.name()))));
-        
+        query.getSubcategoria().ifPresent(subcategoria -> 
+            conditions.add(PESSOA.CATEGORIA_ID.eq(subcategoria.getId())));
         return conditions;
     }
 
@@ -141,6 +142,8 @@ public class PessoaRepository {
         if (pessoaRecord.getSexo() != null)
             p.setSexo(org.ipredencao.ipredencao_manager.model.Sexo.valueOf(pessoaRecord.getSexo().name()));
         p.setChefeDeFamiliaId(pessoaRecord.getChefeDeFamilia());
+        if (pessoaRecord.getCategoriaId() != null)
+            p.setSubcategoria(org.ipredencao.ipredencao_manager.model.SubcategoriaEnum.fromId(pessoaRecord.getCategoriaId()));
         
         // Converter arrays do PostgreSQL para List<String>
         if (pessoaRecord.getEmailsSecundarios() != null) {
@@ -187,6 +190,9 @@ public class PessoaRepository {
         if (pessoa.getSexo() != null)
             pessoaRecord.setSexo(org.ipredencao.ipredencao_manager.jooq.enums.Sexo.valueOf(pessoa.getSexo().name()));
         pessoaRecord.setChefeDeFamilia(pessoa.getChefeDeFamiliaId());
+        if (pessoa.getSubcategoria() != null) {
+            pessoaRecord.setCategoriaId(pessoa.getSubcategoria().getId());
+        }
         
         // Converter List<String> para arrays do PostgreSQL
         if (pessoa.getEmailsSecundarios() != null && !pessoa.getEmailsSecundarios().isEmpty()) {

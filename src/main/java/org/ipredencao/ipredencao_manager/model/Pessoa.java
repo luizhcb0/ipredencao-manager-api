@@ -34,6 +34,7 @@ public class Pessoa {
     private Status status;
     private Sexo sexo;
     private Long chefeDeFamiliaId;
+    private SubcategoriaEnum subcategoria;
 
     // Relacionamentos qualificados com outras pessoas
     private List<RelacionamentoPessoa> relacionamentos;
@@ -99,6 +100,8 @@ public class Pessoa {
     public void setSexo(Sexo sexo) { this.sexo = sexo; }
     public Long getChefeDeFamiliaId() { return chefeDeFamiliaId; }
     public void setChefeDeFamiliaId(Long chefeDeFamiliaId) { this.chefeDeFamiliaId = chefeDeFamiliaId; }
+    public SubcategoriaEnum getSubcategoria() { return subcategoria; }
+    public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
     public List<RelacionamentoPessoa> getRelacionamentos() { return relacionamentos; }
     public void setRelacionamentos(List<RelacionamentoPessoa> relacionamentos) { this.relacionamentos = relacionamentos; }
-} 
+}

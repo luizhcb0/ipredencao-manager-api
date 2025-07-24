@@ -5,6 +5,7 @@ import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
 import org.ipredencao.ipredencao_manager.model.Pessoa;
 import org.ipredencao.ipredencao_manager.model.RelacionamentoPessoa;
 import org.ipredencao.ipredencao_manager.model.PessoaQuery;
+import org.ipredencao.ipredencao_manager.model.SubcategoriaEnum;
 import java.util.List;
 import java.util.NoSuchElementException;
 import com.amazonaws.services.s3.AmazonS3;
@@ -22,7 +23,9 @@ public class PessoaService {
     private AmazonS3 amazonS3;
     private final String bucketName = "ipredencao-manager-photos";
 
-    public PessoaService(PessoaRepository pessoaRepository) {this.pessoaRepository = pessoaRepository;}
+    public PessoaService(PessoaRepository pessoaRepository) {
+        this.pessoaRepository = pessoaRepository;
+    }
 
     public Pessoa create(Pessoa pessoa) {
         return pessoaRepository.insert(pessoa);
@@ -66,4 +69,11 @@ public class PessoaService {
     public List<RelacionamentoPessoa> listarRelacionamentosPorPessoa(Long pessoaId) {
         return pessoaRepository.listarRelacionamentosPorPessoa(pessoaId);
     }
-} 
+    
+    /**
+     * Lista todas as subcategorias disponíveis
+     */
+    public SubcategoriaEnum[] getAllSubcategorias() {
+        return SubcategoriaEnum.values();
+    }
+}
