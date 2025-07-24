@@ -20,6 +20,7 @@ public class PessoaQuery {
     private Optional<DateTime> dataNascimentoFrom;
     private Optional<DateTime> dataNascimentoTo;
     private Optional<TipoBatismo> tipoBatismo;
+    private Optional<SubcategoriaEnum> subcategoria;
 
     // Construtor privado para usar o builder
     private PessoaQuery() {
@@ -38,6 +39,7 @@ public class PessoaQuery {
         this.dataNascimentoFrom = Optional.empty();
         this.dataNascimentoTo = Optional.empty();
         this.tipoBatismo = Optional.empty();
+        this.subcategoria = Optional.empty();
     }
 
     // Builder pattern
@@ -123,6 +125,11 @@ public class PessoaQuery {
             return this;
         }
 
+        public Builder subcategoria(SubcategoriaEnum subcategoria) {
+            this.query.subcategoria = Optional.ofNullable(subcategoria);
+            return this;
+        }
+
         public PessoaQuery build() {
             return this.query;
         }
@@ -148,4 +155,5 @@ public class PessoaQuery {
     public Optional<DateTime> getDataNascimentoFrom() { return dataNascimentoFrom; }
     public Optional<DateTime> getDataNascimentoTo() { return dataNascimentoTo; }
     public Optional<TipoBatismo> getTipoBatismo() { return tipoBatismo; }
+    public Optional<SubcategoriaEnum> getSubcategoria() { return subcategoria; }
 } 

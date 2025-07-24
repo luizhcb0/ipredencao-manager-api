@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.ipredencao.ipredencao_manager.model.Pessoa;
 import org.ipredencao.ipredencao_manager.model.PessoaQuery;
+import org.ipredencao.ipredencao_manager.model.SubcategoriaEnum;
 import org.ipredencao.ipredencao_manager.service.PessoaService;
 import java.util.List;
 import org.ipredencao.ipredencao_manager.model.RelacionamentoPessoa;
@@ -78,5 +79,45 @@ public class PessoaController {
     @GetMapping("/{id}/relacionamentos")
     public List<RelacionamentoPessoa> listarRelacionamentos(@PathVariable Long id) {
         return pessoaService.listarRelacionamentosPorPessoa(id);
+    }
+    
+    /**
+     * Define a subcategoria de uma pessoa
+     */
+    @PutMapping("/{id}/subcategoria")
+    public ResponseEntity<Pessoa> setSubcategoria(
+        @PathVariable Long id, 
+        @RequestBody Map<String, String> request
+    ) {
+        try {
+            String enumName = request.get("subcategoriaEnum");
+            SubcategoriaEnum subcategoriaEnum = SubcategoriaEnum.valueOf(enumName);
+            Pessoa pessoa = pessoaService.setSubcategoria(id, subcategoriaEnum);
+            return ResponseEntity.ok(pessoa);
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(null);
+        }
+    }
+    
+    /**
+     * Lista todas as subcategorias disponíveis
+     */
+    @GetMapping("/subcategorias")
+    public ResponseEntity<SubcategoriaEnum[]> getAllSubcategorias() {
+        return ResponseEntity.ok(pessoaService.getAllSubcategorias());
+    }
+    
+    /**
+     * Busca pessoas por subcategoria
+     */
+    @GetMapping("/subcategoria/{enumName}")
+    public ResponseEntity<List<Pessoa>> getPessoasBySubcategoria(@PathVariable String enumName) {
+        try {
+            SubcategoriaEnum subcategoriaEnum = SubcategoriaEnum.valueOf(enumName);
+            List<Pessoa> pessoas = pessoaService.findBySubcategoria(subcategoriaEnum);
+            return ResponseEntity.ok(pessoas);
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(null);
+        }
     }
 } 
