@@ -168,7 +168,7 @@ INSERT INTO subcategoria (codigo, nome, categoria_id) VALUES
 
 
 CREATE TABLE IF NOT EXISTS pessoa (
-    id BIGSERIAL PRIMARY KEY,
+    pessoa_id BIGSERIAL PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
     sexo sexo NOT NULL,
     apelido VARCHAR(255) NOT NULL,
@@ -199,16 +199,65 @@ CREATE TABLE IF NOT EXISTS pessoa (
     latitude NUMERIC(10,8),
     longitude NUMERIC(11,8),
     foto_url VARCHAR(500),
-    chefe_de_familia BIGINT REFERENCES pessoa(id),
+    chefe_de_familia BIGINT REFERENCES pessoa(pessoa_id),
     categoria_id BIGINT REFERENCES subcategoria(id),
-    status status NOT NULL DEFAULT 'CADASTRADO'
+    status status NOT NULL DEFAULT 'CADASTRADO',
+    added_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS pessoa_history (
+    history_id BIGSERIAL PRIMARY KEY,
+    pessoa_id BIGINT REFERENCES pessoa(pessoa_id),
+    nome VARCHAR(255) NOT NULL,
+    sexo sexo NOT NULL,
+    apelido VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    emails_secundarios VARCHAR(255)[],
+    telefone VARCHAR(30) NOT NULL,
+    telefones_secundarios VARCHAR(255)[],
+    campus VARCHAR(255) NOT NULL,
+    data_nascimento TIMESTAMP NOT NULL,
+    cpf VARCHAR(20) NOT NULL,
+    rg VARCHAR(20) NOT NULL,
+    estado_civil estado_civil,
+    igreja_anterior VARCHAR(255),
+    situacao_igreja_anterior VARCHAR(255),
+--  Se for cadastramento de pedido de membresia.
+    tempo_na_igreja VARCHAR(100),
+    motivos_para_admissao VARCHAR(255),
+--
+    tipo_batismo tipo_batismo,
+    data_batismo TIMESTAMP,
+    data_profissao_de_fe TIMESTAMP,
+    igreja_batismo VARCHAR(255),
+    profissao VARCHAR(100),
+    empresa VARCHAR(100),
+    endereco VARCHAR(255),
+    regiao regiao,
+--  Pode ser extraído de link do google.
+    latitude NUMERIC(10,8),
+    longitude NUMERIC(11,8),
+    foto_url VARCHAR(500),
+    chefe_de_familia BIGINT REFERENCES pessoa(pessoa_id),
+    categoria_id BIGINT REFERENCES subcategoria(id),
+    added_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- Tabela de relacionamento entre pessoas
 CREATE TABLE IF NOT EXISTS pessoa_relacionamento (
     id BIGSERIAL PRIMARY KEY,
-    pessoa_id BIGINT NOT NULL REFERENCES pessoa(id) ON DELETE CASCADE,
-    pessoa_relacionada_id BIGINT NOT NULL REFERENCES pessoa(id) ON DELETE CASCADE,
+    pessoa_id BIGINT NOT NULL REFERENCES pessoa(pessoa_id) ON DELETE CASCADE,
+    pessoa_relacionada_id BIGINT NOT NULL REFERENCES pessoa(pessoa_id) ON DELETE CASCADE,
     tipo_relacionamento tipo_relacionamento NOT NULL,
     inicio_relacionamento TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS pessoa_relacionamento_history (
+    history_id BIGSERIAL PRIMARY KEY,
+    id BIGINT REFERENCES pessoa_relacionamento(id),
+    pessoa_id BIGINT NOT NULL REFERENCES pessoa(pessoa_id) ON DELETE CASCADE,
+    pessoa_relacionada_id BIGINT NOT NULL REFERENCES pessoa(pessoa_id) ON DELETE CASCADE,
+    tipo_relacionamento tipo_relacionamento NOT NULL,
+    inicio_relacionamento TIMESTAMP
+    );

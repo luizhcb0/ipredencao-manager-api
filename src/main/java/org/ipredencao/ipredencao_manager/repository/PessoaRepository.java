@@ -1,10 +1,13 @@
 package org.ipredencao.ipredencao_manager.repository;
 
+import org.ipredencao.ipredencao_manager.jooq.tables.records.PessoaHistoryRecord;
+import org.joda.time.DateTime;
 import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.ipredencao.ipredencao_manager.model.Pessoa;
 import org.ipredencao.ipredencao_manager.model.RelacionamentoPessoa;
+import static org.ipredencao.ipredencao_manager.jooq.Tables.PESSOA_HISTORY;
 import static org.ipredencao.ipredencao_manager.jooq.tables.Pessoa.PESSOA;
 import static org.ipredencao.ipredencao_manager.jooq.tables.PessoaRelacionamento.PESSOA_RELACIONAMENTO;
 import org.ipredencao.ipredencao_manager.jooq.tables.records.PessoaRecord;
@@ -21,7 +24,6 @@ import org.jooq.impl.DSL;
 public class PessoaRepository {
     @Autowired
     private DSLContext dsl;
-
     
     public Pessoa insert(Pessoa pessoa) {
         PessoaRecord pessoaRecord = toRepository(pessoa);
@@ -30,16 +32,32 @@ public class PessoaRepository {
                 .set(pessoaRecord)
                 .returning()
                 .fetchOne();
+
+        insertHistory(saved);
+
         return fromRepository(saved);
     }
 
     public Pessoa update(Pessoa pessoa) {
         PessoaRecord pessoaRecord = toRepository(pessoa);
-        dsl.update(PESSOA)
-                .set(pessoaRecord)
-                .where(PESSOA.ID.eq(pessoa.getId()))
-                .execute();
+        PessoaRecord updated = dsl.update(PESSOA)
+            .set(pessoaRecord)
+            .set(PESSOA.UPDATED_AT, DateTimeHelper.toDb(DateTime.now()))
+            .where(PESSOA.PESSOA_ID.eq(pessoa.getId()))
+            .returning()
+            .fetchOne();
+
+        insertHistory(updated);
+
         return pessoa;
+    }
+
+    private PessoaHistoryRecord insertHistory(PessoaRecord pessoaRecord) {
+        PessoaHistoryRecord historyRecord = toHistoryRepository(pessoaRecord);
+        return dsl.insertInto(PESSOA_HISTORY)
+            .set(historyRecord)
+            .returning()
+            .fetchOne();
     }
 
     public List<Pessoa> find(PessoaQuery query) {
@@ -57,7 +75,7 @@ public class PessoaRepository {
     }
 
     // CRUD para relacionamentos qualificados
-    public RelacionamentoPessoa inserirRelacionamento(Long pessoaId, RelacionamentoPessoa relacionamento) {
+    public RelacionamentoPessoa insertRelationship(Long pessoaId, RelacionamentoPessoa relacionamento) {
         PessoaRelacionamentoRecord relationamentoRecord = toRepository(relacionamento);
         relationamentoRecord.setPessoaId(pessoaId);
         PessoaRelacionamentoRecord saved = dsl.insertInto(PESSOA_RELACIONAMENTO)
@@ -72,16 +90,16 @@ public class PessoaRepository {
                 .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaId))
                 .fetch()
                 .stream()
-                .map(PessoaRepository::fromRepository)
-            .toList();
+                .map(this::fromRepository)
+                .toList();
     }
     
 
     private List<Condition> buildConditions(PessoaQuery query) {
         List<Condition> conditions = new java.util.ArrayList<>();
         
-        query.getId().ifPresent(id -> conditions.add(PESSOA.ID.eq(id)));
-        query.getIds().ifPresent(ids -> conditions.add(PESSOA.ID.in(ids)));
+        query.getId().ifPresent(id -> conditions.add(PESSOA.PESSOA_ID.eq(id)));
+        query.getIds().ifPresent(ids -> conditions.add(PESSOA.PESSOA_ID.in(ids)));
         query.getNome().ifPresent(nome -> conditions.add(PESSOA.NOME.like("%" + nome + "%")));
         query.getApelido().ifPresent(apelido -> conditions.add(PESSOA.APELIDO.like("%" + apelido + "%")));
         query.getEmail().ifPresent(email -> conditions.add(PESSOA.EMAIL.eq(email)));
@@ -109,7 +127,7 @@ public class PessoaRepository {
     private static Pessoa fromRepository(PessoaRecord pessoaRecord) {
         if (pessoaRecord == null) return null;
         Pessoa p = new Pessoa();
-        p.setId(pessoaRecord.getId());
+        p.setId(pessoaRecord.getPessoaId());
         p.setNome(pessoaRecord.getNome());
         p.setApelido(pessoaRecord.getApelido());
         p.setEmail(pessoaRecord.getEmail());
@@ -205,13 +223,76 @@ public class PessoaRepository {
         return pessoaRecord;
     }
 
-    private static RelacionamentoPessoa fromRepository(PessoaRelacionamentoRecord record) {
+    private static PessoaHistoryRecord toHistoryRepository(PessoaRecord pessoa) {
+        PessoaHistoryRecord pessoaHistoryRecord = new PessoaHistoryRecord();
+        
+        // Mapear o pessoa_id (campo obrigatório na tabela history)
+        pessoaHistoryRecord.setPessoaId(pessoa.getPessoaId());
+        
+        pessoaHistoryRecord.setNome(pessoa.getNome());
+        pessoaHistoryRecord.setApelido(pessoa.getApelido());
+        pessoaHistoryRecord.setEmail(pessoa.getEmail());
+        pessoaHistoryRecord.setTelefone(pessoa.getTelefone());
+        pessoaHistoryRecord.setCampus(pessoa.getCampus());
+        pessoaHistoryRecord.setDataNascimento(pessoa.getDataNascimento());
+        pessoaHistoryRecord.setCpf(pessoa.getCpf());
+        pessoaHistoryRecord.setRg(pessoa.getRg());
+        if (pessoa.getEstadoCivil() != null)
+            pessoaHistoryRecord.setEstadoCivil(EstadoCivil.valueOf(pessoa.getEstadoCivil().name()));
+        pessoaHistoryRecord.setIgrejaAnterior(pessoa.getIgrejaAnterior());
+        pessoaHistoryRecord.setSituacaoIgrejaAnterior(pessoa.getSituacaoIgrejaAnterior());
+        pessoaHistoryRecord.setTempoNaIgreja(pessoa.getTempoNaIgreja());
+        pessoaHistoryRecord.setMotivosParaAdmissao(pessoa.getMotivosParaAdmissao());
+        if (pessoa.getTipoBatismo() != null)
+            pessoaHistoryRecord.setTipoBatismo(TipoBatismo.valueOf(pessoa.getTipoBatismo().name()));
+        pessoaHistoryRecord.setDataBatismo(pessoa.getDataBatismo());
+        pessoaHistoryRecord.setDataProfissaoDeFe(pessoa.getDataProfissaoDeFe());
+        pessoaHistoryRecord.setIgrejaBatismo(pessoa.getIgrejaBatismo());
+        pessoaHistoryRecord.setProfissao(pessoa.getProfissao());
+        pessoaHistoryRecord.setEmpresa(pessoa.getEmpresa());
+        pessoaHistoryRecord.setEndereco(pessoa.getEndereco());
+        if (pessoa.getRegiao() != null)
+            pessoaHistoryRecord.setRegiao(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(pessoa.getRegiao().name()));
+        if (pessoa.getLatitude() != null) pessoaHistoryRecord.setLatitude(pessoa.getLatitude());
+        if (pessoa.getLongitude() != null) pessoaHistoryRecord.setLongitude(pessoa.getLongitude());
+        pessoaHistoryRecord.setFotoUrl(pessoa.getFotoUrl());
+        if (pessoa.getSexo() != null)
+            pessoaHistoryRecord.setSexo(org.ipredencao.ipredencao_manager.jooq.enums.Sexo.valueOf(pessoa.getSexo().name()));
+        pessoaHistoryRecord.setChefeDeFamilia(pessoa.getChefeDeFamilia());
+        pessoaHistoryRecord.setCategoriaId(pessoa.getCategoriaId());
+
+        // Mapear arrays do PostgreSQL
+        if (pessoa.getEmailsSecundarios() != null && pessoa.getEmailsSecundarios().length > 0) {
+            pessoaHistoryRecord.setEmailsSecundarios(pessoa.getEmailsSecundarios());
+        }
+        if (pessoa.getTelefonesSecundarios() != null && pessoa.getTelefonesSecundarios().length > 0) {
+            pessoaHistoryRecord.setTelefonesSecundarios(pessoa.getTelefonesSecundarios());
+        }
+
+        return pessoaHistoryRecord;
+    }
+
+    private RelacionamentoPessoa fromRepository(PessoaRelacionamentoRecord record) {
         if (record == null) return null;
         RelacionamentoPessoa rel = new RelacionamentoPessoa();
         rel.setId(record.getId());
-        Pessoa pessoaRelacionada = new Pessoa();
-        pessoaRelacionada.setId(record.getPessoaRelacionadaId());
-        rel.setPessoaRelacionada(pessoaRelacionada);
+        
+        // Buscar pessoa principal completa da tabela pessoa
+        if (record.getPessoaId() != null) {
+            List<Pessoa> pessoaPrincipalResult = find(PessoaQuery.builder().id(record.getPessoaId()).build());
+            if (!pessoaPrincipalResult.isEmpty()) {
+                rel.setPessoa(pessoaPrincipalResult.getFirst());
+            }
+        }
+        
+        // Buscar pessoa relacionada completa da tabela pessoa
+        if (record.getPessoaRelacionadaId() != null) {
+            List<Pessoa> pessoaRelacionadaResult = find(PessoaQuery.builder().id(record.getPessoaRelacionadaId()).build());
+            if (!pessoaRelacionadaResult.isEmpty()) {
+                rel.setPessoaRelacionada(pessoaRelacionadaResult.getFirst());
+            }
+        }
+        
         if (record.getTipoRelacionamento() != null)
             rel.setTipoRelacionamento(
                 org.ipredencao.ipredencao_manager.model.TipoRelacionamento.valueOf(
@@ -225,8 +306,15 @@ public class PessoaRepository {
     private static PessoaRelacionamentoRecord toRepository(RelacionamentoPessoa relacionamento) {
         PessoaRelacionamentoRecord record = new PessoaRelacionamentoRecord();
         record.setId(relacionamento.getId());
+        
+        // Mapear pessoa relacionada
         if (relacionamento.getPessoaRelacionada() != null)
             record.setPessoaRelacionadaId(relacionamento.getPessoaRelacionada().getId());
+            
+        // Mapear pessoa principal (será definido no insertRelationship)
+        if (relacionamento.getPessoa() != null)
+            record.setPessoaId(relacionamento.getPessoa().getId());
+            
         if (relacionamento.getTipoRelacionamento() != null)
             record.setTipoRelacionamento(
                 org.ipredencao.ipredencao_manager.jooq.enums.TipoRelacionamento.valueOf(

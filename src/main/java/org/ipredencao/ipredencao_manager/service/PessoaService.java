@@ -63,7 +63,7 @@ public class PessoaService {
 
     // Relacionamentos qualificados
     public RelacionamentoPessoa criarRelacionamento(Long pessoaId, RelacionamentoPessoa relacionamento) {
-        return pessoaRepository.inserirRelacionamento(pessoaId, relacionamento);
+        return pessoaRepository.insertRelationship(pessoaId, relacionamento);
     }
 
     public List<RelacionamentoPessoa> listarRelacionamentosPorPessoa(Long pessoaId) {
