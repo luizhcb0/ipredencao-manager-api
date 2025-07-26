@@ -31,7 +31,6 @@ public class Pessoa {
     private Double latitude;
     private Double longitude;
     private String fotoUrl;
-    private Status status;
     private Sexo sexo;
     private Long chefeDeFamiliaId;
     private SubcategoriaEnum subcategoria;
@@ -94,8 +93,6 @@ public class Pessoa {
     public void setLongitude(Double longitude) { this.longitude = longitude; }
     public String getFotoUrl() { return fotoUrl; }
     public void setFotoUrl(String fotoUrl) { this.fotoUrl = fotoUrl; }
-    public Status getStatus() { return status; }
-    public void setStatus(Status status) { this.status = status; }
     public Sexo getSexo() { return sexo; }
     public void setSexo(Sexo sexo) { this.sexo = sexo; }
     public Long getChefeDeFamiliaId() { return chefeDeFamiliaId; }
