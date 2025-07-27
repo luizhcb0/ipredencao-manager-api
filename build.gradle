@@ -86,21 +86,11 @@ liquibase {
 
 tasks.register('composeUp', Exec) {
 	// Coloquei /usr/local/bin/docker pois docker não estava acessível no PATH após mudar nome de usuário 
-	commandLine '/usr/local/bin/docker', 'compose', 'up', '-d'
-}
-
-tasks.register('waitForDbHealthy', Exec) {
-	commandLine 'sh', '-c', '''
-		until [ "$(docker inspect -f '{{.State.Health.Status}}' db)" = "healthy" ]; do
-		  echo "Waiting for DB to be ready (status: $(docker inspect -f '{{.State.Health.Status}}' db))...";
-		  sleep 2;
-		done
-	'''
+	commandLine '/usr/local/bin/docker', 'compose', 'up', '-d', '--wait', 'postgres', 'localstack'
 }
 
 tasks.named('update') {
 	dependsOn composeUp
-	dependsOn waitForDbHealthy
 }
 
 tasks.named('generateJooq') {
