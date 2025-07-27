@@ -16,7 +16,6 @@ public class PessoaQuery {
     private Optional<EstadoCivil> estadoCivil;
     private Optional<String> campus;
     private Optional<Regiao> regiao;
-    private Optional<Status> status;
     private Optional<DateTime> dataNascimentoFrom;
     private Optional<DateTime> dataNascimentoTo;
     private Optional<TipoBatismo> tipoBatismo;
@@ -35,7 +34,6 @@ public class PessoaQuery {
         this.estadoCivil = Optional.empty();
         this.campus = Optional.empty();
         this.regiao = Optional.empty();
-        this.status = Optional.empty();
         this.dataNascimentoFrom = Optional.empty();
         this.dataNascimentoTo = Optional.empty();
         this.tipoBatismo = Optional.empty();
@@ -105,11 +103,6 @@ public class PessoaQuery {
             return this;
         }
 
-        public Builder status(Status status) {
-            this.query.status = Optional.ofNullable(status);
-            return this;
-        }
-
         public Builder dataNascimentoFrom(DateTime dataNascimentoFrom) {
             this.query.dataNascimentoFrom = Optional.ofNullable(dataNascimentoFrom);
             return this;
@@ -151,7 +144,6 @@ public class PessoaQuery {
     public Optional<EstadoCivil> getEstadoCivil() { return estadoCivil; }
     public Optional<String> getCampus() { return campus; }
     public Optional<Regiao> getRegiao() { return regiao; }
-    public Optional<Status> getStatus() { return status; }
     public Optional<DateTime> getDataNascimentoFrom() { return dataNascimentoFrom; }
     public Optional<DateTime> getDataNascimentoTo() { return dataNascimentoTo; }
     public Optional<TipoBatismo> getTipoBatismo() { return tipoBatismo; }

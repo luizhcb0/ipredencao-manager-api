@@ -3,7 +3,7 @@ package org.ipredencao.ipredencao_manager.model;
 import org.joda.time.DateTime;
 import java.util.List;
 
-public class Pessoa {
+public class FormularioPessoa {
     private Long id;
     private String nome;
     private String apelido;
@@ -34,11 +34,15 @@ public class Pessoa {
     private Sexo sexo;
     private Long chefeDeFamiliaId;
     private SubcategoriaEnum subcategoria;
+    // Campos extras do formulário
+    private String nomeParceiro;
+    private String nomePai;
+    private String nomeMae;
+    private List<String> nomeFilhos;
+    private DateTime addedAt;
+    private DateTime updatedAt;
 
-    // Relacionamentos qualificados com outras pessoas
-    private List<RelacionamentoPessoa> relacionamentos;
-
-    // getters e setters
+    // Getters e setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getNome() { return nome; }
@@ -99,6 +103,16 @@ public class Pessoa {
     public void setChefeDeFamiliaId(Long chefeDeFamiliaId) { this.chefeDeFamiliaId = chefeDeFamiliaId; }
     public SubcategoriaEnum getSubcategoria() { return subcategoria; }
     public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
-    public List<RelacionamentoPessoa> getRelacionamentos() { return relacionamentos; }
-    public void setRelacionamentos(List<RelacionamentoPessoa> relacionamentos) { this.relacionamentos = relacionamentos; }
-}
+    public String getNomeParceiro() { return nomeParceiro; }
+    public void setNomeParceiro(String nomeParceiro) { this.nomeParceiro = nomeParceiro; }
+    public String getNomePai() { return nomePai; }
+    public void setNomePai(String nomePai) { this.nomePai = nomePai; }
+    public String getNomeMae() { return nomeMae; }
+    public void setNomeMae(String nomeMae) { this.nomeMae = nomeMae; }
+    public List<String> getNomeFilhos() { return nomeFilhos; }
+    public void setNomeFilhos(List<String> nomeFilhos) { this.nomeFilhos = nomeFilhos; }
+    public DateTime getAddedAt() { return addedAt; }
+    public void setAddedAt(DateTime addedAt) { this.addedAt = addedAt; }
+    public DateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(DateTime updatedAt) { this.updatedAt = updatedAt; }
+} 
