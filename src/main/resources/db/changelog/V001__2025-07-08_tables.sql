@@ -23,6 +23,7 @@ CREATE TYPE regiao AS ENUM (
     'SOBRADINHO_II', 'SOL_NASCENTE_PÔR_DO_SOL', 'SUDOESTE_OCTOGONAL', 'SÃO_SEBASTIÃO',
     'TAGUATINGA', 'VARJÃO', 'VICENTE_PIRES'
 );
+CREATE TYPE form_pessoa_status AS ENUM ('CADASTRADO', 'VALIDADO');
 
 -- Tabela de categorias principais
 CREATE TABLE IF NOT EXISTS categoria (
@@ -296,6 +297,7 @@ CREATE TABLE IF NOT EXISTS formulario_pessoa (
     foto_url VARCHAR(500),
     chefe_de_familia VARCHAR(255),
     categoria_id BIGINT REFERENCES subcategoria(id),
+    status form_pessoa_status NOT NULL DEFAULT 'CADASTRADO',
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
