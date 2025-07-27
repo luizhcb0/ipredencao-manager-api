@@ -34,6 +34,7 @@ public class FormularioPessoa {
     private Sexo sexo;
     private Long chefeDeFamiliaId;
     private SubcategoriaEnum subcategoria;
+    private FormPessoaStatus status;
     // Campos extras do formulário
     private String nomeParceiro;
     private String nomePai;
@@ -103,6 +104,8 @@ public class FormularioPessoa {
     public void setChefeDeFamiliaId(Long chefeDeFamiliaId) { this.chefeDeFamiliaId = chefeDeFamiliaId; }
     public SubcategoriaEnum getSubcategoria() { return subcategoria; }
     public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
+    public FormPessoaStatus getStatus() { return status; }
+    public void setStatus(FormPessoaStatus status) { this.status = status; }
     public String getNomeParceiro() { return nomeParceiro; }
     public void setNomeParceiro(String nomeParceiro) { this.nomeParceiro = nomeParceiro; }
     public String getNomePai() { return nomePai; }
@@ -115,4 +118,4 @@ public class FormularioPessoa {
     public void setAddedAt(DateTime addedAt) { this.addedAt = addedAt; }
     public DateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(DateTime updatedAt) { this.updatedAt = updatedAt; }
-} 
+}
