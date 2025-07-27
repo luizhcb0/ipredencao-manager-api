@@ -111,9 +111,7 @@ public class PessoaRepository {
         query.getCampus().ifPresent(campus -> conditions.add(PESSOA.CAMPUS.eq(campus)));
         query.getRegiao().ifPresent(regiao -> 
             conditions.add(PESSOA.REGIAO.eq(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(regiao.name()))));
-        query.getStatus().ifPresent(status -> 
-            conditions.add(PESSOA.STATUS.eq(org.ipredencao.ipredencao_manager.jooq.enums.Status.valueOf(status.name()))));
-        query.getDataNascimentoFrom().ifPresent(from -> 
+        query.getDataNascimentoFrom().ifPresent(from ->
             conditions.add(PESSOA.DATA_NASCIMENTO.greaterOrEqual(DateTimeHelper.toDb(from))));
         query.getDataNascimentoTo().ifPresent(to -> 
             conditions.add(PESSOA.DATA_NASCIMENTO.lessOrEqual(DateTimeHelper.toDb(to))));
@@ -155,8 +153,6 @@ public class PessoaRepository {
         p.setLatitude(pessoaRecord.getLatitude() != null ? pessoaRecord.getLatitude().doubleValue() : null);
         p.setLongitude(pessoaRecord.getLongitude() != null ? pessoaRecord.getLongitude().doubleValue() : null);
         p.setFotoUrl(pessoaRecord.getFotoUrl());
-        if (pessoaRecord.getStatus() != null)
-            p.setStatus(org.ipredencao.ipredencao_manager.model.Status.valueOf(pessoaRecord.getStatus().name()));
         if (pessoaRecord.getSexo() != null)
             p.setSexo(org.ipredencao.ipredencao_manager.model.Sexo.valueOf(pessoaRecord.getSexo().name()));
         p.setChefeDeFamiliaId(pessoaRecord.getChefeDeFamilia());
@@ -203,8 +199,6 @@ public class PessoaRepository {
         if (pessoa.getLatitude() != null) pessoaRecord.setLatitude(java.math.BigDecimal.valueOf(pessoa.getLatitude()));
         if (pessoa.getLongitude() != null) pessoaRecord.setLongitude(java.math.BigDecimal.valueOf(pessoa.getLongitude()));
         pessoaRecord.setFotoUrl(pessoa.getFotoUrl());
-        if (pessoa.getStatus() != null)
-            pessoaRecord.setStatus(org.ipredencao.ipredencao_manager.jooq.enums.Status.valueOf(pessoa.getStatus().name()));
         if (pessoa.getSexo() != null)
             pessoaRecord.setSexo(org.ipredencao.ipredencao_manager.jooq.enums.Sexo.valueOf(pessoa.getSexo().name()));
         pessoaRecord.setChefeDeFamilia(pessoa.getChefeDeFamiliaId());
