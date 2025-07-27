@@ -9,6 +9,7 @@ services:
       - DEBUG=1
     volumes:
       - "./localstack:/var/lib/localstack"
+      
   postgres:
     image: 'postgres:15'
     container_name: db
@@ -26,5 +27,6 @@ services:
       timeout: 5s
       retries: 20
       start_period: 5s
+
 volumes:
   pgdata:
