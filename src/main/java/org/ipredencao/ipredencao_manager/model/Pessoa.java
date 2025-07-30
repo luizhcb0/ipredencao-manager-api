@@ -101,4 +101,39 @@ public class Pessoa {
     public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
     public List<RelacionamentoPessoa> getRelacionamentos() { return relacionamentos; }
     public void setRelacionamentos(List<RelacionamentoPessoa> relacionamentos) { this.relacionamentos = relacionamentos; }
+
+    public static Pessoa fromFormularioPessoa(FormularioPessoa f) {
+        Pessoa p = new Pessoa();
+        p.setNome(f.getNome());
+        p.setApelido(f.getApelido());
+        p.setEmail(f.getEmail());
+        p.setEmailsSecundarios(f.getEmailsSecundarios());
+        p.setTelefone(f.getTelefone());
+        p.setTelefonesSecundarios(f.getTelefonesSecundarios());
+        p.setCampus(f.getCampus());
+        p.setDataNascimento(f.getDataNascimento());
+        p.setCpf(f.getCpf());
+        p.setRg(f.getRg());
+        p.setEstadoCivil(f.getEstadoCivil());
+        p.setIgrejaAnterior(f.getIgrejaAnterior());
+        p.setSituacaoIgrejaAnterior(f.getSituacaoIgrejaAnterior());
+        p.setTempoNaIgreja(f.getTempoNaIgreja());
+        p.setMotivosParaAdmissao(f.getMotivosParaAdmissao());
+        p.setTipoBatismo(f.getTipoBatismo());
+        p.setDataBatismo(f.getDataBatismo());
+        p.setDataProfissaoDeFe(f.getDataProfissaoDeFe());
+        p.setIgrejaBatismo(f.getIgrejaBatismo());
+        p.setProfissao(f.getProfissao());
+        p.setEmpresa(f.getEmpresa());
+        p.setEndereco(f.getEndereco());
+        p.setRegiao(f.getRegiao());
+        p.setLatitude(f.getLatitude());
+        p.setLongitude(f.getLongitude());
+        p.setFotoUrl(f.getFotoUrl());
+        p.setSexo(f.getSexo());
+        p.setChefeDeFamiliaId(f.getChefeDeFamiliaId());
+        p.setSubcategoria(f.getSubcategoria());
+        // Não mapeia campos extras do formulário nem status
+        return p;
+    }
 }

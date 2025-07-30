@@ -2,6 +2,8 @@ package org.ipredencao.ipredencao_manager.controller;
 
 import org.ipredencao.ipredencao_manager.model.FormularioPessoa;
 import org.ipredencao.ipredencao_manager.service.FormularioPessoaService;
+import org.ipredencao.ipredencao_manager.model.Pessoa;
+import org.ipredencao.ipredencao_manager.service.PessoaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +14,8 @@ import java.util.List;
 public class FormularioPessoaController {
     @Autowired
     private FormularioPessoaService service;
+    @Autowired
+    private PessoaService pessoaService;
 
     @PostMapping
     public ResponseEntity<FormularioPessoa> criar(@RequestBody FormularioPessoa formulario) {
@@ -38,5 +42,12 @@ public class FormularioPessoaController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(encontrado);
+    }
+
+    @PostMapping("/gerar-pessoa")
+    public ResponseEntity<Pessoa> gerarPessoa(@RequestBody FormularioPessoa formulario) {
+        Pessoa pessoa = Pessoa.fromFormularioPessoa(formulario);
+        Pessoa criada = pessoaService.create(pessoa);
+        return ResponseEntity.ok(criada);
     }
 } 

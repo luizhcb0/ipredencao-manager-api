@@ -88,4 +88,11 @@ public class PessoaController {
     public ResponseEntity<SubcategoriaEnum[]> getAllSubcategorias() {
         return ResponseEntity.ok(pessoaService.getAllSubcategorias());
     }
+
+    @GetMapping("/buscar-por-nome")
+    public ResponseEntity<List<Pessoa>> buscarPorNome(@RequestParam("nome") String nome) {
+        PessoaQuery query = PessoaQuery.builder().nome(nome).build();
+        List<Pessoa> pessoas = pessoaService.find(query);
+        return ResponseEntity.ok(pessoas);
+    }
 }
