@@ -2,9 +2,13 @@ package org.ipredencao.ipredencao_manager.service;
 
 import org.ipredencao.ipredencao_manager.model.FormularioPessoa;
 import org.ipredencao.ipredencao_manager.model.FormularioPessoaQuery;
+import org.ipredencao.ipredencao_manager.model.Pessoa;
 import org.ipredencao.ipredencao_manager.repository.FormularioPessoaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -12,6 +16,8 @@ import java.util.NoSuchElementException;
 public class FormularioPessoaService {
     @Autowired
     private FormularioPessoaRepository repository;
+    @Autowired
+    private S3Service s3Service;
 
     public FormularioPessoa criar(FormularioPessoa formulario) {
         // Validar se o email já existe
@@ -19,6 +25,12 @@ public class FormularioPessoaService {
             throw new IllegalArgumentException("Já existe um formulário cadastrado com este email: " + formulario.getEmail());
         }
         return repository.insert(formulario);
+    }
+
+    public FormularioPessoa savePhoto(FormularioPessoa formulario, MultipartFile foto) throws IOException {
+        String fotoUrl = s3Service.uploadPhoto(formulario.getId(), foto);
+        formulario.setFotoUrl(fotoUrl);
+        return repository.update(formulario);
     }
 
     public FormularioPessoa atualizar(FormularioPessoa formulario) {
