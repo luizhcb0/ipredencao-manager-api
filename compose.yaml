@@ -9,6 +9,7 @@ services:
       - DEBUG=1
     volumes:
       - "./localstack:/var/lib/localstack"
+      - "./scripts:/etc/localstack/init/ready.d"
       
   postgres:
     image: 'postgres:15'
