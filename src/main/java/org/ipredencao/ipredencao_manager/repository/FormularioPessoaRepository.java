@@ -82,6 +82,7 @@ public class FormularioPessoaRepository {
         f.setProfissao(record.getProfissao());
         f.setEmpresa(record.getEmpresa());
         f.setEndereco(record.getEndereco());
+        f.setCep(record.getCep());
         if (record.getRegiao() != null)
             f.setRegiao(org.ipredencao.ipredencao_manager.model.Regiao.valueOf(record.getRegiao().name()));
         f.setLatitude(record.getLatitude() != null ? record.getLatitude().doubleValue() : null);
@@ -135,6 +136,7 @@ public class FormularioPessoaRepository {
         record.setProfissao(f.getProfissao());
         record.setEmpresa(f.getEmpresa());
         record.setEndereco(f.getEndereco());
+        record.setCep(f.getCep());
         if (f.getRegiao() != null)
             record.setRegiao(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(f.getRegiao().name()));
         if (f.getLatitude() != null) record.setLatitude(java.math.BigDecimal.valueOf(f.getLatitude()));
