@@ -1,6 +1,7 @@
 package org.ipredencao.ipredencao_manager.controller;
 
 import org.ipredencao.ipredencao_manager.model.FormularioPessoa;
+import org.ipredencao.ipredencao_manager.model.FormularioPessoaQuery;
 import org.ipredencao.ipredencao_manager.service.FormularioPessoaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -26,14 +27,15 @@ public class FormularioPessoaController {
         return ResponseEntity.ok(atualizado);
     }
 
-    @GetMapping
-    public ResponseEntity<List<FormularioPessoa>> listarTodos() {
-        return ResponseEntity.ok(service.listarTodos());
+    @PostMapping("/search")
+    public ResponseEntity<List<FormularioPessoa>> buscarFormularioPessoas(@RequestBody FormularioPessoaQuery query) {
+        List<FormularioPessoa> formularios = service.find(query);
+        return ResponseEntity.ok(formularios);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<FormularioPessoa> buscarPorId(@PathVariable Long id) {
-        FormularioPessoa encontrado = service.buscarPorId(id);
+        FormularioPessoa encontrado = service.findById(id);
         if (encontrado == null) {
             return ResponseEntity.notFound().build();
         }

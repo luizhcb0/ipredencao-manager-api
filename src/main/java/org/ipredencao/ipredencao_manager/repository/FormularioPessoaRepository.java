@@ -1,19 +1,19 @@
 package org.ipredencao.ipredencao_manager.repository;
 
 import org.ipredencao.ipredencao_manager.model.FormularioPessoa;
-import org.ipredencao.ipredencao_manager.model.Pessoa;
+import org.ipredencao.ipredencao_manager.model.FormularioPessoaQuery;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
-import org.jooq.Record;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.joda.time.DateTime;
-
 // Importe os records e tabelas do JOOQ gerados para formulario_pessoa
 import static org.ipredencao.ipredencao_manager.jooq.tables.FormularioPessoa.FORMULARIO_PESSOA;
+
 import org.ipredencao.ipredencao_manager.jooq.tables.records.FormularioPessoaRecord;
 
 @Repository
@@ -49,11 +49,45 @@ public class FormularioPessoaRepository {
                 .collect(Collectors.toList());
     }
 
-    public FormularioPessoa findById(Long id) {
-        FormularioPessoaRecord record = dsl.selectFrom(FORMULARIO_PESSOA)
-                .where(FORMULARIO_PESSOA.FORMULARIO_PESSOA_ID.eq(id))
-                .fetchOne();
-        return fromRepository(record);
+    public List<FormularioPessoa> find(FormularioPessoaQuery query) {
+        List<Condition> conditions = buildConditions(query);
+
+        Condition finalCondition = conditions.stream()
+            .reduce(DSL.noCondition(), Condition::and);
+
+        return dsl.selectFrom(FORMULARIO_PESSOA)
+            .where(finalCondition)
+            .fetch()
+            .stream()
+            .map(FormularioPessoaRepository::fromRepository)
+            .toList();
+    }
+
+    private List<Condition> buildConditions(FormularioPessoaQuery query) {
+        List<Condition> conditions = new java.util.ArrayList<>();
+
+        query.getId().ifPresent(id -> conditions.add(FORMULARIO_PESSOA.FORMULARIO_PESSOA_ID.eq(id)));
+        query.getIds().ifPresent(ids -> conditions.add(FORMULARIO_PESSOA.FORMULARIO_PESSOA_ID.in(ids)));
+        query.getNome().ifPresent(nome -> conditions.add(FORMULARIO_PESSOA.NOME.like("%" + nome + "%")));
+        query.getApelido().ifPresent(apelido -> conditions.add(FORMULARIO_PESSOA.APELIDO.like("%" + apelido + "%")));
+        query.getEmail().ifPresent(email -> conditions.add(FORMULARIO_PESSOA.EMAIL.eq(email)));
+        query.getTelefone().ifPresent(telefone -> conditions.add(FORMULARIO_PESSOA.TELEFONE.eq(telefone)));
+        query.getCpf().ifPresent(cpf -> conditions.add(FORMULARIO_PESSOA.CPF.eq(cpf)));
+        query.getRg().ifPresent(rg -> conditions.add(FORMULARIO_PESSOA.RG.eq(rg)));
+        query.getEstadoCivil().ifPresent(estadoCivil ->
+            conditions.add(FORMULARIO_PESSOA.ESTADO_CIVIL.eq(org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil.valueOf(estadoCivil.name()))));
+        query.getCampus().ifPresent(campus -> conditions.add(FORMULARIO_PESSOA.CAMPUS.eq(campus)));
+        query.getRegiao().ifPresent(regiao ->
+            conditions.add(FORMULARIO_PESSOA.REGIAO.eq(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(regiao.name()))));
+        query.getDataNascimentoFrom().ifPresent(from ->
+            conditions.add(FORMULARIO_PESSOA.DATA_NASCIMENTO.greaterOrEqual(DateTimeHelper.toDb(from))));
+        query.getDataNascimentoTo().ifPresent(to ->
+            conditions.add(FORMULARIO_PESSOA.DATA_NASCIMENTO.lessOrEqual(DateTimeHelper.toDb(to))));
+        query.getTipoBatismo().ifPresent(tipoBatismo ->
+            conditions.add(FORMULARIO_PESSOA.TIPO_BATISMO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo.valueOf(tipoBatismo.name()))));
+        query.getSubcategoria().ifPresent(subcategoria ->
+            conditions.add(FORMULARIO_PESSOA.CATEGORIA_ID.eq(subcategoria.getId())));
+        return conditions;
     }
 
     private static FormularioPessoa fromRepository(FormularioPessoaRecord record) {
