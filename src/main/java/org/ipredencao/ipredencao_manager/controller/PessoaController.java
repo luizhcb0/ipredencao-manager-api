@@ -34,7 +34,7 @@ public class PessoaController {
     }
 
     @PostMapping("/{id}/foto")
-    public ResponseEntity<Pessoa> uploadFoto(
+    public ResponseEntity<Pessoa> uploadPhoto(
         @PathVariable Long id,
         @RequestParam("foto") MultipartFile foto
     ) throws IOException {
@@ -42,9 +42,8 @@ public class PessoaController {
         if (pessoa == null) {
             return ResponseEntity.notFound().build();
         }
-        pessoaService.savePhoto(pessoa, foto);
-        Pessoa atualizada = pessoaService.findById(id);
-        return ResponseEntity.ok(atualizada);
+        Pessoa updated = pessoaService.savePhoto(pessoa, foto);
+        return ResponseEntity.ok(updated);
     }
 
     @GetMapping("/{id}")

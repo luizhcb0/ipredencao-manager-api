@@ -8,20 +8,16 @@ import org.ipredencao.ipredencao_manager.model.PessoaQuery;
 import org.ipredencao.ipredencao_manager.model.SubcategoriaEnum;
 import java.util.List;
 import java.util.NoSuchElementException;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.io.IOException;
-import com.amazonaws.services.s3.model.ObjectMetadata;
 
 @Service
 public class PessoaService {
-    private final PessoaRepository pessoaRepository;
-
     @Autowired
-    private AmazonS3 amazonS3;
-    private final String bucketName = "ipredencao-manager-photos";
+    private PessoaRepository pessoaRepository;
+    @Autowired
+    private S3Service s3Service;
 
     public PessoaService(PessoaRepository pessoaRepository) {
         this.pessoaRepository = pessoaRepository;
@@ -32,17 +28,9 @@ public class PessoaService {
     }
 
     public Pessoa savePhoto(Pessoa pessoa, MultipartFile foto) throws IOException {
-        if (foto != null && !foto.isEmpty()) {
-            String key = pessoa.getId() + "_" + System.currentTimeMillis() + "_" + foto.getOriginalFilename();
-            ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentLength(foto.getSize());
-            amazonS3.putObject(new PutObjectRequest(bucketName, key, foto.getInputStream(), metadata));
-            String url = amazonS3.getUrl(bucketName, key).toString();
-            pessoa.setFotoUrl(url);
-            return pessoaRepository.update(pessoa);
-        } else {
-            throw new IllegalArgumentException("Foto não pode ser nula ou vazia");
-        }
+        String fotoUrl = s3Service.uploadPhoto(pessoa.getId(), foto);
+        pessoa.setFotoUrl(fotoUrl);
+        return pessoaRepository.update(pessoa);
     }
 
     public Pessoa findById(Long id) {
