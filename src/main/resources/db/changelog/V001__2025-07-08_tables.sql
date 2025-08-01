@@ -299,6 +299,7 @@ CREATE TABLE IF NOT EXISTS formulario_pessoa (
     longitude NUMERIC(11,8),
     foto_url VARCHAR(500),
     chefe_de_familia VARCHAR(255),
+    propagar_endereco_chefe_familia BOOLEAN,
     categoria_id BIGINT REFERENCES subcategoria(id),
     status form_pessoa_status NOT NULL DEFAULT 'CADASTRADO',
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
