@@ -269,7 +269,7 @@ CREATE TABLE IF NOT EXISTS formulario_pessoa (
     nome VARCHAR(255) NOT NULL,
     sexo sexo NOT NULL,
     apelido VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
     emails_secundarios VARCHAR(255)[],
     telefone VARCHAR(30) NOT NULL,
     telefones_secundarios VARCHAR(255)[],
