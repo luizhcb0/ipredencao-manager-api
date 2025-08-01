@@ -35,6 +35,7 @@ public class FormularioPessoa {
     private Sexo sexo;
     private Long chefeDeFamiliaId;
     private Boolean propagarEnderecoChefeFamilia;
+    private Long pessoaId;
     private SubcategoriaEnum subcategoria;
     private FormPessoaStatus status;
     // Campos extras do formulário
@@ -108,6 +109,8 @@ public class FormularioPessoa {
     public void setChefeDeFamiliaId(Long chefeDeFamiliaId) { this.chefeDeFamiliaId = chefeDeFamiliaId; }
     public Boolean getPropagarEnderecoChefeFamilia() { return propagarEnderecoChefeFamilia; }
     public void setPropagarEnderecoChefeFamilia(Boolean propagarEnderecoChefeFamilia) { this.propagarEnderecoChefeFamilia = propagarEnderecoChefeFamilia; }
+    public Long getPessoaId() { return pessoaId; }
+    public void setPessoaId(Long pessoaId) { this.pessoaId = pessoaId; }
     public SubcategoriaEnum getSubcategoria() { return subcategoria; }
     public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
     public FormPessoaStatus getStatus() { return status; }

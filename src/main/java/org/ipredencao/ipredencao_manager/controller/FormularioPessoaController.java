@@ -1,8 +1,6 @@
 package org.ipredencao.ipredencao_manager.controller;
 
-import org.ipredencao.ipredencao_manager.model.FormularioPessoa;
-import org.ipredencao.ipredencao_manager.model.FormularioPessoaQuery;
-import org.ipredencao.ipredencao_manager.model.Pessoa;
+import org.ipredencao.ipredencao_manager.model.*;
 import org.ipredencao.ipredencao_manager.service.FormularioPessoaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -57,5 +55,22 @@ public class FormularioPessoaController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(encontrado);
+    }
+
+    @PostMapping("/processar")
+    public ResponseEntity<ProcessarFormularioResponse> processarFormulario(
+            @RequestBody ProcessarFormularioRequest request) {
+        try {
+            ProcessarFormularioResponse response = service.processarFormulario(request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            ProcessarFormularioResponse errorResponse = new ProcessarFormularioResponse();
+            errorResponse.setMensagem("Erro: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        } catch (Exception e) {
+            ProcessarFormularioResponse errorResponse = new ProcessarFormularioResponse();
+            errorResponse.setMensagem("Erro interno: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
     }
 } 

@@ -126,6 +126,7 @@ public class FormularioPessoaRepository {
             f.setSexo(org.ipredencao.ipredencao_manager.model.Sexo.valueOf(record.getSexo().name()));
         // chefeDeFamilia: no formulário é String, na model é Long. Não mapeia diretamente.
         f.setPropagarEnderecoChefeFamilia(record.getPropagarEnderecoChefeFamilia());
+        f.setPessoaId(record.getPessoaId());
         if (record.getCategoriaId() != null)
             f.setSubcategoria(org.ipredencao.ipredencao_manager.model.SubcategoriaEnum.fromId(record.getCategoriaId()));
         if (record.getEmailsSecundarios() != null) {
@@ -181,6 +182,7 @@ public class FormularioPessoaRepository {
             record.setSexo(org.ipredencao.ipredencao_manager.jooq.enums.Sexo.valueOf(f.getSexo().name()));
         // chefeDeFamilia: no formulário é String, na model é Long. Não mapeia diretamente.
         record.setPropagarEnderecoChefeFamilia(f.getPropagarEnderecoChefeFamilia());
+        record.setPessoaId(f.getPessoaId());
         if (f.getSubcategoria() != null) {
             record.setCategoriaId(f.getSubcategoria().getId());
         }
