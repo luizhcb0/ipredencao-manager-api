@@ -27,6 +27,7 @@ public class Pessoa {
     private String profissao;
     private String empresa;
     private String endereco;
+    private String cep;
     private Regiao regiao;
     private Double latitude;
     private Double longitude;
@@ -85,6 +86,8 @@ public class Pessoa {
     public void setEmpresa(String empresa) { this.empresa = empresa; }
     public String getEndereco() { return endereco; }
     public void setEndereco(String endereco) { this.endereco = endereco; }
+    public String getCep() { return cep; }
+    public void setCep(String cep) { this.cep = cep; }
     public Regiao getRegiao() { return regiao; }
     public void setRegiao(Regiao regiao) { this.regiao = regiao; }
     public Double getLatitude() { return latitude; }
@@ -101,4 +104,5 @@ public class Pessoa {
     public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
     public List<RelacionamentoPessoa> getRelacionamentos() { return relacionamentos; }
     public void setRelacionamentos(List<RelacionamentoPessoa> relacionamentos) { this.relacionamentos = relacionamentos; }
+
 }
