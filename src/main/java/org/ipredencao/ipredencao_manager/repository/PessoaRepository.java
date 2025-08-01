@@ -148,6 +148,7 @@ public class PessoaRepository {
         p.setProfissao(pessoaRecord.getProfissao());
         p.setEmpresa(pessoaRecord.getEmpresa());
         p.setEndereco(pessoaRecord.getEndereco());
+        p.setCep(pessoaRecord.getCep());
         if (pessoaRecord.getRegiao() != null)
             p.setRegiao(org.ipredencao.ipredencao_manager.model.Regiao.valueOf(pessoaRecord.getRegiao().name()));
         p.setLatitude(pessoaRecord.getLatitude() != null ? pessoaRecord.getLatitude().doubleValue() : null);
@@ -194,6 +195,7 @@ public class PessoaRepository {
         pessoaRecord.setProfissao(pessoa.getProfissao());
         pessoaRecord.setEmpresa(pessoa.getEmpresa());
         pessoaRecord.setEndereco(pessoa.getEndereco());
+        pessoaRecord.setCep(pessoa.getCep());
         if (pessoa.getRegiao() != null)
             pessoaRecord.setRegiao(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(pessoa.getRegiao().name()));
         if (pessoa.getLatitude() != null) pessoaRecord.setLatitude(java.math.BigDecimal.valueOf(pessoa.getLatitude()));
@@ -245,6 +247,7 @@ public class PessoaRepository {
         pessoaHistoryRecord.setProfissao(pessoa.getProfissao());
         pessoaHistoryRecord.setEmpresa(pessoa.getEmpresa());
         pessoaHistoryRecord.setEndereco(pessoa.getEndereco());
+        pessoaHistoryRecord.setCep(pessoa.getCep());
         if (pessoa.getRegiao() != null)
             pessoaHistoryRecord.setRegiao(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(pessoa.getRegiao().name()));
         if (pessoa.getLatitude() != null) pessoaHistoryRecord.setLatitude(pessoa.getLatitude());
