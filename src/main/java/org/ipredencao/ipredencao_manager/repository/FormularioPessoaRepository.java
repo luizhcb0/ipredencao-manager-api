@@ -141,8 +141,6 @@ public class FormularioPessoaRepository {
         f.setNomeFilhos(record.getNomeFilhos() != null ? java.util.Arrays.asList(record.getNomeFilhos()) : null);
         if (record.getStatus() != null)
             f.setStatus(org.ipredencao.ipredencao_manager.model.FormPessoaStatus.valueOf(record.getStatus().name()));
-        f.setAddedAt(DateTimeHelper.fromDb(record.getAddedAt()));
-        f.setUpdatedAt(DateTimeHelper.fromDb(record.getUpdatedAt()));
         return f;
     }
 
@@ -198,8 +196,6 @@ public class FormularioPessoaRepository {
             record.setNomeFilhos(f.getNomeFilhos().toArray(new String[0]));
         if (f.getStatus() != null)
             record.setStatus(org.ipredencao.ipredencao_manager.jooq.enums.FormPessoaStatus.valueOf(f.getStatus().name()));
-        record.setAddedAt(DateTimeHelper.toDb(f.getAddedAt()));
-        record.setUpdatedAt(DateTimeHelper.toDb(f.getUpdatedAt()));
         return record;
     }
 } 
