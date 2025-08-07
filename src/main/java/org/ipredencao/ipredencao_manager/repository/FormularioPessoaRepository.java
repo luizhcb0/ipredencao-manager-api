@@ -136,7 +136,8 @@ public class FormularioPessoaRepository {
             f.setTelefonesSecundarios(java.util.Arrays.asList(record.getTelefonesSecundarios()));
         }
         // Campos extras do formulário
-        f.setNomeParceiro(record.getNomeParceiro());
+        f.setNomePessoaRelacionada(record.getNomePessoaRelacionada());
+        f.setInicioRelacionamento(DateTimeHelper.fromDb(record.getInicioRelacionamento()));
         f.setNomePai(record.getNomePai());
         f.setNomeMae(record.getNomeMae());
         f.setNomeFilhos(record.getNomeFilhos() != null ? java.util.Arrays.asList(record.getNomeFilhos()) : null);
@@ -193,7 +194,8 @@ public class FormularioPessoaRepository {
             record.setTelefonesSecundarios(f.getTelefonesSecundarios().toArray(new String[0]));
         }
         // Campos extras do formulário
-        record.setNomeParceiro(f.getNomeParceiro());
+        record.setNomePessoaRelacionada(f.getNomePessoaRelacionada());
+        record.setInicioRelacionamento(DateTimeHelper.toDb(f.getInicioRelacionamento()));
         record.setNomePai(f.getNomePai());
         record.setNomeMae(f.getNomeMae());
         if (f.getNomeFilhos() != null)

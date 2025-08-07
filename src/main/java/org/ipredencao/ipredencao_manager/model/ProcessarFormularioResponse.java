@@ -1,5 +1,7 @@
 package org.ipredencao.ipredencao_manager.model;
 
+import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoa;
+
 import java.util.List;
 
 public class ProcessarFormularioResponse {

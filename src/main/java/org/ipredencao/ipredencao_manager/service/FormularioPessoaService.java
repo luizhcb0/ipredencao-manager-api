@@ -1,12 +1,12 @@
 package org.ipredencao.ipredencao_manager.service;
 
 import org.ipredencao.ipredencao_manager.model.*;
+import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoa;
+import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoaIds;
 import org.ipredencao.ipredencao_manager.repository.FormularioPessoaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.joda.time.DateTime;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -74,11 +74,11 @@ public class FormularioPessoaService {
             pessoasRelacionamentos.add(mae);
         }
         
-        // Processar parceiro
-        Pessoa parceiro = null;
-        if (formulario.getNomeParceiro() != null && !formulario.getNomeParceiro().trim().isEmpty()) {
-            parceiro = processarPessoaRelacionamento(formulario.getNomeParceiro());
-            pessoasRelacionamentos.add(parceiro);
+        // Processar pessoa relacionada
+        Pessoa pessoaRelacionada = null;
+        if (formulario.getNomePessoaRelacionada() != null && !formulario.getNomePessoaRelacionada().trim().isEmpty()) {
+            pessoaRelacionada = processarPessoaRelacionamento(formulario.getNomePessoaRelacionada());
+            pessoasRelacionamentos.add(pessoaRelacionada);
         }
         
         // Processar chefe de família
@@ -111,7 +111,7 @@ public class FormularioPessoaService {
         repository.update(formulario);
         
         // 5. Criar relacionamentos
-        List<RelacionamentoPessoa> relacionamentos = criarRelacionamentos(pessoa, formulario, parceiro, filhos, pessoasRelacionamentos);
+        List<RelacionamentoPessoa> relacionamentos = criarRelacionamentos(pessoa, formulario, pessoaRelacionada, filhos, pessoasRelacionamentos);
         
         String mensagem = request.getPessoaId() != null ? 
             "Pessoa atualizada e relacionamentos criados com sucesso" : 
@@ -129,8 +129,6 @@ public class FormularioPessoaService {
             // É um nome, criar nova pessoa
             Pessoa novaPessoa = new Pessoa();
             novaPessoa.setNome(nomeOuId.trim());
-            novaPessoa.setAddedAt(DateTime.now());
-            novaPessoa.setUpdatedAt(DateTime.now());
             return pessoaService.create(novaPessoa);
         }
     }
@@ -142,14 +140,11 @@ public class FormularioPessoaService {
             // Atualizar pessoa existente
             pessoa = pessoaService.findById(pessoaId);
             mapearFormularioParaPessoa(formulario, pessoa);
-            pessoa.setUpdatedAt(DateTime.now());
             pessoa = pessoaService.update(pessoa);
         } else {
             // Criar nova pessoa
             pessoa = new Pessoa();
             mapearFormularioParaPessoa(formulario, pessoa);
-            pessoa.setAddedAt(DateTime.now());
-            pessoa.setUpdatedAt(DateTime.now());
             
             // Se tem chefe de família, definir
             if (chefeFamilia != null) {
@@ -205,29 +200,26 @@ public class FormularioPessoaService {
     }
 
     private List<RelacionamentoPessoa> criarRelacionamentos(Pessoa pessoa, FormularioPessoa formulario, 
-                                                           Pessoa parceiro, List<Pessoa> filhos, List<Pessoa> pessoasRelacionamentos) {
+                                                           Pessoa pessoaRelacionada, List<Pessoa> filhos, List<Pessoa> pessoasRelacionamentos) {
         List<RelacionamentoPessoa> relacionamentos = new ArrayList<>();
         
-        // Relacionamento com parceiro
-        if (parceiro != null) {
+        // Relacionamento com pessoa relacionada
+        if (pessoaRelacionada != null) {
             TipoRelacionamento tipoRelacionamento = determinarTipoRelacionamentoParceiro(formulario.getEstadoCivil());
-            RelacionamentoPessoa rel = new RelacionamentoPessoa();
+            RelacionamentoPessoaIds rel = new RelacionamentoPessoaIds();
             rel.setPessoaId(pessoa.getId());
-            rel.setPessoaRelacionadaId(parceiro.getId());
+            rel.setPessoaRelacionadaId(pessoaRelacionada.getId());
             rel.setTipoRelacionamento(tipoRelacionamento);
-            rel.setAddedAt(DateTime.now());
-            rel.setUpdatedAt(DateTime.now());
+            rel.setInicioRelacionamento(formulario.getInicioRelacionamento());
             relacionamentos.add(pessoaService.criarRelacionamento(pessoa.getId(), rel));
         }
         
         // Relacionamentos com filhos
         for (Pessoa filho : filhos) {
-            RelacionamentoPessoa rel = new RelacionamentoPessoa();
+            RelacionamentoPessoaIds rel = new RelacionamentoPessoaIds();
             rel.setPessoaId(pessoa.getId());
             rel.setPessoaRelacionadaId(filho.getId());
             rel.setTipoRelacionamento(TipoRelacionamento.FILHO);
-            rel.setAddedAt(DateTime.now());
-            rel.setUpdatedAt(DateTime.now());
             relacionamentos.add(pessoaService.criarRelacionamento(pessoa.getId(), rel));
         }
         
@@ -235,23 +227,19 @@ public class FormularioPessoaService {
         for (Pessoa pessoaRel : pessoasRelacionamentos) {
             if (formulario.getNomePai() != null && 
                 (pessoaRel.getNome().equals(formulario.getNomePai()) || pessoaRel.getId().toString().equals(formulario.getNomePai()))) {
-                RelacionamentoPessoa rel = new RelacionamentoPessoa();
+                RelacionamentoPessoaIds rel = new RelacionamentoPessoaIds();
                 rel.setPessoaId(pessoa.getId());
                 rel.setPessoaRelacionadaId(pessoaRel.getId());
                 rel.setTipoRelacionamento(TipoRelacionamento.PAI);
-                rel.setAddedAt(DateTime.now());
-                rel.setUpdatedAt(DateTime.now());
                 relacionamentos.add(pessoaService.criarRelacionamento(pessoa.getId(), rel));
             }
             
             if (formulario.getNomeMae() != null && 
                 (pessoaRel.getNome().equals(formulario.getNomeMae()) || pessoaRel.getId().toString().equals(formulario.getNomeMae()))) {
-                RelacionamentoPessoa rel = new RelacionamentoPessoa();
+                RelacionamentoPessoaIds rel = new RelacionamentoPessoaIds();
                 rel.setPessoaId(pessoa.getId());
                 rel.setPessoaRelacionadaId(pessoaRel.getId());
                 rel.setTipoRelacionamento(TipoRelacionamento.MAE);
-                rel.setAddedAt(DateTime.now());
-                rel.setUpdatedAt(DateTime.now());
                 relacionamentos.add(pessoaService.criarRelacionamento(pessoa.getId(), rel));
             }
         }
@@ -260,19 +248,11 @@ public class FormularioPessoaService {
     }
 
     private TipoRelacionamento determinarTipoRelacionamentoParceiro(EstadoCivil estadoCivil) {
-        if (estadoCivil == null) {
-            return TipoRelacionamento.NAMORADO; // padrão
-        }
-        
-        switch (estadoCivil) {
-            case CASADO:
-                return TipoRelacionamento.CONJUGE;
-            case NOIVO:
-                return TipoRelacionamento.NOIVO;
-            case NAMORANDO:
-                return TipoRelacionamento.NAMORADO;
-            default:
-                return TipoRelacionamento.NAMORADO;
-        }
+        return switch (estadoCivil) {
+            case CASADO -> TipoRelacionamento.CONJUGE;
+            case SOLTEIRO_NAMORANDO, DIVORCIADO_NAMORANDO -> TipoRelacionamento.NAMORADO;
+            case SOLTEIRO_NOIVO, VIUVO_NOIVO, DIVORCIADO_NOIVO -> TipoRelacionamento.NOIVO;
+            default -> TipoRelacionamento.SEM_RELACIONAMENTO;
+        };
     }
-} 
+}

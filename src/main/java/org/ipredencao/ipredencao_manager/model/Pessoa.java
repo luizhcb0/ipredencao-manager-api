@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.model;
 
+import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoa;
 import org.joda.time.DateTime;
 import java.util.List;
 
