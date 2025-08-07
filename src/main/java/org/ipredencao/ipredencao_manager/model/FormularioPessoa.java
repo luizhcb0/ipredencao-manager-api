@@ -35,10 +35,12 @@ public class FormularioPessoa {
     private Sexo sexo;
     private Long chefeDeFamiliaId;
     private Boolean propagarEnderecoChefeFamilia;
+    private Long pessoaId;
     private SubcategoriaEnum subcategoria;
     private FormPessoaStatus status;
     // Campos extras do formulário
-    private String nomeParceiro;
+    private String nomePessoaRelacionada;
+    private DateTime inicioRelacionamento;
     private String nomePai;
     private String nomeMae;
     private List<String> nomeFilhos;
@@ -106,12 +108,16 @@ public class FormularioPessoa {
     public void setChefeDeFamiliaId(Long chefeDeFamiliaId) { this.chefeDeFamiliaId = chefeDeFamiliaId; }
     public Boolean getPropagarEnderecoChefeFamilia() { return propagarEnderecoChefeFamilia; }
     public void setPropagarEnderecoChefeFamilia(Boolean propagarEnderecoChefeFamilia) { this.propagarEnderecoChefeFamilia = propagarEnderecoChefeFamilia; }
+    public Long getPessoaId() { return pessoaId; }
+    public void setPessoaId(Long pessoaId) { this.pessoaId = pessoaId; }
     public SubcategoriaEnum getSubcategoria() { return subcategoria; }
     public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
     public FormPessoaStatus getStatus() { return status; }
     public void setStatus(FormPessoaStatus status) { this.status = status; }
-    public String getNomeParceiro() { return nomeParceiro; }
-    public void setNomeParceiro(String nomeParceiro) { this.nomeParceiro = nomeParceiro; }
+    public String getNomePessoaRelacionada() { return nomePessoaRelacionada; }
+    public void setNomePessoaRelacionada(String nomePessoaRelacionada) { this.nomePessoaRelacionada = nomePessoaRelacionada; }
+    public DateTime getInicioRelacionamento() { return inicioRelacionamento; }
+    public void setInicioRelacionamento(DateTime inicioRelacionamento) { this.inicioRelacionamento = inicioRelacionamento; }
     public String getNomePai() { return nomePai; }
     public void setNomePai(String nomePai) { this.nomePai = nomePai; }
     public String getNomeMae() { return nomeMae; }
