@@ -39,7 +39,8 @@ public class FormularioPessoa {
     private SubcategoriaEnum subcategoria;
     private FormPessoaStatus status;
     // Campos extras do formulário
-    private String nomeParceiro;
+    private String nomePessoaRelacionada;
+    private DateTime inicioRelacionamento;
     private String nomePai;
     private String nomeMae;
     private List<String> nomeFilhos;
@@ -115,8 +116,10 @@ public class FormularioPessoa {
     public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
     public FormPessoaStatus getStatus() { return status; }
     public void setStatus(FormPessoaStatus status) { this.status = status; }
-    public String getNomeParceiro() { return nomeParceiro; }
-    public void setNomeParceiro(String nomeParceiro) { this.nomeParceiro = nomeParceiro; }
+    public String getNomePessoaRelacionada() { return nomePessoaRelacionada; }
+    public void setNomePessoaRelacionada(String nomePessoaRelacionada) { this.nomePessoaRelacionada = nomePessoaRelacionada; }
+    public DateTime getInicioRelacionamento() { return inicioRelacionamento; }
+    public void setInicioRelacionamento(DateTime inicioRelacionamento) { this.inicioRelacionamento = inicioRelacionamento; }
     public String getNomePai() { return nomePai; }
     public void setNomePai(String nomePai) { this.nomePai = nomePai; }
     public String getNomeMae() { return nomeMae; }
