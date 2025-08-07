@@ -19,10 +19,11 @@ run: db-up jooq
 	$(GRADLEW) bootRun
 
 run-prod: db-up jooq
+ifeq ($(OS),Windows_NT)
 	set SPRING_PROFILES_ACTIVE=prod && $(GRADLEW) bootRun
-
-run-prod: db-up jooq
-	SPRING_PROFILES_ACTIVE=prod ./gradlew bootRun
+else
+	SPRING_PROFILES_ACTIVE=prod $(GRADLEW) bootRun
+endif
 
 restart:
 	docker compose down

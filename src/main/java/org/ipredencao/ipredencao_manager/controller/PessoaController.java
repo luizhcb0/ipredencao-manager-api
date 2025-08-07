@@ -97,7 +97,7 @@ public class PessoaController {
 
     // Relacionamentos qualificados
     @PostMapping("/{id}/relacionamentos")
-    public RelacionamentoPessoa criarRelacionamento(@PathVariable Long id, @RequestBody RelacionamentoPessoaIds relacionamento) {
+    public ResponseEntity<?> criarRelacionamento(@PathVariable Long id, @RequestBody RelacionamentoPessoaIds relacionamento) {
         try {
             return ResponseEntity.ok(pessoaService.criarRelacionamento(id, relacionamento));
         } catch (NoSuchElementException e) {
