@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.ipredencao.ipredencao_manager.model.ErrorResponse;
 import org.ipredencao.ipredencao_manager.model.Pessoa;
 import org.ipredencao.ipredencao_manager.model.PessoaQuery;
 import org.ipredencao.ipredencao_manager.model.SubcategoriaEnum;
@@ -30,62 +31,104 @@ public class PessoaController {
     public PessoaController(PessoaService pessoaService) {this.pessoaService = pessoaService;}
 
     @PostMapping
-    public ResponseEntity<Pessoa> criarPessoa(@RequestBody Pessoa pessoa) {
-        return ResponseEntity.ok(pessoaService.create(pessoa));
+    public ResponseEntity<?> criarPessoa(@RequestBody Pessoa pessoa) {
+        try {
+            return ResponseEntity.ok(pessoaService.create(pessoa));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
+        }
     }
 
     @PostMapping("/{id}/foto")
-    public ResponseEntity<Pessoa> uploadPhoto(
+    public ResponseEntity<?> uploadPhoto(
         @PathVariable Long id,
         @RequestParam("foto") MultipartFile foto
-    ) throws IOException {
-        Pessoa pessoa = pessoaService.findById(id);
-        if (pessoa == null) {
-            return ResponseEntity.notFound().build();
+    ) {
+        try {
+            Pessoa pessoa = pessoaService.findById(id);
+            Pessoa updated = pessoaService.savePhoto(pessoa, foto);
+            return ResponseEntity.ok(updated);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(404).body(new ErrorResponse("Pessoa não encontrada"));
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body(new ErrorResponse("Erro ao fazer upload", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
         }
-        Pessoa updated = pessoaService.savePhoto(pessoa, foto);
-        return ResponseEntity.ok(updated);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Object> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
         try {
             Pessoa pessoa = pessoaService.findById(id);
             return ResponseEntity.ok(pessoa);
         } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(404).body(new ErrorResponse("Pessoa não encontrada"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
         }
     }
 
     @PostMapping("/search")
-    public ResponseEntity<List<Pessoa>> buscarPessoas(@RequestBody PessoaQuery query) {
-        List<Pessoa> pessoas = pessoaService.find(query);
-        return ResponseEntity.ok(pessoas);
+    public ResponseEntity<?> buscarPessoas(@RequestBody PessoaQuery query) {
+        try {
+            List<Pessoa> pessoas = pessoaService.find(query);
+            return ResponseEntity.ok(pessoas);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ErrorResponse("Erro na busca", e.getMessage()));
+        }
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<Pessoa> atualizarPessoa(@PathVariable Long id, @RequestBody Pessoa pessoa) {
-        pessoa.setId(id);
-        return ResponseEntity.ok(pessoaService.update(pessoa));
+    public ResponseEntity<?> atualizarPessoa(@PathVariable Long id, @RequestBody Pessoa pessoa) {
+        try {
+            pessoa.setId(id);
+            return ResponseEntity.ok(pessoaService.update(pessoa));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(404).body(new ErrorResponse("Pessoa não encontrada"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
+        }
     }
 
     // Relacionamentos qualificados
     @PostMapping("/{id}/relacionamentos")
     public RelacionamentoPessoa criarRelacionamento(@PathVariable Long id, @RequestBody RelacionamentoPessoaIds relacionamento) {
-        return pessoaService.criarRelacionamento(id, relacionamento);
+        try {
+            return ResponseEntity.ok(pessoaService.criarRelacionamento(id, relacionamento));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(404).body(new ErrorResponse("Pessoa não encontrada"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
+        }
     }
 
     @GetMapping("/{id}/relacionamentos")
-    public List<RelacionamentoPessoa> listarRelacionamentos(@PathVariable Long id) {
-        return pessoaService.listarRelacionamentosPorPessoa(id);
+    public ResponseEntity<?> listarRelacionamentos(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(pessoaService.listarRelacionamentosPorPessoa(id));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(404).body(new ErrorResponse("Pessoa não encontrada"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
+        }
     }
     
     /**
      * Lista todas as subcategorias disponíveis
      */
     @GetMapping("/subcategorias")
-    public ResponseEntity<SubcategoriaEnum[]> getAllSubcategorias() {
-        return ResponseEntity.ok(pessoaService.getAllSubcategorias());
+    public ResponseEntity<?> getAllSubcategorias() {
+        try {
+            return ResponseEntity.ok(pessoaService.getAllSubcategorias());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
+        }
     }
 }

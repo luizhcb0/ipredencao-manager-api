@@ -11,6 +11,9 @@ jooq:
 run: db-up jooq
 	./gradlew bootRun
 
+run-prod: db-up jooq
+	SPRING_PROFILES_ACTIVE=prod ./gradlew bootRun
+
 restart:
 	docker compose down
 	docker compose up -d
