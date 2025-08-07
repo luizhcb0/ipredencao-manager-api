@@ -1,9 +1,10 @@
 package org.ipredencao.ipredencao_manager.service;
 
+import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoaIds;
 import org.springframework.stereotype.Service;
 import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
 import org.ipredencao.ipredencao_manager.model.Pessoa;
-import org.ipredencao.ipredencao_manager.model.RelacionamentoPessoa;
+import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoa;
 import org.ipredencao.ipredencao_manager.model.PessoaQuery;
 import org.ipredencao.ipredencao_manager.model.SubcategoriaEnum;
 import java.util.List;
@@ -50,7 +51,7 @@ public class PessoaService {
     }
 
     // Relacionamentos qualificados
-    public RelacionamentoPessoa criarRelacionamento(Long pessoaId, RelacionamentoPessoa relacionamento) {
+    public RelacionamentoPessoa criarRelacionamento(Long pessoaId, RelacionamentoPessoaIds relacionamento) {
         return pessoaRepository.insertRelationship(pessoaId, relacionamento);
     }
 

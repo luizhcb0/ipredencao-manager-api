@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.controller;
 
+import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoaIds;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,7 +18,7 @@ import org.ipredencao.ipredencao_manager.model.PessoaQuery;
 import org.ipredencao.ipredencao_manager.model.SubcategoriaEnum;
 import org.ipredencao.ipredencao_manager.service.PessoaService;
 import java.util.List;
-import org.ipredencao.ipredencao_manager.model.RelacionamentoPessoa;
+import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoa;
 import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.util.Map;
@@ -96,7 +97,7 @@ public class PessoaController {
 
     // Relacionamentos qualificados
     @PostMapping("/{id}/relacionamentos")
-    public ResponseEntity<?> criarRelacionamento(@PathVariable Long id, @RequestBody RelacionamentoPessoa relacionamento) {
+    public RelacionamentoPessoa criarRelacionamento(@PathVariable Long id, @RequestBody RelacionamentoPessoaIds relacionamento) {
         try {
             return ResponseEntity.ok(pessoaService.criarRelacionamento(id, relacionamento));
         } catch (NoSuchElementException e) {

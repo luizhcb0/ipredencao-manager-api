@@ -1,12 +1,13 @@
 package org.ipredencao.ipredencao_manager.repository;
 
 import org.ipredencao.ipredencao_manager.jooq.tables.records.PessoaHistoryRecord;
+import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoaIds;
 import org.joda.time.DateTime;
 import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.ipredencao.ipredencao_manager.model.Pessoa;
-import org.ipredencao.ipredencao_manager.model.RelacionamentoPessoa;
+import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoa;
 import static org.ipredencao.ipredencao_manager.jooq.Tables.PESSOA_HISTORY;
 import static org.ipredencao.ipredencao_manager.jooq.tables.Pessoa.PESSOA;
 import static org.ipredencao.ipredencao_manager.jooq.tables.PessoaRelacionamento.PESSOA_RELACIONAMENTO;
@@ -75,7 +76,7 @@ public class PessoaRepository {
     }
 
     // CRUD para relacionamentos qualificados
-    public RelacionamentoPessoa insertRelationship(Long pessoaId, RelacionamentoPessoa relacionamento) {
+    public RelacionamentoPessoa insertRelationship(Long pessoaId, RelacionamentoPessoaIds relacionamento) {
         PessoaRelacionamentoRecord relationamentoRecord = toRepository(relacionamento);
         relationamentoRecord.setPessoaId(pessoaId);
         PessoaRelacionamentoRecord saved = dsl.insertInto(PESSOA_RELACIONAMENTO)
@@ -300,18 +301,12 @@ public class PessoaRepository {
         return rel;
     }
 
-    private static PessoaRelacionamentoRecord toRepository(RelacionamentoPessoa relacionamento) {
+    private static PessoaRelacionamentoRecord toRepository(RelacionamentoPessoaIds relacionamento) {
         PessoaRelacionamentoRecord record = new PessoaRelacionamentoRecord();
         record.setId(relacionamento.getId());
-        
-        // Mapear pessoa relacionada
-        if (relacionamento.getPessoaRelacionada() != null)
-            record.setPessoaRelacionadaId(relacionamento.getPessoaRelacionada().getId());
-            
-        // Mapear pessoa principal (será definido no insertRelationship)
-        if (relacionamento.getPessoa() != null)
-            record.setPessoaId(relacionamento.getPessoa().getId());
-            
+
+        record.setPessoaId(relacionamento.getPessoaId());
+        record.setPessoaRelacionadaId(relacionamento.getPessoaRelacionadaId());
         if (relacionamento.getTipoRelacionamento() != null)
             record.setTipoRelacionamento(
                 org.ipredencao.ipredencao_manager.jooq.enums.TipoRelacionamento.valueOf(
