@@ -36,10 +36,6 @@ public class FormularioPessoaService {
     }
 
     public FormularioPessoa atualizar(FormularioPessoa formulario) {
-        // Validar se o email já existe para outro formulário
-        if (formulario.getId() != null && !repository.find(FormularioPessoaQuery.builder().email(formulario.getEmail()).build()).isEmpty()) {
-            throw new IllegalArgumentException("Já existe outro formulário cadastrado com este email: " + formulario.getEmail());
-        }
         return repository.update(formulario);
     }
 
