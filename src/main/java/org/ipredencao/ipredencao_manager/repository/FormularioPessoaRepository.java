@@ -11,7 +11,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.joda.time.DateTime;
-// Importe os records e tabelas do JOOQ gerados para formulario_pessoa
 import static org.ipredencao.ipredencao_manager.jooq.tables.FormularioPessoa.FORMULARIO_PESSOA;
 
 import org.ipredencao.ipredencao_manager.jooq.tables.records.FormularioPessoaRecord;

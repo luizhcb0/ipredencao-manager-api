@@ -220,51 +220,51 @@ public class PessoaRepository {
         return pessoaRecord;
     }
 
-    private static PessoaHistoryRecord toHistoryRepository(PessoaRecord pessoa) {
+    private static PessoaHistoryRecord toHistoryRepository(PessoaRecord pessoaRecord) {
         PessoaHistoryRecord pessoaHistoryRecord = new PessoaHistoryRecord();
         
         // Mapear o pessoa_id (campo obrigatório na tabela history)
-        pessoaHistoryRecord.setPessoaId(pessoa.getPessoaId());
+        pessoaHistoryRecord.setPessoaId(pessoaRecord.getPessoaId());
         
-        pessoaHistoryRecord.setNome(pessoa.getNome());
-        pessoaHistoryRecord.setApelido(pessoa.getApelido());
-        pessoaHistoryRecord.setEmail(pessoa.getEmail());
-        pessoaHistoryRecord.setTelefone(pessoa.getTelefone());
-        pessoaHistoryRecord.setCampus(pessoa.getCampus());
-        pessoaHistoryRecord.setDataNascimento(pessoa.getDataNascimento());
-        pessoaHistoryRecord.setCpf(pessoa.getCpf());
-        pessoaHistoryRecord.setRg(pessoa.getRg());
-        if (pessoa.getEstadoCivil() != null)
-            pessoaHistoryRecord.setEstadoCivil(EstadoCivil.valueOf(pessoa.getEstadoCivil().name()));
-        pessoaHistoryRecord.setIgrejaAnterior(pessoa.getIgrejaAnterior());
-        pessoaHistoryRecord.setSituacaoIgrejaAnterior(pessoa.getSituacaoIgrejaAnterior());
-        pessoaHistoryRecord.setTempoNaIgreja(pessoa.getTempoNaIgreja());
-        pessoaHistoryRecord.setMotivosParaAdmissao(pessoa.getMotivosParaAdmissao());
-        if (pessoa.getTipoBatismo() != null)
-            pessoaHistoryRecord.setTipoBatismo(TipoBatismo.valueOf(pessoa.getTipoBatismo().name()));
-        pessoaHistoryRecord.setDataBatismo(pessoa.getDataBatismo());
-        pessoaHistoryRecord.setDataProfissaoDeFe(pessoa.getDataProfissaoDeFe());
-        pessoaHistoryRecord.setIgrejaBatismo(pessoa.getIgrejaBatismo());
-        pessoaHistoryRecord.setProfissao(pessoa.getProfissao());
-        pessoaHistoryRecord.setEmpresa(pessoa.getEmpresa());
-        pessoaHistoryRecord.setEndereco(pessoa.getEndereco());
-        pessoaHistoryRecord.setCep(pessoa.getCep());
-        if (pessoa.getRegiao() != null)
-            pessoaHistoryRecord.setRegiao(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(pessoa.getRegiao().name()));
-        if (pessoa.getLatitude() != null) pessoaHistoryRecord.setLatitude(pessoa.getLatitude());
-        if (pessoa.getLongitude() != null) pessoaHistoryRecord.setLongitude(pessoa.getLongitude());
-        pessoaHistoryRecord.setFotoUrl(pessoa.getFotoUrl());
-        if (pessoa.getSexo() != null)
-            pessoaHistoryRecord.setSexo(org.ipredencao.ipredencao_manager.jooq.enums.Sexo.valueOf(pessoa.getSexo().name()));
-        pessoaHistoryRecord.setChefeDeFamilia(pessoa.getChefeDeFamilia());
-        pessoaHistoryRecord.setCategoriaId(pessoa.getCategoriaId());
+        pessoaHistoryRecord.setNome(pessoaRecord.getNome());
+        pessoaHistoryRecord.setApelido(pessoaRecord.getApelido());
+        pessoaHistoryRecord.setEmail(pessoaRecord.getEmail());
+        pessoaHistoryRecord.setTelefone(pessoaRecord.getTelefone());
+        pessoaHistoryRecord.setCampus(pessoaRecord.getCampus());
+        pessoaHistoryRecord.setDataNascimento(pessoaRecord.getDataNascimento());
+        pessoaHistoryRecord.setCpf(pessoaRecord.getCpf());
+        pessoaHistoryRecord.setRg(pessoaRecord.getRg());
+        if (pessoaRecord.getEstadoCivil() != null)
+            pessoaHistoryRecord.setEstadoCivil(pessoaRecord.getEstadoCivil());
+        pessoaHistoryRecord.setIgrejaAnterior(pessoaRecord.getIgrejaAnterior());
+        pessoaHistoryRecord.setSituacaoIgrejaAnterior(pessoaRecord.getSituacaoIgrejaAnterior());
+        pessoaHistoryRecord.setTempoNaIgreja(pessoaRecord.getTempoNaIgreja());
+        pessoaHistoryRecord.setMotivosParaAdmissao(pessoaRecord.getMotivosParaAdmissao());
+        if (pessoaRecord.getTipoBatismo() != null)
+            pessoaHistoryRecord.setTipoBatismo(pessoaRecord.getTipoBatismo());
+        pessoaHistoryRecord.setDataBatismo(pessoaRecord.getDataBatismo());
+        pessoaHistoryRecord.setDataProfissaoDeFe(pessoaRecord.getDataProfissaoDeFe());
+        pessoaHistoryRecord.setIgrejaBatismo(pessoaRecord.getIgrejaBatismo());
+        pessoaHistoryRecord.setProfissao(pessoaRecord.getProfissao());
+        pessoaHistoryRecord.setEmpresa(pessoaRecord.getEmpresa());
+        pessoaHistoryRecord.setEndereco(pessoaRecord.getEndereco());
+        pessoaHistoryRecord.setCep(pessoaRecord.getCep());
+        if (pessoaRecord.getRegiao() != null)
+            pessoaHistoryRecord.setRegiao(pessoaRecord.getRegiao());
+        if (pessoaRecord.getLatitude() != null) pessoaHistoryRecord.setLatitude(pessoaRecord.getLatitude());
+        if (pessoaRecord.getLongitude() != null) pessoaHistoryRecord.setLongitude(pessoaRecord.getLongitude());
+        pessoaHistoryRecord.setFotoUrl(pessoaRecord.getFotoUrl());
+        if (pessoaRecord.getSexo() != null)
+            pessoaHistoryRecord.setSexo(pessoaRecord.getSexo());
+        pessoaHistoryRecord.setChefeDeFamilia(pessoaRecord.getChefeDeFamilia());
+        pessoaHistoryRecord.setCategoriaId(pessoaRecord.getCategoriaId());
 
         // Mapear arrays do PostgreSQL
-        if (pessoa.getEmailsSecundarios() != null && pessoa.getEmailsSecundarios().length > 0) {
-            pessoaHistoryRecord.setEmailsSecundarios(pessoa.getEmailsSecundarios());
+        if (pessoaRecord.getEmailsSecundarios() != null && pessoaRecord.getEmailsSecundarios().length > 0) {
+            pessoaHistoryRecord.setEmailsSecundarios(pessoaRecord.getEmailsSecundarios());
         }
-        if (pessoa.getTelefonesSecundarios() != null && pessoa.getTelefonesSecundarios().length > 0) {
-            pessoaHistoryRecord.setTelefonesSecundarios(pessoa.getTelefonesSecundarios());
+        if (pessoaRecord.getTelefonesSecundarios() != null && pessoaRecord.getTelefonesSecundarios().length > 0) {
+            pessoaHistoryRecord.setTelefonesSecundarios(pessoaRecord.getTelefonesSecundarios());
         }
 
         return pessoaHistoryRecord;
@@ -303,7 +303,6 @@ public class PessoaRepository {
 
     private static PessoaRelacionamentoRecord toRepository(RelacionamentoPessoaIds relacionamento) {
         PessoaRelacionamentoRecord record = new PessoaRelacionamentoRecord();
-        record.setId(relacionamento.getId());
 
         record.setPessoaId(relacionamento.getPessoaId());
         record.setPessoaRelacionadaId(relacionamento.getPessoaRelacionadaId());
