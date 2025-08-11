@@ -78,17 +78,18 @@ public class FormularioPessoaService {
             pessoaRelacionada = processarPessoaRelacionamento(formulario.getNomePessoaRelacionada());
             pessoasRelacionamentos.add(pessoaRelacionada);
         }
-        
+
         // Processar chefe de família
+//        TODO: Definir processamento do chefe de familia
         Pessoa chefeFamilia = null;
-        if (formulario.getChefeDeFamiliaId() != null) {
-            try {
-                chefeFamilia = pessoaService.findById(formulario.getChefeDeFamiliaId());
-            } catch (NoSuchElementException e) {
-                throw new IllegalArgumentException("Chefe de família com ID " + formulario.getChefeDeFamiliaId() + " não encontrado");
-            }
-        }
-        
+//        if (formulario.getChefeDeFamilia() != null) {
+//            try {
+//                chefeFamilia = pessoaService.findById(formulario.getChefeDeFamilia());
+//            } catch (NoSuchElementException e) {
+//                throw new IllegalArgumentException("Chefe de família com ID " + formulario.getChefeDeFamilia() + " não encontrado");
+//            }
+//        }
+
         // Processar filhos
         List<Pessoa> filhos = new ArrayList<>();
         if (formulario.getNomeFilhos() != null && !formulario.getNomeFilhos().isEmpty()) {
@@ -143,7 +144,7 @@ public class FormularioPessoaService {
             // Criar nova pessoa
             pessoa = new Pessoa();
             mapearFormularioParaPessoa(formulario, pessoa);
-            
+
             // Se tem chefe de família, definir
             if (chefeFamilia != null) {
                 pessoa.setChefeDeFamiliaId(chefeFamilia.getId());
