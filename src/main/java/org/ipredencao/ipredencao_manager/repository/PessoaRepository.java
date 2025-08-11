@@ -101,8 +101,8 @@ public class PessoaRepository {
         
         if (query.getId() != null) conditions.add(PESSOA.PESSOA_ID.eq(query.getId()));
         if (query.getIds() != null && !query.getIds().isEmpty()) conditions.add(PESSOA.PESSOA_ID.in(query.getIds()));
-        if (query.getNome() != null && !query.getNome().trim().isEmpty()) conditions.add(PESSOA.NOME.like("%" + query.getNome() + "%"));
-        if (query.getApelido() != null && !query.getApelido().trim().isEmpty()) conditions.add(PESSOA.APELIDO.like("%" + query.getApelido() + "%"));
+        if (query.getNome() != null && !query.getNome().trim().isEmpty()) conditions.add(PESSOA.NOME.likeIgnoreCase("%" + query.getNome() + "%"));
+        if (query.getApelido() != null && !query.getApelido().trim().isEmpty()) conditions.add(PESSOA.APELIDO.likeIgnoreCase("%" + query.getApelido() + "%"));
         if (query.getEmail() != null && !query.getEmail().trim().isEmpty()) conditions.add(PESSOA.EMAIL.eq(query.getEmail()));
         if (query.getTelefone() != null && !query.getTelefone().trim().isEmpty()) conditions.add(PESSOA.TELEFONE.eq(query.getTelefone()));
         if (query.getCpf() != null && !query.getCpf().trim().isEmpty()) conditions.add(PESSOA.CPF.eq(query.getCpf()));
