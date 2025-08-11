@@ -6,6 +6,7 @@ import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.Relacioname
 import org.ipredencao.ipredencao_manager.repository.FormularioPessoaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,6 +52,7 @@ public class FormularioPessoaService {
         return repository.find(query);
     }
 
+    @Transactional
     public ProcessarFormularioResponse processarFormulario(ProcessarFormularioRequest request) {
         // 1. Buscar o formulário
         FormularioPessoa formulario = findById(request.getFormularioId());
