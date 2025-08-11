@@ -10,7 +10,7 @@ public class JacksonConfig {
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JodaModule());
+        mapper.registerModule(new JodaModule()); // Apenas para Joda DateTime
         return mapper;
     }
 } 
