@@ -99,27 +99,27 @@ public class PessoaRepository {
     private List<Condition> buildConditions(PessoaQuery query) {
         List<Condition> conditions = new java.util.ArrayList<>();
         
-        query.getId().ifPresent(id -> conditions.add(PESSOA.PESSOA_ID.eq(id)));
-        query.getIds().ifPresent(ids -> conditions.add(PESSOA.PESSOA_ID.in(ids)));
-        query.getNome().ifPresent(nome -> conditions.add(PESSOA.NOME.like("%" + nome + "%")));
-        query.getApelido().ifPresent(apelido -> conditions.add(PESSOA.APELIDO.like("%" + apelido + "%")));
-        query.getEmail().ifPresent(email -> conditions.add(PESSOA.EMAIL.eq(email)));
-        query.getTelefone().ifPresent(telefone -> conditions.add(PESSOA.TELEFONE.eq(telefone)));
-        query.getCpf().ifPresent(cpf -> conditions.add(PESSOA.CPF.eq(cpf)));
-        query.getRg().ifPresent(rg -> conditions.add(PESSOA.RG.eq(rg)));
-        query.getEstadoCivil().ifPresent(estadoCivil -> 
-            conditions.add(PESSOA.ESTADO_CIVIL.eq(org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil.valueOf(estadoCivil.name()))));
-        query.getCampus().ifPresent(campus -> conditions.add(PESSOA.CAMPUS.eq(campus)));
-        query.getRegiao().ifPresent(regiao -> 
-            conditions.add(PESSOA.REGIAO.eq(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(regiao.name()))));
-        query.getDataNascimentoFrom().ifPresent(from ->
-            conditions.add(PESSOA.DATA_NASCIMENTO.greaterOrEqual(DateTimeHelper.toDb(from))));
-        query.getDataNascimentoTo().ifPresent(to -> 
-            conditions.add(PESSOA.DATA_NASCIMENTO.lessOrEqual(DateTimeHelper.toDb(to))));
-        query.getTipoBatismo().ifPresent(tipoBatismo -> 
-            conditions.add(PESSOA.TIPO_BATISMO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo.valueOf(tipoBatismo.name()))));
-        query.getSubcategoria().ifPresent(subcategoria -> 
-            conditions.add(PESSOA.CATEGORIA_ID.eq(subcategoria.getId())));
+        if (query.getId() != null) conditions.add(PESSOA.PESSOA_ID.eq(query.getId()));
+        if (query.getIds() != null && !query.getIds().isEmpty()) conditions.add(PESSOA.PESSOA_ID.in(query.getIds()));
+        if (query.getNome() != null && !query.getNome().trim().isEmpty()) conditions.add(PESSOA.NOME.like("%" + query.getNome() + "%"));
+        if (query.getApelido() != null && !query.getApelido().trim().isEmpty()) conditions.add(PESSOA.APELIDO.like("%" + query.getApelido() + "%"));
+        if (query.getEmail() != null && !query.getEmail().trim().isEmpty()) conditions.add(PESSOA.EMAIL.eq(query.getEmail()));
+        if (query.getTelefone() != null && !query.getTelefone().trim().isEmpty()) conditions.add(PESSOA.TELEFONE.eq(query.getTelefone()));
+        if (query.getCpf() != null && !query.getCpf().trim().isEmpty()) conditions.add(PESSOA.CPF.eq(query.getCpf()));
+        if (query.getRg() != null && !query.getRg().trim().isEmpty()) conditions.add(PESSOA.RG.eq(query.getRg()));
+        if (query.getEstadoCivil() != null) 
+            conditions.add(PESSOA.ESTADO_CIVIL.eq(org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil.valueOf(query.getEstadoCivil().name())));
+        if (query.getCampus() != null && !query.getCampus().trim().isEmpty()) conditions.add(PESSOA.CAMPUS.eq(query.getCampus()));
+        if (query.getRegiao() != null) 
+            conditions.add(PESSOA.REGIAO.eq(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(query.getRegiao().name())));
+        if (query.getDataNascimentoFrom() != null)
+            conditions.add(PESSOA.DATA_NASCIMENTO.greaterOrEqual(DateTimeHelper.toDb(query.getDataNascimentoFrom())));
+        if (query.getDataNascimentoTo() != null) 
+            conditions.add(PESSOA.DATA_NASCIMENTO.lessOrEqual(DateTimeHelper.toDb(query.getDataNascimentoTo())));
+        if (query.getTipoBatismo() != null) 
+            conditions.add(PESSOA.TIPO_BATISMO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo.valueOf(query.getTipoBatismo().name())));
+        if (query.getSubcategoria() != null) 
+            conditions.add(PESSOA.CATEGORIA_ID.eq(query.getSubcategoria().getId()));
         return conditions;
     }
 

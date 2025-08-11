@@ -65,27 +65,27 @@ public class FormularioPessoaRepository {
     private List<Condition> buildConditions(FormularioPessoaQuery query) {
         List<Condition> conditions = new java.util.ArrayList<>();
 
-        query.getId().ifPresent(id -> conditions.add(FORMULARIO_PESSOA.FORMULARIO_PESSOA_ID.eq(id)));
-        query.getIds().ifPresent(ids -> conditions.add(FORMULARIO_PESSOA.FORMULARIO_PESSOA_ID.in(ids)));
-        query.getNome().ifPresent(nome -> conditions.add(FORMULARIO_PESSOA.NOME.like("%" + nome + "%")));
-        query.getApelido().ifPresent(apelido -> conditions.add(FORMULARIO_PESSOA.APELIDO.like("%" + apelido + "%")));
-        query.getEmail().ifPresent(email -> conditions.add(FORMULARIO_PESSOA.EMAIL.eq(email)));
-        query.getTelefone().ifPresent(telefone -> conditions.add(FORMULARIO_PESSOA.TELEFONE.eq(telefone)));
-        query.getCpf().ifPresent(cpf -> conditions.add(FORMULARIO_PESSOA.CPF.eq(cpf)));
-        query.getRg().ifPresent(rg -> conditions.add(FORMULARIO_PESSOA.RG.eq(rg)));
-        query.getEstadoCivil().ifPresent(estadoCivil ->
-            conditions.add(FORMULARIO_PESSOA.ESTADO_CIVIL.eq(org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil.valueOf(estadoCivil.name()))));
-        query.getCampus().ifPresent(campus -> conditions.add(FORMULARIO_PESSOA.CAMPUS.eq(campus)));
-        query.getRegiao().ifPresent(regiao ->
-            conditions.add(FORMULARIO_PESSOA.REGIAO.eq(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(regiao.name()))));
-        query.getDataNascimentoFrom().ifPresent(from ->
-            conditions.add(FORMULARIO_PESSOA.DATA_NASCIMENTO.greaterOrEqual(DateTimeHelper.toDb(from))));
-        query.getDataNascimentoTo().ifPresent(to ->
-            conditions.add(FORMULARIO_PESSOA.DATA_NASCIMENTO.lessOrEqual(DateTimeHelper.toDb(to))));
-        query.getTipoBatismo().ifPresent(tipoBatismo ->
-            conditions.add(FORMULARIO_PESSOA.TIPO_BATISMO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo.valueOf(tipoBatismo.name()))));
-        query.getSubcategoria().ifPresent(subcategoria ->
-            conditions.add(FORMULARIO_PESSOA.CATEGORIA_ID.eq(subcategoria.getId())));
+        if (query.getId() != null) conditions.add(FORMULARIO_PESSOA.FORMULARIO_PESSOA_ID.eq(query.getId()));
+        if (query.getIds() != null && !query.getIds().isEmpty()) conditions.add(FORMULARIO_PESSOA.FORMULARIO_PESSOA_ID.in(query.getIds()));
+        if (query.getNome() != null && !query.getNome().trim().isEmpty()) conditions.add(FORMULARIO_PESSOA.NOME.like("%" + query.getNome() + "%"));
+        if (query.getApelido() != null && !query.getApelido().trim().isEmpty()) conditions.add(FORMULARIO_PESSOA.APELIDO.like("%" + query.getApelido() + "%"));
+        if (query.getEmail() != null && !query.getEmail().trim().isEmpty()) conditions.add(FORMULARIO_PESSOA.EMAIL.eq(query.getEmail()));
+        if (query.getTelefone() != null && !query.getTelefone().trim().isEmpty()) conditions.add(FORMULARIO_PESSOA.TELEFONE.eq(query.getTelefone()));
+        if (query.getCpf() != null && !query.getCpf().trim().isEmpty()) conditions.add(FORMULARIO_PESSOA.CPF.eq(query.getCpf()));
+        if (query.getRg() != null && !query.getRg().trim().isEmpty()) conditions.add(FORMULARIO_PESSOA.RG.eq(query.getRg()));
+        if (query.getEstadoCivil() != null)
+            conditions.add(FORMULARIO_PESSOA.ESTADO_CIVIL.eq(org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil.valueOf(query.getEstadoCivil().name())));
+        if (query.getCampus() != null && !query.getCampus().trim().isEmpty()) conditions.add(FORMULARIO_PESSOA.CAMPUS.eq(query.getCampus()));
+        if (query.getRegiao() != null)
+            conditions.add(FORMULARIO_PESSOA.REGIAO.eq(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(query.getRegiao().name())));
+        if (query.getDataNascimentoFrom() != null)
+            conditions.add(FORMULARIO_PESSOA.DATA_NASCIMENTO.greaterOrEqual(DateTimeHelper.toDb(query.getDataNascimentoFrom())));
+        if (query.getDataNascimentoTo() != null)
+            conditions.add(FORMULARIO_PESSOA.DATA_NASCIMENTO.lessOrEqual(DateTimeHelper.toDb(query.getDataNascimentoTo())));
+        if (query.getTipoBatismo() != null)
+            conditions.add(FORMULARIO_PESSOA.TIPO_BATISMO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo.valueOf(query.getTipoBatismo().name())));
+        if (query.getSubcategoria() != null)
+            conditions.add(FORMULARIO_PESSOA.CATEGORIA_ID.eq(query.getSubcategoria().getId()));
         return conditions;
     }
 
