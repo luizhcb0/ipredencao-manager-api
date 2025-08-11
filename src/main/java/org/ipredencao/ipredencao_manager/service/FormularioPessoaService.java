@@ -107,7 +107,7 @@ public class FormularioPessoaService {
         
         // 4. Atualizar o formulário com o ID da pessoa criada/atualizada
         formulario.setPessoaId(pessoa.getId());
-        formulario.setStatus(FormPessoaStatus.CADASTRADO);
+        formulario.setStatus(FormPessoaStatus.VALIDADO);
         repository.update(formulario);
         
         // 5. Criar relacionamentos
