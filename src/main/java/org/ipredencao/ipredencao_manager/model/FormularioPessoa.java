@@ -33,7 +33,7 @@ public class FormularioPessoa {
     private Double longitude;
     private String fotoUrl;
     private Sexo sexo;
-    private Long chefeDeFamiliaId;
+    private String chefeDeFamilia;
     private Boolean propagarEnderecoChefeFamilia;
     private Long pessoaId;
     private SubcategoriaEnum subcategoria;
@@ -104,8 +104,8 @@ public class FormularioPessoa {
     public void setFotoUrl(String fotoUrl) { this.fotoUrl = fotoUrl; }
     public Sexo getSexo() { return sexo; }
     public void setSexo(Sexo sexo) { this.sexo = sexo; }
-    public Long getChefeDeFamiliaId() { return chefeDeFamiliaId; }
-    public void setChefeDeFamiliaId(Long chefeDeFamiliaId) { this.chefeDeFamiliaId = chefeDeFamiliaId; }
+    public String getChefeDeFamilia() { return chefeDeFamilia; }
+    public void setChefeDeFamilia(String chefeDeFamilia) { this.chefeDeFamilia = chefeDeFamilia; }
     public Boolean getPropagarEnderecoChefeFamilia() { return propagarEnderecoChefeFamilia; }
     public void setPropagarEnderecoChefeFamilia(Boolean propagarEnderecoChefeFamilia) { this.propagarEnderecoChefeFamilia = propagarEnderecoChefeFamilia; }
     public Long getPessoaId() { return pessoaId; }

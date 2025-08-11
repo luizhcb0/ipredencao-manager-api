@@ -19,6 +19,7 @@ public class FormularioPessoaQuery {
     private DateTime dataNascimentoTo;
     private TipoBatismo tipoBatismo;
     private SubcategoriaEnum subcategoria;
+    private FormPessoaStatus status;
 
     // Construtor padrão para Jackson
     public FormularioPessoaQuery() {}
@@ -40,6 +41,7 @@ public class FormularioPessoaQuery {
         this.dataNascimentoTo = builder.dataNascimentoTo;
         this.tipoBatismo = builder.tipoBatismo;
         this.subcategoria = builder.subcategoria;
+        this.status = builder.status;
     }
 
     // Builder pattern
@@ -59,6 +61,7 @@ public class FormularioPessoaQuery {
         private DateTime dataNascimentoTo;
         private TipoBatismo tipoBatismo;
         private SubcategoriaEnum subcategoria;
+        private FormPessoaStatus status;
 
         public Builder id(Long id) {
             this.id = id;
@@ -135,6 +138,11 @@ public class FormularioPessoaQuery {
             return this;
         }
 
+        public Builder status(FormPessoaStatus status) {
+            this.status = status;
+            return this;
+        }
+
         public FormularioPessoaQuery build() {
             return new FormularioPessoaQuery(this);
         }
@@ -160,6 +168,7 @@ public class FormularioPessoaQuery {
     public DateTime getDataNascimentoTo() { return dataNascimentoTo; }
     public TipoBatismo getTipoBatismo() { return tipoBatismo; }
     public SubcategoriaEnum getSubcategoria() { return subcategoria; }
+    public FormPessoaStatus getStatus() { return status; }
 
     // Setters para Jackson
     public void setId(Long id) { this.id = id; }
@@ -177,4 +186,5 @@ public class FormularioPessoaQuery {
     public void setDataNascimentoTo(DateTime dataNascimentoTo) { this.dataNascimentoTo = dataNascimentoTo; }
     public void setTipoBatismo(TipoBatismo tipoBatismo) { this.tipoBatismo = tipoBatismo; }
     public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
+    public void setStatus(FormPessoaStatus status) { this.status = status; }
 }

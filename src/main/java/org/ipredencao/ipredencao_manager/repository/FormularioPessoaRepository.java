@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.repository;
 
+import org.ipredencao.ipredencao_manager.jooq.enums.FormPessoaStatus;
 import org.ipredencao.ipredencao_manager.model.FormularioPessoa;
 import org.ipredencao.ipredencao_manager.model.FormularioPessoaQuery;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
@@ -12,7 +13,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.joda.time.DateTime;
 import static org.ipredencao.ipredencao_manager.jooq.tables.FormularioPessoa.FORMULARIO_PESSOA;
-
 import org.ipredencao.ipredencao_manager.jooq.tables.records.FormularioPessoaRecord;
 
 @Repository
@@ -86,6 +86,8 @@ public class FormularioPessoaRepository {
             conditions.add(FORMULARIO_PESSOA.TIPO_BATISMO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo.valueOf(query.getTipoBatismo().name())));
         if (query.getSubcategoria() != null)
             conditions.add(FORMULARIO_PESSOA.CATEGORIA_ID.eq(query.getSubcategoria().getId()));
+        if (query.getStatus() != null)
+            conditions.add(FORMULARIO_PESSOA.STATUS.eq(FormPessoaStatus.valueOf(query.getStatus().name())));
         return conditions;
     }
 
