@@ -1,6 +1,7 @@
 package org.ipredencao.ipredencao_manager.controller;
 
 import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoaIds;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,13 +25,14 @@ import java.util.NoSuchElementException;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/pessoas")
+@RequestMapping("/api/pessoas") // Atualizado para seguir padrão /api/*
 public class PessoaController {
     private final PessoaService pessoaService;
 
     public PessoaController(PessoaService pessoaService) {this.pessoaService = pessoaService;}
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> criarPessoa(@RequestBody Pessoa pessoa) {
         try {
             return ResponseEntity.ok(pessoaService.create(pessoa));
@@ -60,6 +62,7 @@ public class PessoaController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
         try {
             Pessoa pessoa = pessoaService.findById(id);
@@ -72,6 +75,7 @@ public class PessoaController {
     }
 
     @PostMapping("/search")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> buscarPessoas(@RequestBody PessoaQuery query) {
         try {
             List<Pessoa> pessoas = pessoaService.find(query);
@@ -82,6 +86,7 @@ public class PessoaController {
     }
     
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> atualizarPessoa(@PathVariable Long id, @RequestBody Pessoa pessoa) {
         try {
             pessoa.setId(id);
@@ -97,6 +102,7 @@ public class PessoaController {
 
     // Relacionamentos qualificados
     @PostMapping("/{id}/relacionamentos")
+    @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> criarRelacionamento(@PathVariable Long id, @RequestBody RelacionamentoPessoaIds relacionamento) {
         try {
             return ResponseEntity.ok(pessoaService.criarRelacionamento(id, relacionamento));
@@ -110,6 +116,7 @@ public class PessoaController {
     }
 
     @GetMapping("/{id}/relacionamentos")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> listarRelacionamentos(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(pessoaService.listarRelacionamentosPorPessoa(id));
@@ -124,6 +131,7 @@ public class PessoaController {
      * Lista todas as subcategorias disponíveis
      */
     @GetMapping("/subcategorias")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> getAllSubcategorias() {
         try {
             return ResponseEntity.ok(pessoaService.getAllSubcategorias());
