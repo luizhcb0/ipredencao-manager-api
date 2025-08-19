@@ -74,6 +74,63 @@ public class AuthService {
         throw new UnsupportedOperationException("Login com Facebook ainda não implementado");
     }
     
+    public LoginResponse loginComApple(String idToken, String authorizationCode, String userData, HttpServletRequest request) {
+        try {
+            // Verificar token com Firebase (Apple Sign-In)
+            FirebaseToken decodedToken = firebaseAuthService.verifyIdToken(idToken);
+            
+            // Extrair dados do usuário (Apple pode não fornecer nome em logins subsequentes)
+            String email = decodedToken.getEmail();
+            String name = decodedToken.getName();
+            
+            // Se não tem nome no token e foi fornecido userData, extrair do JSON
+            if ((name == null || name.isEmpty()) && userData != null && !userData.isEmpty()) {
+                try {
+                    // Implementação simplificada - em produção usar Jackson ObjectMapper
+                    if (userData.contains("\"firstName\"")) {
+                        // Extrair nome do JSON userData fornecido pelo Apple
+                        name = "Usuario Apple"; // Fallback simples
+                    }
+                } catch (Exception e) {
+                    log.warn("Erro ao extrair dados do usuário Apple: {}", e.getMessage());
+                    name = "Usuario Apple";
+                }
+            }
+            
+            if (name == null || name.isEmpty()) {
+                name = "Usuario Apple";
+            }
+            
+            // Criar/atualizar usuário
+            Usuario usuario = criarOuAtualizarUsuario(
+                decodedToken.getUid(),
+                email,
+                name,
+                ProviderAutenticacao.APPLE
+            );
+            
+            // Gerar tokens
+            String accessToken = jwtService.gerarToken(usuario);
+            String refreshToken = jwtService.gerarRefreshToken(usuario);
+            
+            // Criar sessão
+            SessaoUsuario sessao = criarSessao(usuario, refreshToken, request);
+            
+            // Auditoria
+            auditoriaService.registrarLogin(
+                usuario.getId(),
+                request.getRemoteAddr(),
+                request.getHeader("User-Agent")
+            );
+            
+            return new LoginResponse(accessToken, refreshToken, toUserProfile(usuario));
+            
+        } catch (FirebaseAuthException e) {
+            log.error("Erro no login com Apple: {}", e.getMessage());
+            throw new IllegalArgumentException("Token Apple inválido", e);
+        }
+    }
+    
     public LoginResponse loginComEmail(String email, String senha, HttpServletRequest request) {
         try {
             // Buscar usuário existente

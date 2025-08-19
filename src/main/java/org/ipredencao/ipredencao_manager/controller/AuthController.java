@@ -17,7 +17,7 @@ public class AuthController {
     private AuthService authService;
     
     @PostMapping("/login/google")
-    public ResponseEntity<?> loginGoogle(@RequestBody LoginGoogleRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> loginGoogle(@RequestBody org.ipredencao.ipredencao_manager.model.dto.LoginGoogleRequest request, HttpServletRequest httpRequest) {
         try {
             LoginResponse response = authService.loginComGoogle(request.getIdToken(), httpRequest);
             return ResponseEntity.ok(response);
@@ -29,7 +29,7 @@ public class AuthController {
     }
     
     @PostMapping("/login/facebook")
-    public ResponseEntity<?> loginFacebook(@RequestBody LoginFacebookRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> loginFacebook(@RequestBody org.ipredencao.ipredencao_manager.model.dto.LoginFacebookRequest request, HttpServletRequest httpRequest) {
         try {
             LoginResponse response = authService.loginComFacebook(request.getAccessToken(), httpRequest);
             return ResponseEntity.ok(response);
@@ -37,6 +37,23 @@ public class AuthController {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         } catch (UnsupportedOperationException e) {
             return ResponseEntity.status(501).body(new ErrorResponse("Funcionalidade não implementada", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
+        }
+    }
+    
+    @PostMapping("/login/apple")
+    public ResponseEntity<?> loginApple(@RequestBody LoginAppleRequest request, HttpServletRequest httpRequest) {
+        try {
+            LoginResponse response = authService.loginComApple(
+                request.getIdToken(), 
+                request.getAuthorizationCode(),
+                request.getUser(),
+                httpRequest
+            );
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
         }

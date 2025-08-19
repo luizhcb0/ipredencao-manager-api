@@ -2,7 +2,7 @@
 
 -- ENUMs para autenticação (seguindo padrão existente)
 CREATE TYPE perfil_acesso AS ENUM ('BOLETIM', 'PRESBITERO', 'ADMIN');
-CREATE TYPE provider_autenticacao AS ENUM ('GOOGLE', 'FACEBOOK', 'EMAIL');
+CREATE TYPE provider_autenticacao AS ENUM ('GOOGLE', 'FACEBOOK', 'APPLE', 'EMAIL');
 CREATE TYPE acao_auditoria AS ENUM (
     'LOGIN', 'LOGOUT', 'REGISTER', 
     'CREATE_FORMULARIO', 'UPDATE_FORMULARIO', 'DELETE_FORMULARIO',
