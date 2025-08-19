@@ -1,9 +1,8 @@
-package org.ipredencao.ipredencao_manager.model.dto;
+package org.ipredencao.ipredencao_manager.model.auth;
 
 public class LoginEmailRequest {
     
     private String email;
-    
     private String password;
     
     public LoginEmailRequest() {}

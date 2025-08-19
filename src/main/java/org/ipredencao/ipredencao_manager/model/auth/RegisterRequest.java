@@ -1,11 +1,9 @@
-package org.ipredencao.ipredencao_manager.model.dto;
+package org.ipredencao.ipredencao_manager.model.auth;
 
 public class RegisterRequest {
     
     private String name;
-    
     private String email;
-    
     private String password;
     
     public RegisterRequest() {}
