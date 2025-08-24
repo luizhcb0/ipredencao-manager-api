@@ -1,28 +1,23 @@
 package org.ipredencao.ipredencao_manager.controller;
 
 import org.ipredencao.ipredencao_manager.model.*;
-import org.ipredencao.ipredencao_manager.service.AuditoriaService;
 import org.ipredencao.ipredencao_manager.service.FormularioPessoaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
-@RequestMapping("/api/formularios") // Atualizado para seguir padrão /api/*
+@RequestMapping("/api/formulario-pessoa")
 public class FormularioPessoaController {
     
     @Autowired
     private FormularioPessoaService service;
-    
-    @Autowired
-    private AuditoriaService auditoriaService;
 
     @PostMapping
     public ResponseEntity<?> criar(@RequestBody FormularioPessoa formulario, HttpServletRequest request) {
@@ -30,12 +25,9 @@ public class FormularioPessoaController {
             FormularioPessoa criado = service.criar(formulario);
             
             // Auditoria para usuário anônimo (sem autenticação)
-            auditoriaService.registrarCriacaoFormularioAnonimo(
-                criado.getId(),
-                request.getRemoteAddr(),
-                request.getHeader("User-Agent")
-            );
-            
+            // TODO: salvar estes dados de quem criou.
+//            request.getRemoteAddr(),
+//            request.getHeader("User-Agent")
             return ResponseEntity.ok(criado);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));

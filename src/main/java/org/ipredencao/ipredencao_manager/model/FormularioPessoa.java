@@ -26,8 +26,10 @@ public class FormularioPessoa {
     private String igrejaBatismo;
     private String profissao;
     private String empresa;
-    private String endereco;
-    private String cep;
+    private String enderecoCep;
+    private String enderecoLogradouro;
+    private String enderecoNumero;
+    private String enderecoComplemento;
     private Regiao regiao;
     private Double latitude;
     private Double longitude;
@@ -90,10 +92,14 @@ public class FormularioPessoa {
     public void setProfissao(String profissao) { this.profissao = profissao; }
     public String getEmpresa() { return empresa; }
     public void setEmpresa(String empresa) { this.empresa = empresa; }
-    public String getEndereco() { return endereco; }
-    public void setEndereco(String endereco) { this.endereco = endereco; }
-    public String getCep() { return cep; }
-    public void setCep(String cep) { this.cep = cep; }
+    public String getEnderecoCep() { return enderecoCep; }
+    public void setEnderecoCep(String enderecoCep) { this.enderecoCep = enderecoCep; }
+    public String getEnderecoLogradouro() { return enderecoLogradouro; }
+    public void setEnderecoLogradouro(String enderecoLogradouro) { this.enderecoLogradouro = enderecoLogradouro; }
+    public String getEnderecoNumero() { return enderecoNumero; }
+    public void setEnderecoNumero(String enderecoNumero) { this.enderecoNumero = enderecoNumero; }
+    public String getEnderecoComplemento() { return enderecoComplemento; }
+    public void setEnderecoComplemento(String enderecoComplemento) { this.enderecoComplemento = enderecoComplemento; }
     public Regiao getRegiao() { return regiao; }
     public void setRegiao(Regiao regiao) { this.regiao = regiao; }
     public Double getLatitude() { return latitude; }
