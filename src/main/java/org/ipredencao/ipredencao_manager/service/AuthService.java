@@ -31,9 +31,6 @@ public class AuthService {
     @Autowired
     private FirebaseAuthService firebaseAuthService;
     
-    @Autowired
-    private AuditoriaService auditoriaService;
-    
     public LoginResponse loginComGoogle(String idToken, HttpServletRequest request) {
         try {
             // Verificar token com Firebase
@@ -53,13 +50,6 @@ public class AuthService {
             
             // Criar sessão
             SessaoUsuario sessao = criarSessao(usuario, refreshToken, request);
-            
-            // Auditoria
-            auditoriaService.registrarLogin(
-                usuario.getId(),
-                request.getRemoteAddr(),
-                request.getHeader("User-Agent")
-            );
             
             return new LoginResponse(accessToken, refreshToken, toUserProfile(usuario));
             
@@ -116,13 +106,6 @@ public class AuthService {
             // Criar sessão
             SessaoUsuario sessao = criarSessao(usuario, refreshToken, request);
             
-            // Auditoria
-            auditoriaService.registrarLogin(
-                usuario.getId(),
-                request.getRemoteAddr(),
-                request.getHeader("User-Agent")
-            );
-            
             return new LoginResponse(accessToken, refreshToken, toUserProfile(usuario));
             
         } catch (FirebaseAuthException e) {
@@ -130,54 +113,32 @@ public class AuthService {
             throw new IllegalArgumentException("Token Apple inválido", e);
         }
     }
-    
-    public LoginResponse loginComEmail(String email, String senha, HttpServletRequest request) {
+
+    public LoginResponse loginComEmail(String idToken, HttpServletRequest request) {
         try {
-            // Buscar usuário existente
-            Usuario usuario = usuarioRepository.findByEmail(email);
-            if (usuario == null) {
-                throw new IllegalArgumentException("Usuário não encontrado");
-            }
+            // Verificar o ID Token com Firebase Admin SDK
+            FirebaseToken decodedToken = firebaseAuthService.verifyIdToken(idToken);
             
-            // Verificar se conta não está bloqueada
-            if (usuario.isContaBloqueada()) {
-                throw new IllegalArgumentException("Conta bloqueada temporariamente");
-            }
+            // Buscar ou criar usuário no banco
+            Usuario usuario = criarOuAtualizarUsuario(
+                decodedToken.getUid(),
+                decodedToken.getEmail(),
+                decodedToken.getName(),
+                ProviderAutenticacao.EMAIL
+            );
             
-            // Verificar credenciais com Firebase
-            FirebaseToken decodedToken = firebaseAuthService.verifyIdToken(senha); // Simplificado
-            
-            // Atualizar último login
-            usuario.setLastLogin(DateTime.now());
-            usuario.resetarTentativasFalhou();
-            usuarioRepository.update(usuario);
-            
-            // Gerar tokens
+            // Gerar tokens JWT próprios
             String accessToken = jwtService.gerarToken(usuario);
             String refreshToken = jwtService.gerarRefreshToken(usuario);
             
             // Criar sessão
             SessaoUsuario sessao = criarSessao(usuario, refreshToken, request);
             
-            // Auditoria
-            auditoriaService.registrarLogin(
-                usuario.getId(),
-                request.getRemoteAddr(),
-                request.getHeader("User-Agent")
-            );
-            
             return new LoginResponse(accessToken, refreshToken, toUserProfile(usuario));
             
         } catch (FirebaseAuthException e) {
-            // Registrar tentativa de login falhada
-            Usuario usuario = usuarioRepository.findByEmail(email);
-            if (usuario != null) {
-                usuario.incrementarTentativasFalhou();
-                usuarioRepository.update(usuario);
-            }
-            
-            log.warn("Tentativa de login falhada para: {}", email);
-            throw new IllegalArgumentException("Credenciais inválidas", e);
+            log.error("Token inválido: ", e);
+            throw new IllegalArgumentException("Token inválido", e);
         }
     }
     
@@ -204,7 +165,7 @@ public class AuthService {
             usuario.setProvider(ProviderAutenticacao.EMAIL);
             usuario.setAddedAt(DateTime.now());
             usuario.setActive(true);
-            usuario.setAccessProfile(PerfilAcesso.BOLETIM); // Perfil padrão
+            usuario.setAccessProfile(PerfilAcesso.ADMIN);
             
             usuario = usuarioRepository.insert(usuario);
             
@@ -215,20 +176,10 @@ public class AuthService {
             // Criar sessão
             SessaoUsuario sessao = criarSessao(usuario, refreshToken, request);
             
-            // Auditoria
-            auditoriaService.registrarAcao(
-                usuario.getId(),
-                AcaoAuditoria.REGISTER,
-                "USUARIO",
-                usuario.getId(),
-                request.getRemoteAddr(),
-                request.getHeader("User-Agent")
-            );
-            
             return new LoginResponse(accessToken, refreshToken, toUserProfile(usuario));
             
         } catch (FirebaseAuthException e) {
-            log.error("Erro ao registrar usuário: {}", e.getMessage());
+            log.error("Erro ao registrar usuário:", e);
             throw new IllegalArgumentException("Erro ao criar usuário: " + e.getMessage(), e);
         }
     }
@@ -269,13 +220,6 @@ public class AuthService {
             if (sessao != null) {
                 sessao.setAtivo(false);
                 sessaoRepository.update(sessao);
-                
-                // Auditoria
-                auditoriaService.registrarLogout(
-                    sessao.getUsuarioId(),
-                    null,
-                    null
-                );
             }
         }
     }
@@ -315,7 +259,6 @@ public class AuthService {
         sessao.setDataCriacao(DateTime.now());
         sessao.setDataExpiracao(DateTime.now().plusDays(30)); // 30 dias
         sessao.setDataUltimoUso(DateTime.now());
-        sessao.setIpAddress(request.getRemoteAddr());
         sessao.setUserAgent(request.getHeader("User-Agent"));
         sessao.setAtivo(true);
         

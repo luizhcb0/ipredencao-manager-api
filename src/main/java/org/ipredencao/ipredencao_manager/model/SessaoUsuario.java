@@ -16,8 +16,6 @@ public class SessaoUsuario {
     
     private DateTime dataUltimoUso;
     
-    private String ipAddress;
-    
     private String userAgent;
     
     private String dispositivo;
@@ -82,14 +80,6 @@ public class SessaoUsuario {
     
     public void setDataUltimoUso(DateTime dataUltimoUso) {
         this.dataUltimoUso = dataUltimoUso;
-    }
-    
-    public String getIpAddress() {
-        return ipAddress;
-    }
-    
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
     }
     
     public String getUserAgent() {

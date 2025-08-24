@@ -19,7 +19,7 @@ public class FirebaseAuthService {
             log.debug("Token verificado para usuário: {}", decodedToken.getEmail());
             return decodedToken;
         } catch (FirebaseAuthException e) {
-            log.warn("Erro ao verificar token Firebase: {}", e.getMessage());
+            log.warn("Erro ao verificar token Firebase: {}", e);
             throw e;
         }
     }
@@ -36,7 +36,7 @@ public class FirebaseAuthService {
             log.info("Usuário criado no Firebase: {}", userRecord.getEmail());
             return userRecord;
         } catch (FirebaseAuthException e) {
-            log.error("Erro ao criar usuário no Firebase: {}", e.getMessage());
+            log.error("Erro ao criar usuário no Firebase", e);
             throw e;
         }
     }

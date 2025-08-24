@@ -85,7 +85,6 @@ public class SessaoUsuarioRepository {
         s.setDataCriacao(DateTimeHelper.fromDb(record.getDataCriacao()));
         s.setDataExpiracao(DateTimeHelper.fromDb(record.getDataExpiracao()));
         s.setDataUltimoUso(DateTimeHelper.fromDb(record.getDataUltimoUso()));
-        s.setIpAddress(record.getIpAddress() != null ? record.getIpAddress().toString() : null);
         s.setUserAgent(record.getUserAgent());
         s.setDispositivo(record.getDispositivo());
         s.setLocalizacao(record.getLocalizacao());
@@ -102,7 +101,6 @@ public class SessaoUsuarioRepository {
         record.setDataCriacao(DateTimeHelper.toDb(sessao.getDataCriacao()));
         record.setDataExpiracao(DateTimeHelper.toDb(sessao.getDataExpiracao()));
         record.setDataUltimoUso(DateTimeHelper.toDb(sessao.getDataUltimoUso()));
-        record.setIpAddress(sessao.getIpAddress());
         record.setUserAgent(sessao.getUserAgent());
         record.setDispositivo(sessao.getDispositivo());
         record.setLocalizacao(sessao.getLocalizacao());

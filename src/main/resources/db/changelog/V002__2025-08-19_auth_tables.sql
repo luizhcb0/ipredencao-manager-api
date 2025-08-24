@@ -33,24 +33,10 @@ CREATE TABLE IF NOT EXISTS sessoes_usuario (
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     data_expiracao TIMESTAMP NOT NULL,
     data_ultimo_uso TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ip_address INET,
     user_agent TEXT,
     dispositivo VARCHAR(100),
     localizacao VARCHAR(100),
     ativo BOOLEAN NOT NULL DEFAULT TRUE
-);
-
-CREATE TABLE IF NOT EXISTS auditoria_usuario (
-    id BIGSERIAL PRIMARY KEY,
-    usuario_id BIGINT REFERENCES usuarios(id),
-    acao acao_auditoria NOT NULL,
-    recurso VARCHAR(100),
-    recurso_id BIGINT,
-    detalhes JSONB,
-    ip_address INET,
-    user_agent TEXT,
-    is_anonymous BOOLEAN DEFAULT FALSE,
-    data_acao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Índices para performance
@@ -59,8 +45,6 @@ CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
 CREATE INDEX IF NOT EXISTS idx_usuarios_perfil_ativo ON usuarios(access_profile, active);
 CREATE INDEX IF NOT EXISTS idx_sessoes_usuario_id ON sessoes_usuario(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_sessoes_ativo_expiracao ON sessoes_usuario(ativo, data_expiracao);
-CREATE INDEX IF NOT EXISTS idx_auditoria_usuario_data ON auditoria_usuario(usuario_id, data_acao);
-CREATE INDEX IF NOT EXISTS idx_auditoria_acao_data ON auditoria_usuario(acao, data_acao);
 
 -- Trigger para updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
