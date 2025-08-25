@@ -67,7 +67,7 @@ public class AuthController {
     @PostMapping("/login/email")
     public ResponseEntity<?> loginEmail(@RequestBody LoginEmailRequest request, HttpServletRequest httpRequest) {
         try {
-            LoginResponse response = authService.loginComEmail(request.getEmail(), request.getPassword(), httpRequest);
+            LoginResponse response = authService.loginComEmail(request.getIdToken(), httpRequest);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
