@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 public class JwtConfig {
     
     private String secret;
-    private long expiration = 3600; // 1 hora em segundos
+    private long expiration = 36000; // 10 horas em segundos
     private long refreshExpiration = 2592000; // 30 dias em segundos
     private String issuer = "ipredencao-manager";
     
