@@ -2,29 +2,19 @@ package org.ipredencao.ipredencao_manager.model.auth;
 
 public class LoginEmailRequest {
     
-    private String email;
-    private String password;
+    private String idToken;
     
     public LoginEmailRequest() {}
     
-    public LoginEmailRequest(String email, String password) {
-        this.email = email;
-        this.password = password;
+    public LoginEmailRequest(String idToken) {
+        this.idToken = idToken;
     }
     
-    public String getEmail() {
-        return email;
+    public String getIdToken() {
+        return idToken;
     }
     
-    public void setEmail(String email) {
-        this.email = email;
-    }
-    
-    public String getPassword() {
-        return password;
-    }
-    
-    public void setPassword(String password) {
-        this.password = password;
+    public void setIdToken(String idToken) {
+        this.idToken = idToken;
     }
 }
