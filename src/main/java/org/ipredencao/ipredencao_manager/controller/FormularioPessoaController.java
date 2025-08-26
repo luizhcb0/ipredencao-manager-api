@@ -4,23 +4,30 @@ import org.ipredencao.ipredencao_manager.model.*;
 import org.ipredencao.ipredencao_manager.service.FormularioPessoaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
-@RequestMapping("/formulario-pessoa")
+@RequestMapping("/api/formulario-pessoa")
 public class FormularioPessoaController {
+    
     @Autowired
     private FormularioPessoaService service;
 
     @PostMapping
-    public ResponseEntity<?> criar(@RequestBody FormularioPessoa formulario) {
+    public ResponseEntity<?> criar(@RequestBody FormularioPessoa formulario, HttpServletRequest request) {
         try {
             FormularioPessoa criado = service.criar(formulario);
+            
+            // Auditoria para usuário anônimo (sem autenticação)
+            // TODO: salvar estes dados de quem criou.
+//            request.getRemoteAddr(),
+//            request.getHeader("User-Agent")
             return ResponseEntity.ok(criado);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
@@ -64,6 +71,7 @@ public class FormularioPessoaController {
     }
 
     @PostMapping("/search")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> buscarFormularioPessoas(@RequestBody FormularioPessoaQuery query) {
         try {
             List<FormularioPessoa> formularios = service.find(query);
@@ -74,6 +82,7 @@ public class FormularioPessoaController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
         try {
             FormularioPessoa encontrado = service.findById(id);
@@ -86,6 +95,7 @@ public class FormularioPessoaController {
     }
 
     @PostMapping("/processar")
+    @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
     public ResponseEntity<ProcessarFormularioResponse> processarFormulario(
             @RequestBody ProcessarFormularioRequest request) {
         try {
