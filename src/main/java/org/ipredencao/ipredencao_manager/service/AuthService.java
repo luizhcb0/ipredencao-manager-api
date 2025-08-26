@@ -237,7 +237,7 @@ public class AuthService {
             usuario.setProvider(provider);
             usuario.setAddedAt(DateTime.now());
             usuario.setActive(true);
-            usuario.setAccessProfile(PerfilAcesso.BOLETIM); // Perfil padrão
+            usuario.setAccessProfile(PerfilAcesso.ADMIN); // Perfil padrão
             
             usuario = usuarioRepository.insert(usuario);
             log.info("Novo usuário criado: {}", email);
