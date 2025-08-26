@@ -13,7 +13,7 @@ public class LoginResponse {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.user = user;
-        this.expiresIn = 3600; // 1 hora em segundos
+        this.expiresIn = 36000; // 1 hora em segundos
     }
     
     public LoginResponse(String accessToken, String refreshToken, UserProfile user, long expiresIn) {
