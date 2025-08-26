@@ -33,7 +33,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Endpoints públicos
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/formularios").permitAll() // Anônimo pode CRIAR
+                .requestMatchers(HttpMethod.POST, "/api/formulario-pessoa").permitAll() // Anônimo pode CRIAR
                 
                 // Actuator endpoints
                 .requestMatchers("/actuator/health").permitAll()
@@ -43,9 +43,9 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 
                 // Formulários (autenticados)
-                .requestMatchers(HttpMethod.GET, "/api/formularios/**").hasAnyRole("BOLETIM", "PRESBITERO", "ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/formularios/**").hasAnyRole("PRESBITERO", "ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/formularios/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/formulario-pessoa/**").hasAnyRole("BOLETIM", "PRESBITERO", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/formulario-pessoa/**").hasAnyRole("PRESBITERO", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/formulario-pessoa/**").hasRole("ADMIN")
                 
                 // Pessoas (apenas autenticados)
                 .requestMatchers(HttpMethod.GET, "/api/pessoas/**").hasAnyRole("BOLETIM", "PRESBITERO", "ADMIN")
