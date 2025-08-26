@@ -156,8 +156,10 @@ public class FormularioPessoaService {
         
         // Propagar endereço do chefe de família se solicitado
         if (Boolean.TRUE.equals(formulario.getPropagarEnderecoChefeFamilia()) && chefeFamilia != null) {
-            pessoa.setEndereco(chefeFamilia.getEndereco());
-            pessoa.setCep(chefeFamilia.getCep());
+            pessoa.setEnderecoCep(chefeFamilia.getEnderecoCep());
+            pessoa.setEnderecoLogradouro(chefeFamilia.getEnderecoLogradouro());
+            pessoa.setEnderecoNumero(chefeFamilia.getEnderecoNumero());
+            pessoa.setEnderecoComplemento(chefeFamilia.getEnderecoComplemento());
             pessoa.setLatitude(chefeFamilia.getLatitude());
             pessoa.setLongitude(chefeFamilia.getLongitude());
             pessoa.setRegiao(chefeFamilia.getRegiao());
@@ -189,8 +191,10 @@ public class FormularioPessoaService {
         pessoa.setIgrejaBatismo(formulario.getIgrejaBatismo());
         pessoa.setProfissao(formulario.getProfissao());
         pessoa.setEmpresa(formulario.getEmpresa());
-        pessoa.setEndereco(formulario.getEndereco());
-        pessoa.setCep(formulario.getCep());
+        pessoa.setEnderecoCep(formulario.getEnderecoCep());
+        pessoa.setEnderecoLogradouro(formulario.getEnderecoLogradouro());
+        pessoa.setEnderecoNumero(formulario.getEnderecoNumero());
+        pessoa.setEnderecoComplemento(formulario.getEnderecoComplemento());
         pessoa.setRegiao(formulario.getRegiao());
         pessoa.setLatitude(formulario.getLatitude());
         pessoa.setLongitude(formulario.getLongitude());

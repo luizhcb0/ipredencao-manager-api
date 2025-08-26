@@ -1,6 +1,6 @@
 package org.ipredencao.ipredencao_manager.model;
 
-import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoa;
+import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoaIds;
 import org.joda.time.DateTime;
 import java.util.List;
 
@@ -27,8 +27,10 @@ public class Pessoa {
     private String igrejaBatismo;
     private String profissao;
     private String empresa;
-    private String endereco;
-    private String cep;
+    private String enderecoCep;
+    private String enderecoLogradouro;
+    private String enderecoNumero;
+    private String enderecoComplemento;
     private Regiao regiao;
     private Double latitude;
     private Double longitude;
@@ -38,7 +40,7 @@ public class Pessoa {
     private SubcategoriaEnum subcategoria;
 
     // Relacionamentos qualificados com outras pessoas
-    private List<RelacionamentoPessoa> relacionamentos;
+    private List<RelacionamentoPessoaIds> relacionamentos;
 
     // getters e setters
     public Long getId() { return id; }
@@ -85,10 +87,14 @@ public class Pessoa {
     public void setProfissao(String profissao) { this.profissao = profissao; }
     public String getEmpresa() { return empresa; }
     public void setEmpresa(String empresa) { this.empresa = empresa; }
-    public String getEndereco() { return endereco; }
-    public void setEndereco(String endereco) { this.endereco = endereco; }
-    public String getCep() { return cep; }
-    public void setCep(String cep) { this.cep = cep; }
+    public String getEnderecoCep() { return enderecoCep; }
+    public void setEnderecoCep(String enderecoCep) { this.enderecoCep = enderecoCep; }
+    public String getEnderecoLogradouro() { return enderecoLogradouro; }
+    public void setEnderecoLogradouro(String enderecoLogradouro) { this.enderecoLogradouro = enderecoLogradouro; }
+    public String getEnderecoNumero() { return enderecoNumero; }
+    public void setEnderecoNumero(String enderecoNumero) { this.enderecoNumero = enderecoNumero; }
+    public String getEnderecoComplemento() { return enderecoComplemento; }
+    public void setEnderecoComplemento(String enderecoComplemento) { this.enderecoComplemento = enderecoComplemento; }
     public Regiao getRegiao() { return regiao; }
     public void setRegiao(Regiao regiao) { this.regiao = regiao; }
     public Double getLatitude() { return latitude; }
@@ -103,7 +109,7 @@ public class Pessoa {
     public void setChefeDeFamiliaId(Long chefeDeFamiliaId) { this.chefeDeFamiliaId = chefeDeFamiliaId; }
     public SubcategoriaEnum getSubcategoria() { return subcategoria; }
     public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
-    public List<RelacionamentoPessoa> getRelacionamentos() { return relacionamentos; }
-    public void setRelacionamentos(List<RelacionamentoPessoa> relacionamentos) { this.relacionamentos = relacionamentos; }
+    public List<RelacionamentoPessoaIds> getRelacionamentos() { return relacionamentos; }
+    public void setRelacionamentos(List<RelacionamentoPessoaIds> relacionamentos) { this.relacionamentos = relacionamentos; }
 
 }
