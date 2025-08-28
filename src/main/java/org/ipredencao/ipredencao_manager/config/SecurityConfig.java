@@ -51,6 +51,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/pessoas/**").hasAnyRole("BOLETIM", "PRESBITERO", "ADMIN")
                 .requestMatchers("/api/pessoas/**").hasAnyRole("PRESBITERO", "ADMIN")
                 
+                // Relatórios (apenas autenticados)
+                .requestMatchers("/api/reports/**").hasAnyRole("BOLETIM", "PRESBITERO", "ADMIN")
+                
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
