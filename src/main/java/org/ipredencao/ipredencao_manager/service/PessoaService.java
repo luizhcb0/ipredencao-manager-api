@@ -1,12 +1,15 @@
 package org.ipredencao.ipredencao_manager.service;
 
-import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoaIds;
+import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistory;
+import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.RelacionamentoPessoaIds;
 import org.springframework.stereotype.Service;
 import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
-import org.ipredencao.ipredencao_manager.model.Pessoa;
-import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoa;
-import org.ipredencao.ipredencao_manager.model.PessoaQuery;
-import org.ipredencao.ipredencao_manager.model.SubcategoriaEnum;
+import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
+import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.RelacionamentoPessoa;
+import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
+import org.ipredencao.ipredencao_manager.model.pessoa.SubcategoriaEnum;
+import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistoryResponse;
+import org.ipredencao.ipredencao_manager.util.SecurityUtils;
 import java.util.List;
 import java.util.NoSuchElementException;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,18 +22,29 @@ public class PessoaService {
     private PessoaRepository pessoaRepository;
     @Autowired
     private S3Service s3Service;
+    @Autowired
+    private SecurityUtils securityUtils;
 
     public PessoaService(PessoaRepository pessoaRepository) {
         this.pessoaRepository = pessoaRepository;
     }
 
     public Pessoa create(Pessoa pessoa) {
+        // Definir quem criou a pessoa
+        Long currentUserId = securityUtils.getCurrentUserId();
+        pessoa.setUpdatedByUserId(currentUserId);
+        
         return pessoaRepository.insert(pessoa);
     }
 
     public Pessoa savePhoto(Pessoa pessoa, MultipartFile foto) throws IOException {
         String fotoUrl = s3Service.uploadPhoto(pessoa.getId(), foto);
         pessoa.setFotoUrl(fotoUrl);
+        
+        // Definir quem atualizou a pessoa
+        Long currentUserId = securityUtils.getCurrentUserId();
+        pessoa.setUpdatedByUserId(currentUserId);
+        
         return pessoaRepository.update(pessoa);
     }
 
@@ -47,6 +61,10 @@ public class PessoaService {
     }
 
     public Pessoa update(Pessoa pessoa) {
+        // Definir quem atualizou a pessoa
+        Long currentUserId = securityUtils.getCurrentUserId();
+        pessoa.setUpdatedByUserId(currentUserId);
+        
         return pessoaRepository.update(pessoa);
     }
 
@@ -64,5 +82,12 @@ public class PessoaService {
      */
     public SubcategoriaEnum[] getAllSubcategorias() {
         return SubcategoriaEnum.values();
+    }
+    
+    /**
+     * Busca o histórico de alterações de uma pessoa
+     */
+    public List<PessoaHistory> findHistoryById(Long id) {
+        return pessoaRepository.findHistoryByPessoaId(id);
     }
 }

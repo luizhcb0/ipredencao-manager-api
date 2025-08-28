@@ -1,5 +1,9 @@
 package org.ipredencao.ipredencao_manager.controller;
 
+import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoa;
+import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoaQuery;
+import org.ipredencao.ipredencao_manager.model.formulario_pessoa.ProcessarFormularioRequest;
+import org.ipredencao.ipredencao_manager.model.formulario_pessoa.ProcessarFormularioResponse;
 import org.ipredencao.ipredencao_manager.model.*;
 import org.ipredencao.ipredencao_manager.service.FormularioPessoaService;
 import org.springframework.beans.factory.annotation.Autowired;

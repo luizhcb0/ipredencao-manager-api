@@ -1,7 +1,14 @@
 package org.ipredencao.ipredencao_manager.controller;
 
 import org.ipredencao.ipredencao_manager.model.ErrorResponse;
-import org.ipredencao.ipredencao_manager.model.auth.*;
+import org.ipredencao.ipredencao_manager.model.auth.dto.LoginAppleRequest;
+import org.ipredencao.ipredencao_manager.model.auth.dto.LoginEmailRequest;
+import org.ipredencao.ipredencao_manager.model.auth.dto.LoginFacebookRequest;
+import org.ipredencao.ipredencao_manager.model.auth.dto.LoginGoogleRequest;
+import org.ipredencao.ipredencao_manager.model.auth.dto.LoginResponse;
+import org.ipredencao.ipredencao_manager.model.auth.dto.LogoutRequest;
+import org.ipredencao.ipredencao_manager.model.auth.dto.RefreshTokenRequest;
+import org.ipredencao.ipredencao_manager.model.auth.dto.RegisterRequest;
 import org.ipredencao.ipredencao_manager.service.AuthService;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

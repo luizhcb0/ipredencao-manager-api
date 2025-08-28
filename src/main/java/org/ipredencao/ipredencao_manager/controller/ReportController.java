@@ -1,6 +1,8 @@
 package org.ipredencao.ipredencao_manager.controller;
 
 import org.ipredencao.ipredencao_manager.model.*;
+import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
+import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.ipredencao.ipredencao_manager.service.ReportService;
 import org.ipredencao.ipredencao_manager.service.PessoaService;
 import org.slf4j.Logger;

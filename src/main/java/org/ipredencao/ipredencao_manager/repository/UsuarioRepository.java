@@ -1,10 +1,10 @@
 package org.ipredencao.ipredencao_manager.repository;
 
 import org.ipredencao.ipredencao_manager.jooq.tables.records.UsuariosRecord;
-import org.ipredencao.ipredencao_manager.model.PerfilAcesso;
-import org.ipredencao.ipredencao_manager.model.ProviderAutenticacao;
-import org.ipredencao.ipredencao_manager.model.Usuario;
-import org.ipredencao.ipredencao_manager.model.UsuarioQuery;
+import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
+import org.ipredencao.ipredencao_manager.model.auth.ProviderAutenticacao;
+import org.ipredencao.ipredencao_manager.model.user.Usuario;
+import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
 import org.joda.time.DateTime;
 import org.jooq.Condition;

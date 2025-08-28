@@ -1,6 +1,10 @@
 package org.ipredencao.ipredencao_manager.service;
 
+import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoa;
+import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoaQuery;
 import org.ipredencao.ipredencao_manager.model.*;
+import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
+import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.ipredencao.ipredencao_manager.repository.FormularioPessoaRepository;
 import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
 import org.slf4j.Logger;

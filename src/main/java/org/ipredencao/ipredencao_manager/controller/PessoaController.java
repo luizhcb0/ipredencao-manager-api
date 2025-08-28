@@ -1,6 +1,9 @@
 package org.ipredencao.ipredencao_manager.controller;
 
-import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoaIds;
+import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistory;
+import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.RelacionamentoPessoaIds;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,17 +15,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
 import org.ipredencao.ipredencao_manager.model.ErrorResponse;
-import org.ipredencao.ipredencao_manager.model.Pessoa;
-import org.ipredencao.ipredencao_manager.model.PessoaQuery;
-import org.ipredencao.ipredencao_manager.model.SubcategoriaEnum;
+import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
+import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
+import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistoryResponse;
 import org.ipredencao.ipredencao_manager.service.PessoaService;
 import java.util.List;
-import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoa;
 import java.io.IOException;
 import java.util.NoSuchElementException;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/pessoas") // Atualizado para seguir padrão /api/*
@@ -30,6 +30,8 @@ public class PessoaController {
     private final PessoaService pessoaService;
 
     public PessoaController(PessoaService pessoaService) {this.pessoaService = pessoaService;}
+
+    private static final Logger log = LoggerFactory.getLogger(PessoaController.class);
 
     @PostMapping
     @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
@@ -135,6 +137,23 @@ public class PessoaController {
     public ResponseEntity<?> getAllSubcategorias() {
         try {
             return ResponseEntity.ok(pessoaService.getAllSubcategorias());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
+        }
+    }
+
+    /**
+     * Busca o histórico de alterações de uma pessoa por ID
+     */
+    @GetMapping("/{id}/history")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
+    public ResponseEntity<?> buscarHistoricoPorId(@PathVariable Long id) {
+        try {
+            List<PessoaHistory> history = pessoaService.findHistoryById(id);
+            PessoaHistoryResponse pessoaHistoryResponse = new PessoaHistoryResponse(id, history);
+            return ResponseEntity.ok(pessoaHistoryResponse);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(404).body(new ErrorResponse("Pessoa não encontrada"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
         }

@@ -5,7 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.ipredencao.ipredencao_manager.config.JwtConfig;
-import org.ipredencao.ipredencao_manager.model.Usuario;
+import org.ipredencao.ipredencao_manager.model.user.Usuario;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +30,10 @@ public class JwtService {
     
     public String extrairRole(String token) {
         return extrairClaim(token, claims -> claims.get("role", String.class));
+    }
+    
+    public Long extrairUserId(String token) {
+        return extrairClaim(token, claims -> claims.get("userId", Long.class));
     }
     
     public <T> T extrairClaim(String token, Function<Claims, T> claimsResolver) {

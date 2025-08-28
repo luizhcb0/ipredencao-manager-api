@@ -198,14 +198,12 @@ CREATE TABLE IF NOT EXISTS pessoa (
     profissao VARCHAR(100),
     empresa VARCHAR(100),
     regiao regiao,
---  Pode ser extraído de link do google.
-    latitude NUMERIC(10,8),
-    longitude NUMERIC(11,8),
     foto_url VARCHAR(500),
     chefe_de_familia BIGINT REFERENCES pessoa(pessoa_id),
     categoria_id BIGINT REFERENCES subcategoria(id),
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_by BIGINT
 );
 
 CREATE TABLE IF NOT EXISTS pessoa_history (
@@ -240,13 +238,11 @@ CREATE TABLE IF NOT EXISTS pessoa_history (
     profissao VARCHAR(100),
     empresa VARCHAR(100),
     regiao regiao,
---  Pode ser extraído de link do google.
-    latitude NUMERIC(10,8),
-    longitude NUMERIC(11,8),
     foto_url VARCHAR(500),
     chefe_de_familia BIGINT REFERENCES pessoa(pessoa_id),
     categoria_id BIGINT REFERENCES subcategoria(id),
-    added_at TIMESTAMP NOT NULL DEFAULT NOW()
+    added_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_by BIGINT
 );
 
 -- Tabela de relacionamento entre pessoas
@@ -302,8 +298,6 @@ CREATE TABLE IF NOT EXISTS formulario_pessoa (
     profissao VARCHAR(100),
     empresa VARCHAR(100),
     regiao regiao,
-    latitude NUMERIC(10,8),
-    longitude NUMERIC(11,8),
     foto_url VARCHAR(500),
     chefe_de_familia VARCHAR(255),
     propagar_endereco_chefe_familia BOOLEAN,
