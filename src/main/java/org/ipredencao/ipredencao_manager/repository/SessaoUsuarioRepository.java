@@ -1,7 +1,7 @@
 package org.ipredencao.ipredencao_manager.repository;
 
 import org.ipredencao.ipredencao_manager.jooq.tables.records.SessoesUsuarioRecord;
-import org.ipredencao.ipredencao_manager.model.SessaoUsuario;
+import org.ipredencao.ipredencao_manager.model.user.SessaoUsuario;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
 import org.joda.time.DateTime;
 import org.jooq.DSLContext;

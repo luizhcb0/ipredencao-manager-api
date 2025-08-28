@@ -1,8 +1,15 @@
 package org.ipredencao.ipredencao_manager.service;
 
-import org.ipredencao.ipredencao_manager.model.*;
-import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoa;
-import org.ipredencao.ipredencao_manager.model.relacionamento_pessoa.RelacionamentoPessoaIds;
+import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoa;
+import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoaQuery;
+import org.ipredencao.ipredencao_manager.model.formulario_pessoa.ProcessarFormularioRequest;
+import org.ipredencao.ipredencao_manager.model.formulario_pessoa.ProcessarFormularioResponse;
+import org.ipredencao.ipredencao_manager.model.pessoa.EstadoCivil;
+import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
+import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
+import org.ipredencao.ipredencao_manager.model.pessoa.TipoRelacionamento;
+import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.RelacionamentoPessoa;
+import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.RelacionamentoPessoaIds;
 import org.ipredencao.ipredencao_manager.repository.FormularioPessoaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -160,8 +167,6 @@ public class FormularioPessoaService {
             pessoa.setEnderecoLogradouro(chefeFamilia.getEnderecoLogradouro());
             pessoa.setEnderecoNumero(chefeFamilia.getEnderecoNumero());
             pessoa.setEnderecoComplemento(chefeFamilia.getEnderecoComplemento());
-            pessoa.setLatitude(chefeFamilia.getLatitude());
-            pessoa.setLongitude(chefeFamilia.getLongitude());
             pessoa.setRegiao(chefeFamilia.getRegiao());
             pessoa = pessoaService.update(pessoa);
         }
@@ -196,8 +201,6 @@ public class FormularioPessoaService {
         pessoa.setEnderecoNumero(formulario.getEnderecoNumero());
         pessoa.setEnderecoComplemento(formulario.getEnderecoComplemento());
         pessoa.setRegiao(formulario.getRegiao());
-        pessoa.setLatitude(formulario.getLatitude());
-        pessoa.setLongitude(formulario.getLongitude());
         pessoa.setFotoUrl(formulario.getFotoUrl());
         pessoa.setSexo(formulario.getSexo());
         pessoa.setSubcategoria(formulario.getSubcategoria());

@@ -1,0 +1,14 @@
+package org.ipredencao.ipredencao_manager.model.pessoa;
+
+public enum EstadoCivil {
+    CASADO,
+    SOLTEIRO_SEM_RELACIONAMENTO,
+    SOLTEIRO_NAMORANDO,
+    SOLTEIRO_NOIVO,
+    DIVORCIADO_SEM_RELACIONAMENTO,
+    DIVORCIADO_NAMORANDO,
+    DIVORCIADO_NOIVO,
+    VIUVO_SEM_RELACIONAMENTO,
+    VIUVO_NAMORANDO,
+    VIUVO_NOIVO
+}

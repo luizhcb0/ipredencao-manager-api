@@ -2,8 +2,12 @@ package org.ipredencao.ipredencao_manager.service;
 
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
-import org.ipredencao.ipredencao_manager.model.*;
 import org.ipredencao.ipredencao_manager.model.auth.*;
+import org.ipredencao.ipredencao_manager.model.auth.dto.LoginResponse;
+import org.ipredencao.ipredencao_manager.model.auth.dto.RegisterRequest;
+import org.ipredencao.ipredencao_manager.model.user.SessaoUsuario;
+import org.ipredencao.ipredencao_manager.model.user.Usuario;
+import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
 import org.ipredencao.ipredencao_manager.repository.SessaoUsuarioRepository;
 import org.ipredencao.ipredencao_manager.repository.UsuarioRepository;
 import org.joda.time.DateTime;

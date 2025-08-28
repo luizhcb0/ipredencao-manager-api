@@ -1,8 +1,13 @@
 package org.ipredencao.ipredencao_manager.repository;
 
 import org.ipredencao.ipredencao_manager.jooq.enums.FormPessoaStatus;
-import org.ipredencao.ipredencao_manager.model.FormularioPessoa;
-import org.ipredencao.ipredencao_manager.model.FormularioPessoaQuery;
+import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoa;
+import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoaQuery;
+import org.ipredencao.ipredencao_manager.model.pessoa.EstadoCivil;
+import org.ipredencao.ipredencao_manager.model.pessoa.Regiao;
+import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
+import org.ipredencao.ipredencao_manager.model.pessoa.SubcategoriaEnum;
+import org.ipredencao.ipredencao_manager.model.pessoa.TipoBatismo;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -104,13 +109,13 @@ public class FormularioPessoaRepository {
         f.setCpf(record.getCpf());
         f.setRg(record.getRg());
         if (record.getEstadoCivil() != null)
-            f.setEstadoCivil(org.ipredencao.ipredencao_manager.model.EstadoCivil.valueOf(record.getEstadoCivil().name()));
+            f.setEstadoCivil(EstadoCivil.valueOf(record.getEstadoCivil().name()));
         f.setIgrejaAnterior(record.getIgrejaAnterior());
         f.setSituacaoIgrejaAnterior(record.getSituacaoIgrejaAnterior());
         f.setTempoNaIgreja(record.getTempoNaIgreja());
         f.setMotivosParaAdmissao(record.getMotivosParaAdmissao());
         if (record.getTipoBatismo() != null)
-            f.setTipoBatismo(org.ipredencao.ipredencao_manager.model.TipoBatismo.valueOf(record.getTipoBatismo().name()));
+            f.setTipoBatismo(TipoBatismo.valueOf(record.getTipoBatismo().name()));
         f.setDataBatismo(DateTimeHelper.fromDb(record.getDataBatismo()));
         f.setDataProfissaoDeFe(DateTimeHelper.fromDb(record.getDataProfissaoDeFe()));
         f.setIgrejaBatismo(record.getIgrejaBatismo());
@@ -121,17 +126,15 @@ public class FormularioPessoaRepository {
         f.setEnderecoNumero(record.getEnderecoNumero());
         f.setEnderecoComplemento(record.getEnderecoComplemento());
         if (record.getRegiao() != null)
-            f.setRegiao(org.ipredencao.ipredencao_manager.model.Regiao.valueOf(record.getRegiao().name()));
-        f.setLatitude(record.getLatitude() != null ? record.getLatitude().doubleValue() : null);
-        f.setLongitude(record.getLongitude() != null ? record.getLongitude().doubleValue() : null);
+            f.setRegiao(Regiao.valueOf(record.getRegiao().name()));
         f.setFotoUrl(record.getFotoUrl());
         if (record.getSexo() != null)
-            f.setSexo(org.ipredencao.ipredencao_manager.model.Sexo.valueOf(record.getSexo().name()));
+            f.setSexo(Sexo.valueOf(record.getSexo().name()));
         // chefeDeFamilia: no formulário é String, na model é Long. Não mapeia diretamente.
         f.setPropagarEnderecoChefeFamilia(record.getPropagarEnderecoChefeFamilia());
         f.setPessoaId(record.getPessoaId());
         if (record.getCategoriaId() != null)
-            f.setSubcategoria(org.ipredencao.ipredencao_manager.model.SubcategoriaEnum.fromId(record.getCategoriaId()));
+            f.setSubcategoria(SubcategoriaEnum.fromId(record.getCategoriaId()));
         if (record.getEmailsSecundarios() != null) {
             f.setEmailsSecundarios(java.util.Arrays.asList(record.getEmailsSecundarios()));
         }
@@ -145,7 +148,7 @@ public class FormularioPessoaRepository {
         f.setNomeMae(record.getNomeMae());
         f.setNomeFilhos(record.getNomeFilhos() != null ? java.util.Arrays.asList(record.getNomeFilhos()) : null);
         if (record.getStatus() != null)
-            f.setStatus(org.ipredencao.ipredencao_manager.model.FormPessoaStatus.valueOf(record.getStatus().name()));
+            f.setStatus(org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus.valueOf(record.getStatus().name()));
         return f;
     }
 
@@ -179,8 +182,6 @@ public class FormularioPessoaRepository {
         record.setEnderecoComplemento(f.getEnderecoComplemento());
         if (f.getRegiao() != null)
             record.setRegiao(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(f.getRegiao().name()));
-        if (f.getLatitude() != null) record.setLatitude(java.math.BigDecimal.valueOf(f.getLatitude()));
-        if (f.getLongitude() != null) record.setLongitude(java.math.BigDecimal.valueOf(f.getLongitude()));
         record.setFotoUrl(f.getFotoUrl());
         if (f.getSexo() != null)
             record.setSexo(org.ipredencao.ipredencao_manager.jooq.enums.Sexo.valueOf(f.getSexo().name()));
