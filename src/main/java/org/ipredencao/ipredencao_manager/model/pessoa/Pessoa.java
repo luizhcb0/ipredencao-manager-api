@@ -1,6 +1,6 @@
 package org.ipredencao.ipredencao_manager.model.pessoa;
 
-import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.RelacionamentoPessoaIds;
+import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
 import org.joda.time.DateTime;
 import java.util.List;
 
@@ -38,8 +38,8 @@ public class Pessoa {
     private SubcategoriaEnum subcategoria;
     private Long updatedByUserId;
 
-    // Relacionamentos qualificados com outras pessoas
-    private List<RelacionamentoPessoaIds> relacionamentos;
+    // Relacionamento qualificados com outras pessoas
+    private List<Relacionamento> relacionamentos;
 
     // getters e setters
     public Long getId() { return id; }
@@ -104,8 +104,8 @@ public class Pessoa {
     public void setChefeDeFamiliaId(Long chefeDeFamiliaId) { this.chefeDeFamiliaId = chefeDeFamiliaId; }
     public SubcategoriaEnum getSubcategoria() { return subcategoria; }
     public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
-    public List<RelacionamentoPessoaIds> getRelacionamentos() { return relacionamentos; }
-    public void setRelacionamentos(List<RelacionamentoPessoaIds> relacionamentos) { this.relacionamentos = relacionamentos; }
+    public List<Relacionamento> getRelacionamentos() { return relacionamentos; }
+    public void setRelacionamentos(List<Relacionamento> relacionamentos) { this.relacionamentos = relacionamentos; }
     public Long getUpdatedByUserId() { return updatedByUserId; }
     public void setUpdatedByUserId(Long updatedByUserId) { this.updatedByUserId = updatedByUserId; }
 }

@@ -8,8 +8,7 @@ import org.ipredencao.ipredencao_manager.model.pessoa.EstadoCivil;
 import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoRelacionamento;
-import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.RelacionamentoPessoa;
-import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.RelacionamentoPessoaIds;
+import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
 import org.ipredencao.ipredencao_manager.repository.FormularioPessoaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -118,7 +117,7 @@ public class FormularioPessoaService {
         repository.update(formulario);
         
         // 5. Criar relacionamentos
-        List<RelacionamentoPessoa> relacionamentos = criarRelacionamentos(pessoa, formulario, pessoaRelacionada, filhos, pessoasRelacionamentos);
+        List<Relacionamento> relacionamentos = criarRelacionamentos(pessoa, formulario, pessoaRelacionada, filhos, pessoasRelacionamentos);
         
         String mensagem = request.getPessoaId() != null ? 
             "Pessoa atualizada e relacionamentos criados com sucesso" : 
@@ -206,14 +205,14 @@ public class FormularioPessoaService {
         pessoa.setSubcategoria(formulario.getSubcategoria());
     }
 
-    private List<RelacionamentoPessoa> criarRelacionamentos(Pessoa pessoa, FormularioPessoa formulario, 
+    private List<Relacionamento> criarRelacionamentos(Pessoa pessoa, FormularioPessoa formulario,
                                                            Pessoa pessoaRelacionada, List<Pessoa> filhos, List<Pessoa> pessoasRelacionamentos) {
-        List<RelacionamentoPessoa> relacionamentos = new ArrayList<>();
+        List<Relacionamento> relacionamentos = new ArrayList<>();
         
         // Relacionamento com pessoa relacionada
         if (pessoaRelacionada != null) {
             TipoRelacionamento tipoRelacionamento = determinarTipoRelacionamentoParceiro(formulario.getEstadoCivil());
-            RelacionamentoPessoaIds rel = new RelacionamentoPessoaIds();
+            Relacionamento rel = new Relacionamento();
             rel.setPessoaId(pessoa.getId());
             rel.setPessoaRelacionadaId(pessoaRelacionada.getId());
             rel.setTipoRelacionamento(tipoRelacionamento);
@@ -221,20 +220,20 @@ public class FormularioPessoaService {
             relacionamentos.add(pessoaService.criarRelacionamento(pessoa.getId(), rel));
         }
         
-        // Relacionamentos com filhos
+        // Relacionamento com filhos
         for (Pessoa filho : filhos) {
-            RelacionamentoPessoaIds rel = new RelacionamentoPessoaIds();
+            Relacionamento rel = new Relacionamento();
             rel.setPessoaId(pessoa.getId());
             rel.setPessoaRelacionadaId(filho.getId());
             rel.setTipoRelacionamento(TipoRelacionamento.FILHO);
             relacionamentos.add(pessoaService.criarRelacionamento(pessoa.getId(), rel));
         }
         
-        // Relacionamentos com pai e mãe
+        // Relacionamento com pai e mãe
         for (Pessoa pessoaRel : pessoasRelacionamentos) {
             if (formulario.getNomePai() != null && 
                 (pessoaRel.getNome().equals(formulario.getNomePai()) || pessoaRel.getId().toString().equals(formulario.getNomePai()))) {
-                RelacionamentoPessoaIds rel = new RelacionamentoPessoaIds();
+                Relacionamento rel = new Relacionamento();
                 rel.setPessoaId(pessoa.getId());
                 rel.setPessoaRelacionadaId(pessoaRel.getId());
                 rel.setTipoRelacionamento(TipoRelacionamento.PAI);
@@ -243,7 +242,7 @@ public class FormularioPessoaService {
             
             if (formulario.getNomeMae() != null && 
                 (pessoaRel.getNome().equals(formulario.getNomeMae()) || pessoaRel.getId().toString().equals(formulario.getNomeMae()))) {
-                RelacionamentoPessoaIds rel = new RelacionamentoPessoaIds();
+                Relacionamento rel = new Relacionamento();
                 rel.setPessoaId(pessoa.getId());
                 rel.setPessoaRelacionadaId(pessoaRel.getId());
                 rel.setTipoRelacionamento(TipoRelacionamento.MAE);
