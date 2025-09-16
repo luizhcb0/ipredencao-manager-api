@@ -5,18 +5,18 @@ import org.ipredencao.ipredencao_manager.model.pessoa.Regiao;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
 import org.ipredencao.ipredencao_manager.model.pessoa.SubcategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistory;
-import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistoryResponse;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistoryChange;
 import java.util.ArrayList;
 import java.util.Arrays;
-import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.RelacionamentoPessoaIds;
+import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
 import org.joda.time.DateTime;
 import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
-import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.RelacionamentoPessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoRelacionamento;
+import org.ipredencao.ipredencao_manager.model.user.Usuario;
+import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
 import static org.ipredencao.ipredencao_manager.jooq.Tables.PESSOA_HISTORY;
 import static org.ipredencao.ipredencao_manager.jooq.tables.Pessoa.PESSOA;
 import static org.ipredencao.ipredencao_manager.jooq.tables.PessoaRelacionamento.PESSOA_RELACIONAMENTO;
@@ -34,6 +34,9 @@ import org.jooq.impl.DSL;
 public class PessoaRepository {
     @Autowired
     private DSLContext dsl;
+    
+    @Autowired
+    private UsuarioRepository usuarioRepository;
     
     public Pessoa insert(Pessoa pessoa) {
         PessoaRecord pessoaRecord = toRepository(pessoa);
@@ -85,7 +88,7 @@ public class PessoaRepository {
         
         // Carregar relacionamentos para cada pessoa
         for (Pessoa pessoa : pessoas) {
-            List<RelacionamentoPessoaIds> relacionamentos = buscarRelacionamentosPorPessoa(pessoa.getId());
+            List<Relacionamento> relacionamentos = buscarRelacionamentosPorPessoa(pessoa.getId());
             pessoa.setRelacionamentos(relacionamentos);
         }
         
@@ -109,9 +112,22 @@ public class PessoaRepository {
             List<PessoaHistoryChange> changes = compareHistoryEntries(currentRecord, previousRecord);
             
             if (!changes.isEmpty()) {
+                // Buscar o nome do usuário que fez a modificação
+                String updatedByUserName = null;
+                if (currentRecord.getUpdatedBy() != null) {
+                    UsuarioQuery query = UsuarioQuery.builder()
+                        .id(currentRecord.getUpdatedBy())
+                        .build();
+                    List<Usuario> usuarios = usuarioRepository.find(query);
+                    if (!usuarios.isEmpty()) {
+                        updatedByUserName = usuarios.getFirst().getName();
+                    }
+                }
+                
                 PessoaHistory entry = new PessoaHistory(
                     DateTimeHelper.fromDb(currentRecord.getAddedAt()),
                     currentRecord.getUpdatedBy(),
+                    updatedByUserName,
                     changes
                 );
                 history.add(entry);
@@ -122,31 +138,20 @@ public class PessoaRepository {
     }
 
     // CRUD para relacionamentos qualificados
-    public RelacionamentoPessoa insertRelationship(Long pessoaId, RelacionamentoPessoaIds relacionamento) {
-        PessoaRelacionamentoRecord relationamentoRecord = toRepository(relacionamento);
-        relationamentoRecord.setPessoaId(pessoaId);
+    public Relacionamento insertRelationship(Long pessoaId, Relacionamento relacionamento) {
+        PessoaRelacionamentoRecord relationamentoRecord = toRepository(relacionamento, pessoaId);
         PessoaRelacionamentoRecord saved = dsl.insertInto(PESSOA_RELACIONAMENTO)
                 .set(relationamentoRecord)
                 .returning()
                 .fetchOne();
-        return mapRelationshipToFull(saved, pessoaId);
-    }
-
-    public List<RelacionamentoPessoa> listarRelacionamentosPorPessoa(Long pessoaId) {
-        return dsl.selectFrom(PESSOA_RELACIONAMENTO)
-                .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaId)
-                    .or(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(pessoaId)))
-                .fetch()
-                .stream()
-                .map(record -> mapRelationshipToFull(record, pessoaId))
-                .toList();
+        return mapRelationship(saved, pessoaId);
     }
     
     /**
      * Busca todos os relacionamentos de uma pessoa, considerando que ela pode estar
      * tanto na coluna pessoa_id quanto na pessoa_relacionada_id
      */
-    private List<RelacionamentoPessoaIds> buscarRelacionamentosPorPessoa(Long pessoaId) {
+    private List<Relacionamento> buscarRelacionamentosPorPessoa(Long pessoaId) {
         return dsl.selectFrom(PESSOA_RELACIONAMENTO)
                 .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaId)
                     .or(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(pessoaId)))
@@ -157,19 +162,17 @@ public class PessoaRepository {
     }
     
     /**
-     * Mapeia um record de relacionamento para RelacionamentoPessoaIds,
+     * Mapeia um record de relacionamento para Relacionamento,
      * ajustando a perspectiva para a pessoa especificada
      */
-    private RelacionamentoPessoaIds mapRelationship(PessoaRelacionamentoRecord record, Long pessoaId) {
-        RelacionamentoPessoaIds rel = new RelacionamentoPessoaIds();
-        rel.setId(record.getId());
+    private Relacionamento mapRelationship(PessoaRelacionamentoRecord record, Long pessoaId) {
+        Relacionamento rel = new Relacionamento();
         rel.setInicioRelacionamento(DateTimeHelper.fromDb(record.getInicioRelacionamento()));
         
         boolean pessoalPrincipal = record.getPessoaId().equals(pessoaId);
         
         if (pessoalPrincipal) {
             // Pessoa atual é a principal - usar dados diretos
-            rel.setPessoaId(record.getPessoaId());
             rel.setPessoaRelacionadaId(record.getPessoaRelacionadaId());
             if (record.getTipoRelacionamento() != null) {
                 rel.setTipoRelacionamento(
@@ -178,7 +181,6 @@ public class PessoaRepository {
             }
         } else {
             // Pessoa atual é a relacionada - inverter perspectiva
-            rel.setPessoaId(record.getPessoaRelacionadaId()); // Pessoa atual
             rel.setPessoaRelacionadaId(record.getPessoaId()); // Outra pessoa
             if (record.getTipoRelacionamento() != null) {
                 TipoRelacionamento tipoOriginal = TipoRelacionamento.valueOf(record.getTipoRelacionamento().name());
@@ -186,36 +188,14 @@ public class PessoaRepository {
             }
         }
         
-        return rel;
-    }
-    
-    /**
-     * Mapeia um record de relacionamento para RelacionamentoPessoa (com objetos Pessoa completos),
-     * ajustando a perspectiva para a pessoa especificada
-     */
-    private RelacionamentoPessoa mapRelationshipToFull(PessoaRelacionamentoRecord record, Long pessoaId) {
-        RelacionamentoPessoa rel = new RelacionamentoPessoa();
-        rel.setId(record.getId());
-        rel.setInicioRelacionamento(DateTimeHelper.fromDb(record.getInicioRelacionamento()));
-        
-        boolean pessoalPrincipal = record.getPessoaId().equals(pessoaId);
-        
-        if (pessoalPrincipal) {
-            // Pessoa atual é a principal - usar dados diretos
-            rel.setPessoa(buscarPessoaPorId(record.getPessoaId()));
-            rel.setPessoaRelacionada(buscarPessoaPorId(record.getPessoaRelacionadaId()));
-            if (record.getTipoRelacionamento() != null) {
-                rel.setTipoRelacionamento(
-                    TipoRelacionamento.valueOf(record.getTipoRelacionamento().name())
-                );
-            }
-        } else {
-            // Pessoa atual é a relacionada - inverter perspectiva
-            rel.setPessoa(buscarPessoaPorId(record.getPessoaRelacionadaId())); // Pessoa atual
-            rel.setPessoaRelacionada(buscarPessoaPorId(record.getPessoaId())); // Outra pessoa
-            if (record.getTipoRelacionamento() != null) {
-                TipoRelacionamento tipoOriginal = TipoRelacionamento.valueOf(record.getTipoRelacionamento().name());
-                rel.setTipoRelacionamento(inverterTipoRelacionamento(tipoOriginal));
+        // Buscar o nome da pessoa relacionada
+        Long pessoaRelacionadaId = rel.getPessoaRelacionadaId();
+        if (pessoaRelacionadaId != null) {
+            PessoaRecord pessoaRelacionada = dsl.selectFrom(PESSOA)
+                .where(PESSOA.PESSOA_ID.eq(pessoaRelacionadaId))
+                .fetchOne();
+            if (pessoaRelacionada != null) {
+                rel.setNomePessoaRelacionada(pessoaRelacionada.getNome());
             }
         }
         
@@ -502,10 +482,10 @@ public class PessoaRepository {
     }
 
 
-    private static PessoaRelacionamentoRecord toRepository(RelacionamentoPessoaIds relacionamento) {
+    private static PessoaRelacionamentoRecord toRepository(Relacionamento relacionamento, Long pessoaId) {
         PessoaRelacionamentoRecord record = new PessoaRelacionamentoRecord();
 
-        record.setPessoaId(relacionamento.getPessoaId());
+        record.setPessoaId(pessoaId);
         record.setPessoaRelacionadaId(relacionamento.getPessoaRelacionadaId());
         if (relacionamento.getTipoRelacionamento() != null)
             record.setTipoRelacionamento(

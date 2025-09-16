@@ -1,7 +1,6 @@
 package org.ipredencao.ipredencao_manager.controller;
 
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistory;
-import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.RelacionamentoPessoaIds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -97,33 +96,6 @@ public class PessoaController {
             return ResponseEntity.status(404).body(new ErrorResponse("Pessoa não encontrada"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
-        }
-    }
-
-    // Relacionamentos qualificados
-    @PostMapping("/{id}/relacionamentos")
-    @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> criarRelacionamento(@PathVariable Long id, @RequestBody RelacionamentoPessoaIds relacionamento) {
-        try {
-            return ResponseEntity.ok(pessoaService.criarRelacionamento(id, relacionamento));
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(404).body(new ErrorResponse("Pessoa não encontrada"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
-        }
-    }
-
-    @GetMapping("/{id}/relacionamentos")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> listarRelacionamentos(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(pessoaService.listarRelacionamentosPorPessoa(id));
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(404).body(new ErrorResponse("Pessoa não encontrada"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
         }

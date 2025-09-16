@@ -7,6 +7,7 @@ import java.util.ArrayList;
 public class PessoaHistory {
     private DateTime updatedAt;
     private Long updatedByUserId;
+    private String updatedByUserName;
     private List<PessoaHistoryChange> changes;
 
     public PessoaHistory() {
@@ -19,9 +20,23 @@ public class PessoaHistory {
         this.changes = new ArrayList<>();
     }
 
+    public PessoaHistory(DateTime updatedAt, Long updatedByUserId, String updatedByUserName) {
+        this.updatedAt = updatedAt;
+        this.updatedByUserId = updatedByUserId;
+        this.updatedByUserName = updatedByUserName;
+        this.changes = new ArrayList<>();
+    }
+
     public PessoaHistory(DateTime updatedAt, Long updatedByUserId, List<PessoaHistoryChange> changes) {
         this.updatedAt = updatedAt;
         this.updatedByUserId = updatedByUserId;
+        this.changes = changes != null ? changes : new ArrayList<>();
+    }
+
+    public PessoaHistory(DateTime updatedAt, Long updatedByUserId, String updatedByUserName, List<PessoaHistoryChange> changes) {
+        this.updatedAt = updatedAt;
+        this.updatedByUserId = updatedByUserId;
+        this.updatedByUserName = updatedByUserName;
         this.changes = changes != null ? changes : new ArrayList<>();
     }
 
@@ -46,6 +61,14 @@ public class PessoaHistory {
 
     public void setUpdatedByUserId(Long updatedByUserId) {
         this.updatedByUserId = updatedByUserId;
+    }
+
+    public String getUpdatedByUserName() {
+        return updatedByUserName;
+    }
+
+    public void setUpdatedByUserName(String updatedByUserName) {
+        this.updatedByUserName = updatedByUserName;
     }
 
     public List<PessoaHistoryChange> getChanges() {

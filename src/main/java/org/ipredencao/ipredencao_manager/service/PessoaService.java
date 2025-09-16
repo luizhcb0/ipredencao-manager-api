@@ -1,14 +1,12 @@
 package org.ipredencao.ipredencao_manager.service;
 
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistory;
-import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.RelacionamentoPessoaIds;
+import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
 import org.springframework.stereotype.Service;
 import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
-import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.RelacionamentoPessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.ipredencao.ipredencao_manager.model.pessoa.SubcategoriaEnum;
-import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistoryResponse;
 import org.ipredencao.ipredencao_manager.util.SecurityUtils;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -68,13 +66,9 @@ public class PessoaService {
         return pessoaRepository.update(pessoa);
     }
 
-    // Relacionamentos qualificados
-    public RelacionamentoPessoa criarRelacionamento(Long pessoaId, RelacionamentoPessoaIds relacionamento) {
+    // Relacionamento qualificados
+    public Relacionamento criarRelacionamento(Long pessoaId, Relacionamento relacionamento) {
         return pessoaRepository.insertRelationship(pessoaId, relacionamento);
-    }
-
-    public List<RelacionamentoPessoa> listarRelacionamentosPorPessoa(Long pessoaId) {
-        return pessoaRepository.listarRelacionamentosPorPessoa(pessoaId);
     }
     
     /**
