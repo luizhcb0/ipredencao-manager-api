@@ -1,5 +1,8 @@
 package org.ipredencao.ipredencao_manager.model.pessoa;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum SubcategoriaEnum {
     CATEGORIA_DESCONHECIDA("-1", "Categoria Desconhecida", -1L),
     // Categoria 00 (Pastores)

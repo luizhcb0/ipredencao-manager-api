@@ -1,5 +1,8 @@
 package org.ipredencao.ipredencao_manager.model.pessoa;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum CategoriaEnum {
     PASTORES("00", "Pastores"),
     MEMBROS_COMUNGANTES("01", "Membros comungantes"),
