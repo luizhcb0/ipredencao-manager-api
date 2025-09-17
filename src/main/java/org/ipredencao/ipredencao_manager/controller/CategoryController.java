@@ -8,7 +8,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/categorias")
@@ -17,15 +16,13 @@ public class CategoryController {
     
     /**
      * Lista todas as categorias disponíveis no sistema
-     * @return Lista de nomes das categorias
+     * @return Lista de categorias com código e nome
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> listarCategorias() {
         try {
-            List<String> categorias = Arrays.stream(CategoriaEnum.values())
-                .map(CategoriaEnum::getNome)
-                .collect(Collectors.toList());
+            List<CategoriaEnum> categorias = Arrays.asList(CategoriaEnum.values());
             
             return ResponseEntity.ok(categorias);
         } catch (Exception e) {
@@ -37,7 +34,7 @@ public class CategoryController {
     /**
      * Lista todas as subcategorias de uma categoria específica
      * @param codigoCategoria Código da categoria (ex: "01", "02", etc)
-     * @return Lista de nomes das subcategorias da categoria informada
+     * @return Lista de subcategorias da categoria informada
      */
     @GetMapping("/{codigoCategoria}/subcategorias")
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
@@ -55,9 +52,7 @@ public class CategoryController {
             // Buscar subcategorias da categoria
             SubcategoriaEnum[] subcategorias = SubcategoriaEnum.getByCategoria(categoria);
             
-            List<String> resultado = Arrays.stream(subcategorias)
-                .map(SubcategoriaEnum::getNome)
-                .collect(Collectors.toList());
+            List<SubcategoriaEnum> resultado = Arrays.asList(subcategorias);
             
             return ResponseEntity.ok(resultado);
         } catch (Exception e) {
@@ -68,15 +63,13 @@ public class CategoryController {
     
     /**
      * Lista todas as subcategorias disponíveis no sistema
-     * @return Lista de nomes de todas as subcategorias
+     * @return Lista de todas as subcategorias
      */
     @GetMapping("/subcategorias")
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> listarTodasSubcategorias() {
         try {
-            List<String> subcategorias = Arrays.stream(SubcategoriaEnum.values())
-                .map(SubcategoriaEnum::getNome)
-                .collect(Collectors.toList());
+            List<SubcategoriaEnum> subcategorias = Arrays.asList(SubcategoriaEnum.values());
             
             return ResponseEntity.ok(subcategorias);
         } catch (Exception e) {
