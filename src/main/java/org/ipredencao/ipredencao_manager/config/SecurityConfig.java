@@ -34,6 +34,7 @@ public class SecurityConfig {
                 // Endpoints públicos
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/formulario-pessoa").permitAll() // Anônimo pode CRIAR
+                .requestMatchers(HttpMethod.POST, "/api/formulario-pessoa/*/foto").permitAll() // Anônimo pode fazer upload de foto
                 
                 // Actuator endpoints
                 .requestMatchers("/actuator/health").permitAll()
@@ -53,6 +54,9 @@ public class SecurityConfig {
                 
                 // Relatórios (apenas autenticados)
                 .requestMatchers("/api/reports/**").hasAnyRole("BOLETIM", "PRESBITERO", "ADMIN")
+                
+                // Dados do sistema (apenas autenticados com roles específicos)
+                .requestMatchers("/api/categorias/**").hasAnyRole("BOLETIM", "PRESBITERO", "ADMIN")
                 
                 .anyRequest().authenticated()
             )
