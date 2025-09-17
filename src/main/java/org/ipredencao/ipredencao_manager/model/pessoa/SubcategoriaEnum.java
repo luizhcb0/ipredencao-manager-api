@@ -122,6 +122,28 @@ public enum SubcategoriaEnum {
         return id;
     }
     
+    /**
+     * Retorna a categoria à qual esta subcategoria pertence
+     * @return CategoriaEnum correspondente
+     */
+    public CategoriaEnum getCategoria() {
+        return CategoriaEnum.fromCodigoSubcategoria(this.codigo);
+    }
+    
+    /**
+     * Retorna todas as subcategorias de uma categoria específica
+     * @param categoria A categoria para filtrar
+     * @return Array de subcategorias da categoria informada
+     */
+    public static SubcategoriaEnum[] getByCategoria(CategoriaEnum categoria) {
+        return java.util.Arrays.stream(values())
+            .filter(sub -> {
+                CategoriaEnum subCategoria = sub.getCategoria();
+                return subCategoria != null && subCategoria == categoria;
+            })
+            .toArray(SubcategoriaEnum[]::new);
+    }
+    
     public static SubcategoriaEnum fromCodigo(String codigo) {
         for (SubcategoriaEnum subcategoria : values()) {
             if (subcategoria.codigo.equals(codigo)) {
