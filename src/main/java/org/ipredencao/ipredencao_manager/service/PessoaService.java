@@ -62,6 +62,7 @@ public class PessoaService {
         // Definir quem atualizou a pessoa
         Long currentUserId = securityUtils.getCurrentUserId();
         pessoa.setUpdatedByUserId(currentUserId);
+        //TODO: Atualizar/Criar relacionamentos
         
         return pessoaRepository.update(pessoa);
     }
