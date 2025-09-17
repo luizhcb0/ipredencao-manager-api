@@ -5,6 +5,7 @@ import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPesso
 import org.ipredencao.ipredencao_manager.model.*;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
+import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
 import org.ipredencao.ipredencao_manager.repository.FormularioPessoaRepository;
 import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
 import org.slf4j.Logger;
@@ -51,12 +52,23 @@ public class ReportService {
             ));
         
         // Contar formulários por status
-        Map<String, Long> formulariosPorStatus = formularios.stream()
+        Map<String, Long> formsByStatus = new HashMap<>();
+        
+        // Inicializar todos os status com 0
+        for (FormPessoaStatus status : FormPessoaStatus.values()) {
+            formsByStatus.put(status.name(), 0L);
+        }
+        
+        // Contar formulários existentes
+        Map<String, Long> formsByStatusCount = formularios.stream()
             .filter(f -> f.getStatus() != null)
             .collect(Collectors.groupingBy(
                 f -> f.getStatus().name(), 
                 Collectors.counting()
             ));
+        
+        // Atualizar com as contagens
+        formsByStatus.putAll(formsByStatusCount);
         
         // Contar pessoas por região
         Map<String, Long> pessoasPorRegiao = pessoas.stream()
@@ -87,7 +99,7 @@ public class ReportService {
             (long) formularios.size(),
             totalFamilias,
             pessoasPorCategoria,
-            formulariosPorStatus,
+            formsByStatus,
             pessoasPorRegiao,
             pessoasPorCampus,
             pessoasPorSexo
