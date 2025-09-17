@@ -15,13 +15,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
 
 @Service
 public class AuthService {
     
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
+    private static final List<PerfilAcesso> allowedProfiles  = List.of(PerfilAcesso.PRESBITERO, PerfilAcesso.BOLETIM);
     
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -169,7 +171,11 @@ public class AuthService {
             usuario.setProvider(ProviderAutenticacao.EMAIL);
             usuario.setAddedAt(DateTime.now());
             usuario.setActive(true);
-            usuario.setAccessProfile(PerfilAcesso.ADMIN);
+            if (!allowedProfiles.contains(registerRequest.getProfile())) {
+                log.error("Perfil de acesso inválido: {}", registerRequest.getProfile());
+                throw new IllegalArgumentException("Perfil de acesso inválido");
+            }
+            usuario.setAccessProfile(registerRequest.getProfile());
             
             usuario = usuarioRepository.insert(usuario);
             

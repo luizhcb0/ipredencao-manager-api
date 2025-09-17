@@ -1,10 +1,13 @@
 package org.ipredencao.ipredencao_manager.model.auth.dto;
 
+import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
+
 public class RegisterRequest {
     
     private String name;
     private String email;
     private String password;
+    private PerfilAcesso profile;
     
     public RegisterRequest() {}
     
@@ -37,4 +40,8 @@ public class RegisterRequest {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public PerfilAcesso getProfile() { return profile; }
+
+    public void setProfile(PerfilAcesso profile) { this.profile = profile; }
 }
