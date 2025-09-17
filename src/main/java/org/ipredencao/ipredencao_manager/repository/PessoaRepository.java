@@ -167,6 +167,7 @@ public class PessoaRepository {
      */
     private Relacionamento mapRelationship(PessoaRelacionamentoRecord record, Long pessoaId) {
         Relacionamento rel = new Relacionamento();
+        rel.setPessoaId(pessoaId);
         rel.setInicioRelacionamento(DateTimeHelper.fromDb(record.getInicioRelacionamento()));
         
         boolean pessoalPrincipal = record.getPessoaId().equals(pessoaId);
