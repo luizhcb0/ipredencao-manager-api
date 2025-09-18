@@ -3,7 +3,7 @@ package org.ipredencao.ipredencao_manager.model.formulario_pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.EstadoCivil;
 import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
 import org.ipredencao.ipredencao_manager.model.pessoa.Regiao;
-import org.ipredencao.ipredencao_manager.model.pessoa.SubcategoriaEnum;
+import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoBatismo;
 import org.joda.time.DateTime;
 import java.util.List;
@@ -23,7 +23,7 @@ public class FormularioPessoaQuery {
     private DateTime dataNascimentoFrom;
     private DateTime dataNascimentoTo;
     private TipoBatismo tipoBatismo;
-    private SubcategoriaEnum subcategoria;
+    private CategoriaEnum categoria;
     private FormPessoaStatus status;
 
     // Construtor padrão para Jackson
@@ -45,7 +45,7 @@ public class FormularioPessoaQuery {
         this.dataNascimentoFrom = builder.dataNascimentoFrom;
         this.dataNascimentoTo = builder.dataNascimentoTo;
         this.tipoBatismo = builder.tipoBatismo;
-        this.subcategoria = builder.subcategoria;
+        this.categoria = builder.categoria;
         this.status = builder.status;
     }
 
@@ -65,7 +65,7 @@ public class FormularioPessoaQuery {
         private DateTime dataNascimentoFrom;
         private DateTime dataNascimentoTo;
         private TipoBatismo tipoBatismo;
-        private SubcategoriaEnum subcategoria;
+        private CategoriaEnum categoria;
         private FormPessoaStatus status;
 
         public Builder id(Long id) {
@@ -138,8 +138,8 @@ public class FormularioPessoaQuery {
             return this;
         }
 
-        public Builder subcategoria(SubcategoriaEnum subcategoria) {
-            this.subcategoria = subcategoria;
+        public Builder categoria(CategoriaEnum categoria) {
+            this.categoria = categoria;
             return this;
         }
 
@@ -172,7 +172,7 @@ public class FormularioPessoaQuery {
     public DateTime getDataNascimentoFrom() { return dataNascimentoFrom; }
     public DateTime getDataNascimentoTo() { return dataNascimentoTo; }
     public TipoBatismo getTipoBatismo() { return tipoBatismo; }
-    public SubcategoriaEnum getSubcategoria() { return subcategoria; }
+    public CategoriaEnum getCategoria() { return categoria; }
     public FormPessoaStatus getStatus() { return status; }
 
     // Setters para Jackson
@@ -190,6 +190,6 @@ public class FormularioPessoaQuery {
     public void setDataNascimentoFrom(DateTime dataNascimentoFrom) { this.dataNascimentoFrom = dataNascimentoFrom; }
     public void setDataNascimentoTo(DateTime dataNascimentoTo) { this.dataNascimentoTo = dataNascimentoTo; }
     public void setTipoBatismo(TipoBatismo tipoBatismo) { this.tipoBatismo = tipoBatismo; }
-    public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
+    public void setCategoria(CategoriaEnum categoria) { this.categoria = categoria; }
     public void setStatus(FormPessoaStatus status) { this.status = status; }
 }

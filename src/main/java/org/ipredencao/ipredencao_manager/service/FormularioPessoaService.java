@@ -4,6 +4,7 @@ import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPesso
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoaQuery;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.ProcessarFormularioRequest;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.ProcessarFormularioResponse;
+import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.EstadoCivil;
 import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
@@ -135,6 +136,7 @@ public class FormularioPessoaService {
             // É um nome, criar nova pessoa
             Pessoa novaPessoa = new Pessoa();
             novaPessoa.setNome(nomeOuId.trim());
+            novaPessoa.setCategoria(CategoriaEnum.AGREGADO_FAMILIAR);
             return pessoaService.create(novaPessoa);
         }
     }
@@ -202,7 +204,7 @@ public class FormularioPessoaService {
         pessoa.setRegiao(formulario.getRegiao());
         pessoa.setFotoUrl(formulario.getFotoUrl());
         pessoa.setSexo(formulario.getSexo());
-        pessoa.setSubcategoria(formulario.getSubcategoria());
+        pessoa.setCategoria(formulario.getCategoria());
     }
 
     private List<Relacionamento> criarRelacionamentos(Pessoa pessoa, FormularioPessoa formulario,

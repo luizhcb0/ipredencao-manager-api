@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
-import org.ipredencao.ipredencao_manager.model.pessoa.SubcategoriaEnum;
 import org.ipredencao.ipredencao_manager.util.SecurityUtils;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -70,13 +69,6 @@ public class PessoaService {
     // Relacionamento qualificados
     public Relacionamento criarRelacionamento(Long pessoaId, Relacionamento relacionamento) {
         return pessoaRepository.insertRelationship(pessoaId, relacionamento);
-    }
-    
-    /**
-     * Lista todas as subcategorias disponíveis
-     */
-    public SubcategoriaEnum[] getAllSubcategorias() {
-        return SubcategoriaEnum.values();
     }
     
     /**

@@ -25,146 +25,90 @@ CREATE TYPE regiao AS ENUM (
 );
 CREATE TYPE form_pessoa_status AS ENUM ('CADASTRADO', 'VALIDADO');
 
--- Tabela de categorias principais
-CREATE TABLE IF NOT EXISTS categoria (
+-- Tabela de agregadores de categorias
+CREATE TABLE IF NOT EXISTS agregador_categoria (
     id BIGSERIAL PRIMARY KEY,
-    codigo VARCHAR(10) NOT NULL UNIQUE,
     nome VARCHAR(255) NOT NULL
 );
 
--- Inserir categorias principais
-INSERT INTO categoria (codigo, nome) VALUES
-('00', 'Pastores'),
-('01', 'Membros comungantes'),
-('02', 'Membros comungantes (rol à parte)'),
-('03', 'Membros não comungantes'),
-('04', 'Admissão'),
-('05', 'Em processo de admissão'),
-('06', 'Em avaliação para admissão'),
-('07', 'Pastor congregante'),
-('08', 'Agregado não membro (p.ex. familiar frequente)'),
-('09', 'Pessoa fictícia (sistema)'),
-('40', 'Visitantes frequentes'),
-('48', 'Aparece na contabilidade'),
-('49', 'Possível admissão: gestação'),
-('50', 'Missionários'),
-('51', 'Missionários apoiados'),
-('52', 'Missionários eventualmente auxiliados'),
-('80', 'Oficiais da IPB'),
-('90', 'Visitantes'),
-('91', 'Ex-membro da Igreja'),
-('95', 'Visitante'),
-('97', 'Relacionamento profissional'),
-('98', 'Organização'),
-('99', 'Pessoa referenciada (sistema)');
+-- Inserir agregadores de categorias
+INSERT INTO agregador_categoria (nome) VALUES
+('Pastor'),
+('Membro comungante'),
+('Membro não comungante'),
+('Rol à parte'),
+('Admitendo'),
+('Transferido'),
+('Excluido'),
+('Missionário'),
+('Possível admissão: gestação'),
+('Pessoa referenciada');
 
--- Tabela de subcategorias
-CREATE TABLE IF NOT EXISTS subcategoria (
+-- Tabela de categorias
+CREATE TABLE IF NOT EXISTS categoria (
     id BIGSERIAL PRIMARY KEY,
-    codigo VARCHAR(10) NOT NULL UNIQUE,
     nome VARCHAR(255) NOT NULL,
-    categoria_id BIGINT NOT NULL REFERENCES categoria(id) ON DELETE CASCADE
+    agregador_categoria_id BIGINT NOT NULL REFERENCES agregador_categoria(id) ON DELETE CASCADE
 );
 
--- Inserir subcategorias
-INSERT INTO subcategoria (codigo, nome, categoria_id) VALUES
--- Categoria 00 (Pastores)
-('00', 'Pastores da Igreja', (SELECT id FROM categoria WHERE codigo = '00')),
+-- Inserir categorias
+INSERT INTO categoria (nome, agregador_categoria_id) VALUES
+-- Categorias do agregador Pastor
+('Pastor da igreja', 1),
+('Pastor congregante', 1),
 
--- Categoria 01 (Membros comungantes)
-('01', 'Membro', (SELECT id FROM categoria WHERE codigo = '01')),
+-- Categorias do agregador Membro comungante
+('Membro comungante', 2),
 
--- Subcategorias da categoria 02 (Membros comungantes - rol à parte)
-('02.01', 'Rol à parte, membro em trânsito', (SELECT id FROM categoria WHERE codigo = '02')),
-('02.03', 'Rol à parte, membro ausente (doença etc.)', (SELECT id FROM categoria WHERE codigo = '02')),
-('02.90', 'Rol à parte, membro a transferir', (SELECT id FROM categoria WHERE codigo = '02')),
-('02.95', 'Rol à parte, membro não localizado ou pedido de desligamento', (SELECT id FROM categoria WHERE codigo = '02')),
-('02.99', 'Rol à parte, membro sob disciplina', (SELECT id FROM categoria WHERE codigo = '02')),
+-- Categorias do agregador Membro não comungante
+('Membro não comungante, aguardando profissão de fé (admitindo)', 3),
+('Membro não comungante, aguardando exame para profissão de fé (admitindo)', 3),
+('Membro não comungante, em catequização final', 3),
+('Membro não comungante (especial), não requer profissão de fé', 3),
+('Membro não comungante', 3),
+('Membro não comungante, em idade para profissão de fé', 3),
 
--- Subcategorias da categoria 03 (Membros não comungantes)
-('03.00', 'Membro não comungante, aguardando profissão de fé (admitindo)', (SELECT id FROM categoria WHERE codigo = '03')),
-('03.01', 'Membro não comungante, aguardando exame para profissão de fé (admitindo)', (SELECT id FROM categoria WHERE codigo = '03')),
-('03.02', 'Membro não comungante, em catequização final', (SELECT id FROM categoria WHERE codigo = '03')),
-('03.95', 'Membro não comungante (especial), não requer profissão de fé', (SELECT id FROM categoria WHERE codigo = '03')),
-('03.96', 'Membro não comungante', (SELECT id FROM categoria WHERE codigo = '03')),
-('03.97', 'Membro não comungante, em idade para profissão de fé', (SELECT id FROM categoria WHERE codigo = '03')),
-('03.98', 'Membro não comungante, rol à parte (em trânsito)', (SELECT id FROM categoria WHERE codigo = '03')),
-('03.99', 'Membro não comungante, rol à parte (transf)', (SELECT id FROM categoria WHERE codigo = '03')),
+-- Categorias do agregador Rol à parte
+('Membro em trânsito', 4),
+('Membro ausente', 4),
+('Membro a transferir', 4),
+('Membro não localizado ou pedido de desligamento', 4),
+('Membro sob disciplina', 4),
 
--- Subcategorias da categoria 04 (Admissão)
-('04.00', 'Admissão, rotina de admissão', (SELECT id FROM categoria WHERE codigo = '04')),
-('04.01', 'Admissão, aguardando registro em ata', (SELECT id FROM categoria WHERE codigo = '04')),
-('04.98', 'Admissão, aguardando carta de transferência', (SELECT id FROM categoria WHERE codigo = '04')),
-('04.99', 'Admissão, solicitar carta de transferência', (SELECT id FROM categoria WHERE codigo = '04')),
+-- Categorias do agregador Admitendo
+('Aguardando carta de transferência', 5),
+('Solicitar carta de transferência', 5),
+('Aguardando batismo infantil', 5),
+('Aguardando votos de membresia', 5),
+('Aguardando profissão de fé', 5),
+('Aguardando profissão de fé e batismo', 5),
+('Aguardando exame para profissão de fé', 5),
+('Aguardando casamento com membro da Igreja', 5),
+('Aguardando resolução pendência', 5),
+('Aguardando entrevista', 5),
+('Em catequização', 5),
+('Admissão sobrestada (pedido, impedim. ou discord. CFW)', 5),
+('Admissão: batismo de menor sobrestado (credobatismo)', 5),
 
--- Subcategorias da categoria 05 (Em processo de admissão)
-('05.01', 'Admitendo, menor batizado a admitir juntamente com pais ou responsáveis', (SELECT id FROM categoria WHERE codigo = '05')),
-('05.10', 'Admitendo, menor aguardando batismo infantil', (SELECT id FROM categoria WHERE codigo = '05')),
-('05.15', 'Admitendo, não presbiteriano aguardando votos de membresia', (SELECT id FROM categoria WHERE codigo = '05')),
-('05.50', 'Admitendo, adulto/jovem aguardando profissão de fé', (SELECT id FROM categoria WHERE codigo = '05')),
-('05.51', 'Admitendo, adulto/jovem aguardando profissão de fé e batismo', (SELECT id FROM categoria WHERE codigo = '05')),
-('05.59', 'Admitendo, aguardando exame para profissão de fé', (SELECT id FROM categoria WHERE codigo = '05')),
-('05.60', 'Admitendo, aguardando casamento com membro da Igreja', (SELECT id FROM categoria WHERE codigo = '05')),
-('05.70', 'Admitendo, aguardando resolução pendência', (SELECT id FROM categoria WHERE codigo = '05')),
-('05.90', 'Admitendo, aguardando entrevista', (SELECT id FROM categoria WHERE codigo = '05')),
+-- Categorias do agregador Transferido
+('Transferido para outra igreja', 6),
 
--- Subcategorias da categoria 06 (Em avaliação para admissão)
-('06.01', 'Possível admissão: em catequização', (SELECT id FROM categoria WHERE codigo = '06')),
-('06.94', 'Possível admissão: filhos de pais em catequização', (SELECT id FROM categoria WHERE codigo = '06')),
-('06.95', 'Possível admissão: gestação', (SELECT id FROM categoria WHERE codigo = '06')),
-('06.96', 'Possível admissão: admissão sobrestada (pedido, impedim. ou discord. CFW)', (SELECT id FROM categoria WHERE codigo = '06')),
-('06.97', 'Possível admissão: batismo de menor sobrestado (credobatismo)', (SELECT id FROM categoria WHERE codigo = '06')),
-('06.98', 'Possível admissão: em avaliação', (SELECT id FROM categoria WHERE codigo = '06')),
-('06.99', 'Possível admissão: aguardando ficha cadastral', (SELECT id FROM categoria WHERE codigo = '06')),
+-- Categorias do agregador Excluido
+('Excluído a pedido', 7),
+('Excluído por abandono', 7),
+('Excluído por disciplina', 7),
+('Excluído por falecimento', 7),
 
--- Categoria 07 (Pastor congregante)
-('07', 'Pastor congregante', (SELECT id FROM categoria WHERE codigo = '07')),
+-- Categorias do agregador Missionário
+('Missionário apoiado', 8),
+('Missionário eventualmente auxiliado', 8),
 
--- Categoria 08 (Agregado não membro)
-('08', 'Agregado não membro (p.ex. familiar frequente)', (SELECT id FROM categoria WHERE codigo = '08')),
+-- Categorias do agregador Possível admissão: gestação
+('Gestação', 9),
+('Gestação mantida em sigilo temporariamente', 9),
 
--- Categoria 09 (Pessoa fictícia)
-('09', 'Pessoa fictícia (sistema)', (SELECT id FROM categoria WHERE codigo = '09')),
-
--- Subcategorias da categoria 40 (Visitantes frequentes)
-('42', 'Visitante recorrente EBD/GF/3aIdade/EnglishBibleStudy/Youtube', (SELECT id FROM categoria WHERE codigo = '40')),
-('43', 'Visitante frequente', (SELECT id FROM categoria WHERE codigo = '40')),
-('44', 'Visitante frequente (menor de idade)', (SELECT id FROM categoria WHERE codigo = '40')),
-('45', 'Visitante frequente, mas sem intenção de admissão', (SELECT id FROM categoria WHERE codigo = '40')),
-('46', 'Visitante evento (AcampUMP, Conferência etc.)', (SELECT id FROM categoria WHERE codigo = '40')),
-
--- Categoria 48 (Aparece na contabilidade)
-('48', 'Aparece na contabilidade', (SELECT id FROM categoria WHERE codigo = '48')),
-
--- Categoria 49 (Possível admissão: gestação)
-('49', 'Possível admissão: gestação (mantida em sigilo, temporariamente)', (SELECT id FROM categoria WHERE codigo = '49')),
-
--- Categoria 51 (Missionários apoiados)
-('51', 'Missionários apoiados', (SELECT id FROM categoria WHERE codigo = '51')),
-
--- Categoria 52 (Missionários eventualmente auxiliados)
-('52', 'Missionários eventualmente auxiliados', (SELECT id FROM categoria WHERE codigo = '52')),
-
--- Categoria 80 (Oficiais da IPB)
-('80', 'Oficiais da IPB', (SELECT id FROM categoria WHERE codigo = '80')),
-
--- Categoria 90 (Visitantes)
-('90', 'Visitante ocasional periódico', (SELECT id FROM categoria WHERE codigo = '90')),
-
--- Categoria 91 (Ex-membro da Igreja)
-('91', 'Ex-membro da Igreja', (SELECT id FROM categoria WHERE codigo = '91')),
-
--- Categoria 95 (Visitante)
-('95', 'Visitante', (SELECT id FROM categoria WHERE codigo = '95')),
-
--- Categoria 97 (Relacionamento profissional)
-('97', 'Relacionamento profissional', (SELECT id FROM categoria WHERE codigo = '97')),
-
--- Categoria 98 (Organização)
-('98', 'Organização', (SELECT id FROM categoria WHERE codigo = '98')),
-
--- Categoria 99 (Pessoa referenciada)
-('99', 'Pessoa referenciada (sistema)', (SELECT id FROM categoria WHERE codigo = '99'));
+-- Categorias do agregador Pessoa referenciada
+('Agregado ou familiar', 10);
 
 
 CREATE TABLE IF NOT EXISTS pessoa (
@@ -200,7 +144,7 @@ CREATE TABLE IF NOT EXISTS pessoa (
     regiao regiao,
     foto_url VARCHAR(500),
     chefe_de_familia BIGINT REFERENCES pessoa(pessoa_id),
-    categoria_id BIGINT REFERENCES subcategoria(id),
+    categoria_id BIGINT REFERENCES categoria(id),
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_by BIGINT
@@ -240,7 +184,7 @@ CREATE TABLE IF NOT EXISTS pessoa_history (
     regiao regiao,
     foto_url VARCHAR(500),
     chefe_de_familia BIGINT REFERENCES pessoa(pessoa_id),
-    categoria_id BIGINT REFERENCES subcategoria(id),
+    categoria_id BIGINT REFERENCES categoria(id),
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_by BIGINT
 );
@@ -302,7 +246,7 @@ CREATE TABLE IF NOT EXISTS formulario_pessoa (
     chefe_de_familia VARCHAR(255),
     propagar_endereco_chefe_familia BOOLEAN,
     pessoa_id BIGINT REFERENCES pessoa(pessoa_id),
-    categoria_id BIGINT REFERENCES subcategoria(id),
+    categoria_id BIGINT REFERENCES categoria(id),
     status form_pessoa_status NOT NULL DEFAULT 'CADASTRADO',
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()

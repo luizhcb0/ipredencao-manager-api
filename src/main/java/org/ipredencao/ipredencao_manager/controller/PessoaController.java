@@ -100,19 +100,6 @@ public class PessoaController {
             return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
         }
     }
-    
-    /**
-     * Lista todas as subcategorias disponíveis
-     */
-    @GetMapping("/subcategorias")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> getAllSubcategorias() {
-        try {
-            return ResponseEntity.ok(pessoaService.getAllSubcategorias());
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
-        }
-    }
 
     /**
      * Busca o histórico de alterações de uma pessoa por ID

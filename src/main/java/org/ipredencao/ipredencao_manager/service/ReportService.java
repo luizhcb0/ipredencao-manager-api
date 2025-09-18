@@ -45,9 +45,9 @@ public class ReportService {
         
         // Contar por subcategoria (categoria)
         Map<String, Long> pessoasPorCategoria = pessoas.stream()
-            .filter(p -> p.getSubcategoria() != null)
+            .filter(p -> p.getCategoria() != null)
             .collect(Collectors.groupingBy(
-                p -> p.getSubcategoria().name(), 
+                p -> p.getCategoria().name(), 
                 Collectors.counting()
             ));
         

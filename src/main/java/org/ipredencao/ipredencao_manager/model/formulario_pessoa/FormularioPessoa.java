@@ -4,7 +4,7 @@ import org.ipredencao.ipredencao_manager.model.pessoa.EstadoCivil;
 import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
 import org.ipredencao.ipredencao_manager.model.pessoa.Regiao;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
-import org.ipredencao.ipredencao_manager.model.pessoa.SubcategoriaEnum;
+import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoBatismo;
 import org.joda.time.DateTime;
 import java.util.List;
@@ -42,7 +42,7 @@ public class FormularioPessoa {
     private String chefeDeFamilia;
     private Boolean propagarEnderecoChefeFamilia;
     private Long pessoaId;
-    private SubcategoriaEnum subcategoria;
+    private CategoriaEnum categoria;
     private FormPessoaStatus status;
     // Campos extras do formulário
     private String nomePessoaRelacionada;
@@ -116,8 +116,8 @@ public class FormularioPessoa {
     public void setPropagarEnderecoChefeFamilia(Boolean propagarEnderecoChefeFamilia) { this.propagarEnderecoChefeFamilia = propagarEnderecoChefeFamilia; }
     public Long getPessoaId() { return pessoaId; }
     public void setPessoaId(Long pessoaId) { this.pessoaId = pessoaId; }
-    public SubcategoriaEnum getSubcategoria() { return subcategoria; }
-    public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
+    public CategoriaEnum getCategoria() { return categoria; }
+    public void setCategoria(CategoriaEnum categoria) { this.categoria = categoria; }
     public FormPessoaStatus getStatus() { return status; }
     public void setStatus(FormPessoaStatus status) { this.status = status; }
     public String getNomePessoaRelacionada() { return nomePessoaRelacionada; }

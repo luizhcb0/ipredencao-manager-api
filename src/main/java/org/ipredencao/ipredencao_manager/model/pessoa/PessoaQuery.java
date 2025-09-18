@@ -18,7 +18,7 @@ public class PessoaQuery {
     private DateTime dataNascimentoFrom;
     private DateTime dataNascimentoTo;
     private TipoBatismo tipoBatismo;
-    private SubcategoriaEnum subcategoria;
+    private CategoriaEnum categoria;
 
     // Construtor padrão para Jackson
     public PessoaQuery() {}
@@ -39,7 +39,7 @@ public class PessoaQuery {
         this.dataNascimentoFrom = builder.dataNascimentoFrom;
         this.dataNascimentoTo = builder.dataNascimentoTo;
         this.tipoBatismo = builder.tipoBatismo;
-        this.subcategoria = builder.subcategoria;
+        this.categoria = builder.categoria;
     }
 
     // Builder pattern
@@ -58,7 +58,7 @@ public class PessoaQuery {
         private DateTime dataNascimentoFrom;
         private DateTime dataNascimentoTo;
         private TipoBatismo tipoBatismo;
-        private SubcategoriaEnum subcategoria;
+        private CategoriaEnum categoria;
 
         public Builder id(Long id) {
             this.id = id;
@@ -130,8 +130,8 @@ public class PessoaQuery {
             return this;
         }
 
-        public Builder subcategoria(SubcategoriaEnum subcategoria) {
-            this.subcategoria = subcategoria;
+        public Builder categoria(CategoriaEnum categoria) {
+            this.categoria = categoria;
             return this;
         }
 
@@ -159,7 +159,7 @@ public class PessoaQuery {
     public DateTime getDataNascimentoFrom() { return dataNascimentoFrom; }
     public DateTime getDataNascimentoTo() { return dataNascimentoTo; }
     public TipoBatismo getTipoBatismo() { return tipoBatismo; }
-    public SubcategoriaEnum getSubcategoria() { return subcategoria; }
+    public CategoriaEnum getCategoria() { return categoria; }
 
 
 
@@ -178,5 +178,5 @@ public class PessoaQuery {
     public void setDataNascimentoFrom(DateTime dataNascimentoFrom) { this.dataNascimentoFrom = dataNascimentoFrom; }
     public void setDataNascimentoTo(DateTime dataNascimentoTo) { this.dataNascimentoTo = dataNascimentoTo; }
     public void setTipoBatismo(TipoBatismo tipoBatismo) { this.tipoBatismo = tipoBatismo; }
-    public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
+    public void setCategoria(CategoriaEnum categoria) { this.categoria = categoria; }
 }
