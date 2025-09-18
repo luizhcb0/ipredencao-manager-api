@@ -3,7 +3,7 @@ package org.ipredencao.ipredencao_manager.repository;
 import org.ipredencao.ipredencao_manager.jooq.tables.records.PessoaHistoryRecord;
 import org.ipredencao.ipredencao_manager.model.pessoa.Regiao;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
-import org.ipredencao.ipredencao_manager.model.pessoa.SubcategoriaEnum;
+import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistory;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistoryChange;
 import java.util.ArrayList;
@@ -254,8 +254,8 @@ public class PessoaRepository {
             conditions.add(PESSOA.DATA_NASCIMENTO.lessOrEqual(DateTimeHelper.toDb(query.getDataNascimentoTo())));
         if (query.getTipoBatismo() != null) 
             conditions.add(PESSOA.TIPO_BATISMO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo.valueOf(query.getTipoBatismo().name())));
-        if (query.getSubcategoria() != null) 
-            conditions.add(PESSOA.CATEGORIA_ID.eq(query.getSubcategoria().getId()));
+        if (query.getCategoria() != null) 
+            conditions.add(PESSOA.CATEGORIA_ID.eq(query.getCategoria().getId()));
         return conditions;
     }
 
@@ -295,7 +295,7 @@ public class PessoaRepository {
             p.setSexo(Sexo.valueOf(pessoaRecord.getSexo().name()));
         p.setChefeDeFamiliaId(pessoaRecord.getChefeDeFamilia());
         if (pessoaRecord.getCategoriaId() != null)
-            p.setSubcategoria(SubcategoriaEnum.fromId(pessoaRecord.getCategoriaId()));
+            p.setCategoria(CategoriaEnum.fromId(pessoaRecord.getCategoriaId()));
 
         // Converter arrays do PostgreSQL para List<String>
         if (pessoaRecord.getEmailsSecundarios() != null) {
@@ -342,8 +342,8 @@ public class PessoaRepository {
         if (pessoa.getSexo() != null)
             pessoaRecord.setSexo(org.ipredencao.ipredencao_manager.jooq.enums.Sexo.valueOf(pessoa.getSexo().name()));
         pessoaRecord.setChefeDeFamilia(pessoa.getChefeDeFamiliaId());
-        if (pessoa.getSubcategoria() != null) {
-            pessoaRecord.setCategoriaId(pessoa.getSubcategoria().getId());
+        if (pessoa.getCategoria() != null) {
+            pessoaRecord.setCategoriaId(pessoa.getCategoria().getId());
         }
         
         // Converter List<String> para arrays do PostgreSQL

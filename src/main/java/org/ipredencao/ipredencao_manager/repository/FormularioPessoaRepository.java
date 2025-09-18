@@ -6,7 +6,7 @@ import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPesso
 import org.ipredencao.ipredencao_manager.model.pessoa.EstadoCivil;
 import org.ipredencao.ipredencao_manager.model.pessoa.Regiao;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
-import org.ipredencao.ipredencao_manager.model.pessoa.SubcategoriaEnum;
+import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoBatismo;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
 import org.jooq.Condition;
@@ -89,8 +89,8 @@ public class FormularioPessoaRepository {
             conditions.add(FORMULARIO_PESSOA.DATA_NASCIMENTO.lessOrEqual(DateTimeHelper.toDb(query.getDataNascimentoTo())));
         if (query.getTipoBatismo() != null)
             conditions.add(FORMULARIO_PESSOA.TIPO_BATISMO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo.valueOf(query.getTipoBatismo().name())));
-        if (query.getSubcategoria() != null)
-            conditions.add(FORMULARIO_PESSOA.CATEGORIA_ID.eq(query.getSubcategoria().getId()));
+        if (query.getCategoria() != null)
+            conditions.add(FORMULARIO_PESSOA.CATEGORIA_ID.eq(query.getCategoria().getId()));
         if (query.getStatus() != null)
             conditions.add(FORMULARIO_PESSOA.STATUS.eq(FormPessoaStatus.valueOf(query.getStatus().name())));
         return conditions;
@@ -134,7 +134,7 @@ public class FormularioPessoaRepository {
         f.setPropagarEnderecoChefeFamilia(record.getPropagarEnderecoChefeFamilia());
         f.setPessoaId(record.getPessoaId());
         if (record.getCategoriaId() != null)
-            f.setSubcategoria(SubcategoriaEnum.fromId(record.getCategoriaId()));
+            f.setCategoria(CategoriaEnum.fromId(record.getCategoriaId()));
         if (record.getEmailsSecundarios() != null) {
             f.setEmailsSecundarios(java.util.Arrays.asList(record.getEmailsSecundarios()));
         }
@@ -188,8 +188,8 @@ public class FormularioPessoaRepository {
         // chefeDeFamilia: no formulário é String, na model é Long. Não mapeia diretamente.
         record.setPropagarEnderecoChefeFamilia(f.getPropagarEnderecoChefeFamilia());
         record.setPessoaId(f.getPessoaId());
-        if (f.getSubcategoria() != null) {
-            record.setCategoriaId(f.getSubcategoria().getId());
+        if (f.getCategoria() != null) {
+            record.setCategoriaId(f.getCategoria().getId());
         }
         if (f.getEmailsSecundarios() != null && !f.getEmailsSecundarios().isEmpty()) {
             record.setEmailsSecundarios(f.getEmailsSecundarios().toArray(new String[0]));

@@ -1,7 +1,7 @@
 package org.ipredencao.ipredencao_manager.controller;
 
+import org.ipredencao.ipredencao_manager.model.pessoa.AgregadorCategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
-import org.ipredencao.ipredencao_manager.model.pessoa.SubcategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.ErrorResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,16 +15,46 @@ import java.util.List;
 public class CategoryController {
     
     /**
-     * Lista todas as categorias disponíveis no sistema
-     * @return Lista de categorias com código e nome
+     * Lista todos os agregadores de categorias disponíveis no sistema
+     * @return Lista de agregadores de categorias com id e nome
      */
-    @GetMapping
+    @GetMapping("/agregadores")
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> listarCategorias() {
+    public ResponseEntity<?> listarAgregadoresCategorias() {
         try {
-            List<CategoriaEnum> categorias = Arrays.asList(CategoriaEnum.values());
+            List<AgregadorCategoriaEnum> agregadores = Arrays.asList(AgregadorCategoriaEnum.values());
             
-            return ResponseEntity.ok(categorias);
+            return ResponseEntity.ok(agregadores);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(new ErrorResponse("Erro ao listar agregadores de categorias", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Lista todas as categorias de um agregador específico
+     * @param idAgregador ID do agregador de categoria
+     * @return Lista de categorias do agregador informado
+     */
+    @GetMapping("/agregadores/{idAgregador}")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
+    public ResponseEntity<?> listarCategoriasPorAgregador(@PathVariable Long idAgregador) {
+        try {
+            // Buscar o agregador pelo ID
+            AgregadorCategoriaEnum agregador;
+            try {
+                agregador = AgregadorCategoriaEnum.fromId(idAgregador);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(404)
+                    .body(new ErrorResponse("Agregador de categoria não encontrado", "ID de agregador inválido: " + idAgregador));
+            }
+            
+            // Buscar categorias do agregador
+            CategoriaEnum[] categorias = CategoriaEnum.getByAgregadorCategoria(agregador);
+            
+            List<CategoriaEnum> resultado = Arrays.asList(categorias);
+            
+            return ResponseEntity.ok(resultado);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(new ErrorResponse("Erro ao listar categorias", e.getMessage()));
@@ -32,49 +62,19 @@ public class CategoryController {
     }
     
     /**
-     * Lista todas as subcategorias de uma categoria específica
-     * @param codigoCategoria Código da categoria (ex: "01", "02", etc)
-     * @return Lista de subcategorias da categoria informada
+     * Lista todas as categorias disponíveis no sistema
+     * @return Lista de todas as categorias
      */
-    @GetMapping("/{codigoCategoria}/subcategorias")
+    @GetMapping
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> listarSubcategoriasPorCategoria(@PathVariable String codigoCategoria) {
+    public ResponseEntity<?> listarTodasCategorias() {
         try {
-            // Buscar a categoria pelo código
-            CategoriaEnum categoria;
-            try {
-                categoria = CategoriaEnum.fromCodigo(codigoCategoria);
-            } catch (IllegalArgumentException e) {
-                return ResponseEntity.status(404)
-                    .body(new ErrorResponse("Categoria não encontrada", "Código de categoria inválido: " + codigoCategoria));
-            }
+            List<CategoriaEnum> categorias = Arrays.asList(CategoriaEnum.values());
             
-            // Buscar subcategorias da categoria
-            SubcategoriaEnum[] subcategorias = SubcategoriaEnum.getByCategoria(categoria);
-            
-            List<SubcategoriaEnum> resultado = Arrays.asList(subcategorias);
-            
-            return ResponseEntity.ok(resultado);
+            return ResponseEntity.ok(categorias);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(new ErrorResponse("Erro ao listar subcategorias", e.getMessage()));
-        }
-    }
-    
-    /**
-     * Lista todas as subcategorias disponíveis no sistema
-     * @return Lista de todas as subcategorias
-     */
-    @GetMapping("/subcategorias")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> listarTodasSubcategorias() {
-        try {
-            List<SubcategoriaEnum> subcategorias = Arrays.asList(SubcategoriaEnum.values());
-            
-            return ResponseEntity.ok(subcategorias);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                .body(new ErrorResponse("Erro ao listar subcategorias", e.getMessage()));
+                .body(new ErrorResponse("Erro ao listar categorias", e.getMessage()));
         }
     }
 }

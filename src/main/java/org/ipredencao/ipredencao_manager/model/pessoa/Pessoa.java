@@ -35,7 +35,7 @@ public class Pessoa {
     private String fotoUrl;
     private Sexo sexo;
     private Long chefeDeFamiliaId;
-    private SubcategoriaEnum subcategoria;
+    private CategoriaEnum categoria;
     private Long updatedByUserId;
 
     // Relacionamento qualificados com outras pessoas
@@ -102,8 +102,8 @@ public class Pessoa {
     public void setSexo(Sexo sexo) { this.sexo = sexo; }
     public Long getChefeDeFamiliaId() { return chefeDeFamiliaId; }
     public void setChefeDeFamiliaId(Long chefeDeFamiliaId) { this.chefeDeFamiliaId = chefeDeFamiliaId; }
-    public SubcategoriaEnum getSubcategoria() { return subcategoria; }
-    public void setSubcategoria(SubcategoriaEnum subcategoria) { this.subcategoria = subcategoria; }
+    public CategoriaEnum getCategoria() { return categoria; }
+    public void setCategoria(CategoriaEnum categoria) { this.categoria = categoria; }
     public List<Relacionamento> getRelacionamentos() { return relacionamentos; }
     public void setRelacionamentos(List<Relacionamento> relacionamentos) { this.relacionamentos = relacionamentos; }
     public Long getUpdatedByUserId() { return updatedByUserId; }
