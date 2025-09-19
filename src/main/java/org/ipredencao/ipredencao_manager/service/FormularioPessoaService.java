@@ -86,17 +86,6 @@ public class FormularioPessoaService {
             relatedPeople.add(relatedPerson);
         }
 
-        // Processar chefe de família
-//        TODO: Definir processamento do chefe de familia
-        Pessoa familyHead = null;
-//        if (formulario.getChefeDeFamilia() != null) {
-//            try {
-//                chefeFamilia = pessoaService.findById(formulario.getChefeDeFamilia());
-//            } catch (NoSuchElementException e) {
-//                throw new IllegalArgumentException("Chefe de família com ID " + formulario.getChefeDeFamilia() + " não encontrado");
-//            }
-//        }
-
         // Processar filhos
         List<Pessoa> children = new ArrayList<>();
         if (formulario.getNomeFilhos() != null && !formulario.getNomeFilhos().isEmpty()) {
@@ -107,6 +96,12 @@ public class FormularioPessoaService {
                     relatedPeople.add(child);
                 }
             }
+        }
+
+        // Processar chefe de família
+        Pessoa familyHead = null;
+        if (formulario.getChefeDeFamilia() != null && !formulario.getChefeDeFamilia().trim().isEmpty()) {
+            familyHead = processFamilyHead(formulario.getChefeDeFamilia(), relatedPeople);
         }
         
         // 3. Criar ou atualizar a pessoa
@@ -148,6 +143,15 @@ public class FormularioPessoaService {
             // Atualizar pessoa existente
             person = pessoaService.findById(pessoaId);
             mapFormToPerson(formulario, person);
+            
+            // Se tem chefe de família, definir
+            if (familyHead != null) {
+                person.setChefeDeFamiliaId(familyHead.getId());
+            } else if (person.getChefeDeFamiliaId() == null) {
+                // Se pessoa existente não tem chefe, ela é o próprio chefe
+                person.setChefeDeFamiliaId(person.getId());
+            }
+            
             person = pessoaService.update(person);
         } else {
             // Criar nova pessoa
@@ -160,6 +164,12 @@ public class FormularioPessoaService {
             }
             
             person = pessoaService.create(person);
+            
+            // Se pessoa nova não tem chefe, ela é o próprio chefe
+            if (familyHead == null) {
+                person.setChefeDeFamiliaId(person.getId());
+                person = pessoaService.update(person);
+            }
         }
         
         // Propagar endereço do chefe de família se solicitado
@@ -262,5 +272,28 @@ public class FormularioPessoaService {
             case SOLTEIRO_NOIVO, VIUVO_NOIVO, DIVORCIADO_NOIVO -> TipoRelacionamento.NOIVO;
             default -> TipoRelacionamento.SEM_RELACIONAMENTO;
         };
+    }
+    
+    private Pessoa processFamilyHead(String nameOrId, List<Pessoa> relatedPeople) {
+        // Verificar se é um ID (número)
+        try {
+            Long id = Long.parseLong(nameOrId.trim());
+            return pessoaService.findById(id);
+        } catch (NumberFormatException e) {
+            // É um nome, verificar se já foi criado nos relacionamentos
+            for (Pessoa person : relatedPeople) {
+                if (person.getNome() != null && person.getNome().trim().equalsIgnoreCase(nameOrId.trim())) {
+                    return person;
+                }
+            }
+            
+            // Se não encontrou, criar nova pessoa
+            Pessoa newPerson = new Pessoa();
+            newPerson.setNome(nameOrId.trim());
+            newPerson.setCategoria(CategoriaEnum.AGREGADO_FAMILIAR);
+            Pessoa createdPerson = pessoaService.create(newPerson);
+            relatedPeople.add(createdPerson);
+            return createdPerson;
+        }
     }
 }
