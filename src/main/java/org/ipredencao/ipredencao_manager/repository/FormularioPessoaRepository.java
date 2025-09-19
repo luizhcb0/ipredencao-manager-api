@@ -130,7 +130,7 @@ public class FormularioPessoaRepository {
         f.setFotoUrl(record.getFotoUrl());
         if (record.getSexo() != null)
             f.setSexo(Sexo.valueOf(record.getSexo().name()));
-        // chefeDeFamilia: no formulário é String, na model é Long. Não mapeia diretamente.
+        f.setChefeDeFamilia(record.getChefeDeFamilia());
         f.setPropagarEnderecoChefeFamilia(record.getPropagarEnderecoChefeFamilia());
         f.setPessoaId(record.getPessoaId());
         if (record.getCategoriaId() != null)
@@ -185,7 +185,7 @@ public class FormularioPessoaRepository {
         record.setFotoUrl(f.getFotoUrl());
         if (f.getSexo() != null)
             record.setSexo(org.ipredencao.ipredencao_manager.jooq.enums.Sexo.valueOf(f.getSexo().name()));
-        // chefeDeFamilia: no formulário é String, na model é Long. Não mapeia diretamente.
+        record.setChefeDeFamilia(f.getChefeDeFamilia());
         record.setPropagarEnderecoChefeFamilia(f.getPropagarEnderecoChefeFamilia());
         record.setPessoaId(f.getPessoaId());
         if (f.getCategoria() != null) {
