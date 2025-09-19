@@ -37,7 +37,7 @@ public class AuthService {
     @Autowired
     private FirebaseAuthService firebaseAuthService;
     
-    public LoginResponse loginComGoogle(String idToken, HttpServletRequest request) {
+    public LoginResponse loginWithGoogle(String idToken, HttpServletRequest request) {
         try {
             // Verificar token com Firebase
             FirebaseToken decodedToken = firebaseAuthService.verifyIdToken(idToken);
@@ -51,8 +51,8 @@ public class AuthService {
             );
             
             // Gerar tokens
-            String accessToken = jwtService.gerarToken(usuario);
-            String refreshToken = jwtService.gerarRefreshToken(usuario);
+            String accessToken = jwtService.generateToken(usuario);
+            String refreshToken = jwtService.generateRefreshToken(usuario);
             
             // Criar sessão
             SessaoUsuario sessao = criarSessao(usuario, refreshToken, request);
@@ -65,12 +65,12 @@ public class AuthService {
         }
     }
     
-    public LoginResponse loginComFacebook(String accessToken, HttpServletRequest request) {
+    public LoginResponse loginWithFacebook(String accessToken, HttpServletRequest request) {
         // TODO: Implementar verificação com Facebook Graph API
         throw new UnsupportedOperationException("Login com Facebook ainda não implementado");
     }
     
-    public LoginResponse loginComApple(String idToken, String authorizationCode, String userData, HttpServletRequest request) {
+    public LoginResponse loginWithApple(String idToken, String authorizationCode, String userData, HttpServletRequest request) {
         try {
             // Verificar token com Firebase (Apple Sign-In)
             FirebaseToken decodedToken = firebaseAuthService.verifyIdToken(idToken);
@@ -106,8 +106,8 @@ public class AuthService {
             );
             
             // Gerar tokens
-            String accessToken = jwtService.gerarToken(usuario);
-            String refreshToken = jwtService.gerarRefreshToken(usuario);
+            String accessToken = jwtService.generateToken(usuario);
+            String refreshToken = jwtService.generateRefreshToken(usuario);
             
             // Criar sessão
             SessaoUsuario sessao = criarSessao(usuario, refreshToken, request);
@@ -120,7 +120,7 @@ public class AuthService {
         }
     }
 
-    public LoginResponse loginComEmail(String idToken, HttpServletRequest request) {
+    public LoginResponse loginWithEmail(String idToken, HttpServletRequest request) {
         try {
             // Verificar o ID Token com Firebase Admin SDK
             FirebaseToken decodedToken = firebaseAuthService.verifyIdToken(idToken);
@@ -134,8 +134,8 @@ public class AuthService {
             );
             
             // Gerar tokens JWT próprios
-            String accessToken = jwtService.gerarToken(usuario);
-            String refreshToken = jwtService.gerarRefreshToken(usuario);
+            String accessToken = jwtService.generateToken(usuario);
+            String refreshToken = jwtService.generateRefreshToken(usuario);
             
             // Criar sessão
             SessaoUsuario sessao = criarSessao(usuario, refreshToken, request);
@@ -180,8 +180,8 @@ public class AuthService {
             usuario = usuarioRepository.insert(usuario);
             
             // Gerar tokens
-            String accessToken = jwtService.gerarToken(usuario);
-            String refreshToken = jwtService.gerarRefreshToken(usuario);
+            String accessToken = jwtService.generateToken(usuario);
+            String refreshToken = jwtService.generateRefreshToken(usuario);
             
             // Criar sessão
             SessaoUsuario sessao = criarSessao(usuario, refreshToken, request);
@@ -212,7 +212,7 @@ public class AuthService {
         );
         
         // Gerar novo access token
-        String newAccessToken = jwtService.gerarToken(usuario);
+        String newAccessToken = jwtService.generateToken(usuario);
         
         // Atualizar último uso da sessão
         sessao.atualizarUltimoUso();

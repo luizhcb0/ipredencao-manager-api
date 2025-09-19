@@ -40,7 +40,7 @@ public enum AgregadorCategoriaEnum {
         throw new IllegalArgumentException("Agregador de categoria não encontrado para o ID: " + id);
     }
     
-    public static AgregadorCategoriaEnum fromNome(String nome) {
+    public static AgregadorCategoriaEnum fromName(String nome) {
         for (AgregadorCategoriaEnum categoria : values()) {
             if (categoria.nome.equals(nome)) {
                 return categoria;

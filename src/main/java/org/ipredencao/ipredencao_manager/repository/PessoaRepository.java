@@ -79,7 +79,7 @@ public class PessoaRepository {
         Condition finalCondition = conditions.stream()
             .reduce(DSL.noCondition(), Condition::and);
         
-        List<Pessoa> pessoas = dsl.selectFrom(PESSOA)
+        List<Pessoa> people = dsl.selectFrom(PESSOA)
                 .where(finalCondition)
                 .fetch()
                 .stream()
@@ -87,15 +87,15 @@ public class PessoaRepository {
                 .toList();
         
         // Carregar relacionamentos para cada pessoa
-        for (Pessoa pessoa : pessoas) {
-            List<Relacionamento> relacionamentos = buscarRelacionamentosPorPessoa(pessoa.getId());
-            pessoa.setRelacionamentos(relacionamentos);
+        for (Pessoa pessoa : people) {
+            List<Relacionamento> relationships = findRelationshipsByPersonId(pessoa.getId());
+            pessoa.setRelacionamentos(relationships);
         }
         
-        return pessoas;
+        return people;
     }
 
-    public List<PessoaHistory> findHistoryByPessoaId(Long pessoaId) {
+    public List<PessoaHistory> findHistoryByPersonId(Long pessoaId) {
         // Buscar registros de histórico ordenados por data
         List<PessoaHistoryRecord> historyRecords = dsl.selectFrom(PESSOA_HISTORY)
             .where(PESSOA_HISTORY.PESSOA_ID.eq(pessoaId))
@@ -151,7 +151,7 @@ public class PessoaRepository {
      * Busca todos os relacionamentos de uma pessoa, considerando que ela pode estar
      * tanto na coluna pessoa_id quanto na pessoa_relacionada_id
      */
-    private List<Relacionamento> buscarRelacionamentosPorPessoa(Long pessoaId) {
+    private List<Relacionamento> findRelationshipsByPersonId(Long pessoaId) {
         return dsl.selectFrom(PESSOA_RELACIONAMENTO)
                 .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaId)
                     .or(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(pessoaId)))
@@ -206,7 +206,7 @@ public class PessoaRepository {
     /**
      * Busca uma pessoa por ID (método auxiliar para evitar recursão infinita)
      */
-    private Pessoa buscarPessoaPorId(Long id) {
+    private Pessoa findPersonById(Long id) {
         PessoaRecord record = dsl.selectFrom(PESSOA)
                 .where(PESSOA.PESSOA_ID.eq(id))
                 .fetchOne();

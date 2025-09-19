@@ -29,7 +29,7 @@ public class FormularioPessoaService {
     @Autowired
     private PessoaService pessoaService;
 
-    public FormularioPessoa criar(FormularioPessoa formulario) {
+    public FormularioPessoa create(FormularioPessoa formulario) {
         // Validar se o email já existe
         if (!repository.find(FormularioPessoaQuery.builder().email(formulario.getEmail()).build()).isEmpty()) {
             throw new IllegalArgumentException("Já existe um formulário cadastrado com este email: " + formulario.getEmail());
@@ -43,7 +43,7 @@ public class FormularioPessoaService {
         return repository.update(formulario);
     }
 
-    public FormularioPessoa atualizar(FormularioPessoa formulario) {
+    public FormularioPessoa update(FormularioPessoa formulario) {
         return repository.update(formulario);
     }
 
@@ -60,35 +60,35 @@ public class FormularioPessoaService {
     }
 
     @Transactional
-    public ProcessarFormularioResponse processarFormulario(ProcessarFormularioRequest request) {
+    public ProcessarFormularioResponse processForm(ProcessarFormularioRequest request) {
         // 1. Buscar o formulário
         FormularioPessoa formulario = findById(request.getFormularioId());
         
         // 2. Processar pessoas dos relacionamentos primeiro
-        List<Pessoa> pessoasRelacionamentos = new ArrayList<>();
+        List<Pessoa> relatedPeople = new ArrayList<>();
         
         // Processar pai
         if (formulario.getNomePai() != null && !formulario.getNomePai().trim().isEmpty()) {
-            Pessoa pai = processarPessoaRelacionamento(formulario.getNomePai());
-            pessoasRelacionamentos.add(pai);
+            Pessoa father = processRelatedPerson(formulario.getNomePai());
+            relatedPeople.add(father);
         }
         
         // Processar mãe
         if (formulario.getNomeMae() != null && !formulario.getNomeMae().trim().isEmpty()) {
-            Pessoa mae = processarPessoaRelacionamento(formulario.getNomeMae());
-            pessoasRelacionamentos.add(mae);
+            Pessoa mother = processRelatedPerson(formulario.getNomeMae());
+            relatedPeople.add(mother);
         }
         
         // Processar pessoa relacionada
-        Pessoa pessoaRelacionada = null;
+        Pessoa relatedPerson = null;
         if (formulario.getNomePessoaRelacionada() != null && !formulario.getNomePessoaRelacionada().trim().isEmpty()) {
-            pessoaRelacionada = processarPessoaRelacionamento(formulario.getNomePessoaRelacionada());
-            pessoasRelacionamentos.add(pessoaRelacionada);
+            relatedPerson = processRelatedPerson(formulario.getNomePessoaRelacionada());
+            relatedPeople.add(relatedPerson);
         }
 
         // Processar chefe de família
 //        TODO: Definir processamento do chefe de familia
-        Pessoa chefeFamilia = null;
+        Pessoa familyHead = null;
 //        if (formulario.getChefeDeFamilia() != null) {
 //            try {
 //                chefeFamilia = pessoaService.findById(formulario.getChefeDeFamilia());
@@ -98,84 +98,84 @@ public class FormularioPessoaService {
 //        }
 
         // Processar filhos
-        List<Pessoa> filhos = new ArrayList<>();
+        List<Pessoa> children = new ArrayList<>();
         if (formulario.getNomeFilhos() != null && !formulario.getNomeFilhos().isEmpty()) {
             for (String nomeFilho : formulario.getNomeFilhos()) {
                 if (nomeFilho != null && !nomeFilho.trim().isEmpty()) {
-                    Pessoa filho = processarPessoaRelacionamento(nomeFilho);
-                    filhos.add(filho);
-                    pessoasRelacionamentos.add(filho);
+                    Pessoa child = processRelatedPerson(nomeFilho);
+                    children.add(child);
+                    relatedPeople.add(child);
                 }
             }
         }
         
         // 3. Criar ou atualizar a pessoa
-        Pessoa pessoa = criarOuAtualizarPessoa(formulario, request.getPessoaId(), chefeFamilia);
+        Pessoa person = createOrUpdatePerson(formulario, request.getPessoaId(), familyHead);
         
         // 4. Atualizar o formulário com o ID da pessoa criada/atualizada
-        formulario.setPessoaId(pessoa.getId());
+        formulario.setPessoaId(person.getId());
         formulario.setStatus(FormPessoaStatus.VALIDADO);
         repository.update(formulario);
         
         // 5. Criar relacionamentos
-        List<Relacionamento> relacionamentos = criarRelacionamentos(pessoa, formulario, pessoaRelacionada, filhos, pessoasRelacionamentos);
+        List<Relacionamento> relationships = createRelationships(person, formulario, relatedPerson, children, relatedPeople);
         
-        String mensagem = request.getPessoaId() != null ? 
+        String message = request.getPessoaId() != null ? 
             "Pessoa atualizada e relacionamentos criados com sucesso" : 
             "Pessoa criada e relacionamentos criados com sucesso";
             
-        return new ProcessarFormularioResponse(pessoa, relacionamentos, mensagem);
+        return new ProcessarFormularioResponse(person, relationships, message);
     }
 
-    private Pessoa processarPessoaRelacionamento(String nomeOuId) {
+    private Pessoa processRelatedPerson(String nameOrId) {
         // Verificar se é um ID (número)
         try {
-            Long id = Long.parseLong(nomeOuId.trim());
+            Long id = Long.parseLong(nameOrId.trim());
             return pessoaService.findById(id);
         } catch (NumberFormatException e) {
             // É um nome, criar nova pessoa
-            Pessoa novaPessoa = new Pessoa();
-            novaPessoa.setNome(nomeOuId.trim());
-            novaPessoa.setCategoria(CategoriaEnum.AGREGADO_FAMILIAR);
-            return pessoaService.create(novaPessoa);
+            Pessoa newPerson = new Pessoa();
+            newPerson.setNome(nameOrId.trim());
+            newPerson.setCategoria(CategoriaEnum.AGREGADO_FAMILIAR);
+            return pessoaService.create(newPerson);
         }
     }
 
-    private Pessoa criarOuAtualizarPessoa(FormularioPessoa formulario, Long pessoaId, Pessoa chefeFamilia) {
-        Pessoa pessoa;
+    private Pessoa createOrUpdatePerson(FormularioPessoa formulario, Long pessoaId, Pessoa familyHead) {
+        Pessoa person;
         
         if (pessoaId != null) {
             // Atualizar pessoa existente
-            pessoa = pessoaService.findById(pessoaId);
-            mapearFormularioParaPessoa(formulario, pessoa);
-            pessoa = pessoaService.update(pessoa);
+            person = pessoaService.findById(pessoaId);
+            mapFormToPerson(formulario, person);
+            person = pessoaService.update(person);
         } else {
             // Criar nova pessoa
-            pessoa = new Pessoa();
-            mapearFormularioParaPessoa(formulario, pessoa);
+            person = new Pessoa();
+            mapFormToPerson(formulario, person);
 
             // Se tem chefe de família, definir
-            if (chefeFamilia != null) {
-                pessoa.setChefeDeFamiliaId(chefeFamilia.getId());
+            if (familyHead != null) {
+                person.setChefeDeFamiliaId(familyHead.getId());
             }
             
-            pessoa = pessoaService.create(pessoa);
+            person = pessoaService.create(person);
         }
         
         // Propagar endereço do chefe de família se solicitado
-        if (Boolean.TRUE.equals(formulario.getPropagarEnderecoChefeFamilia()) && chefeFamilia != null) {
-            pessoa.setEnderecoCep(chefeFamilia.getEnderecoCep());
-            pessoa.setEnderecoLogradouro(chefeFamilia.getEnderecoLogradouro());
-            pessoa.setEnderecoNumero(chefeFamilia.getEnderecoNumero());
-            pessoa.setEnderecoComplemento(chefeFamilia.getEnderecoComplemento());
-            pessoa.setRegiao(chefeFamilia.getRegiao());
-            pessoa = pessoaService.update(pessoa);
+        if (Boolean.TRUE.equals(formulario.getPropagarEnderecoChefeFamilia()) && familyHead != null) {
+            person.setEnderecoCep(familyHead.getEnderecoCep());
+            person.setEnderecoLogradouro(familyHead.getEnderecoLogradouro());
+            person.setEnderecoNumero(familyHead.getEnderecoNumero());
+            person.setEnderecoComplemento(familyHead.getEnderecoComplemento());
+            person.setRegiao(familyHead.getRegiao());
+            person = pessoaService.update(person);
         }
         
-        return pessoa;
+        return person;
     }
 
-    private void mapearFormularioParaPessoa(FormularioPessoa formulario, Pessoa pessoa) {
+    private void mapFormToPerson(FormularioPessoa formulario, Pessoa pessoa) {
         pessoa.setNome(formulario.getNome());
         pessoa.setApelido(formulario.getApelido());
         pessoa.setEmail(formulario.getEmail());
@@ -207,39 +207,39 @@ public class FormularioPessoaService {
         pessoa.setCategoria(formulario.getCategoria());
     }
 
-    private List<Relacionamento> criarRelacionamentos(Pessoa pessoa, FormularioPessoa formulario,
-                                                           Pessoa pessoaRelacionada, List<Pessoa> filhos, List<Pessoa> pessoasRelacionamentos) {
-        List<Relacionamento> relacionamentos = new ArrayList<>();
+    private List<Relacionamento> createRelationships(Pessoa pessoa, FormularioPessoa formulario,
+                                                           Pessoa pessoaRelacionada, List<Pessoa> children, List<Pessoa> relatedPeople) {
+        List<Relacionamento> relationships = new ArrayList<>();
         
         // Relacionamento com pessoa relacionada
         if (pessoaRelacionada != null) {
-            TipoRelacionamento tipoRelacionamento = determinarTipoRelacionamentoParceiro(formulario.getEstadoCivil());
+            TipoRelacionamento tipoRelacionamento = determineRelationshipType(formulario.getEstadoCivil());
             Relacionamento rel = new Relacionamento();
             rel.setPessoaId(pessoa.getId());
             rel.setPessoaRelacionadaId(pessoaRelacionada.getId());
             rel.setTipoRelacionamento(tipoRelacionamento);
             rel.setInicioRelacionamento(formulario.getInicioRelacionamento());
-            relacionamentos.add(pessoaService.criarRelacionamento(pessoa.getId(), rel));
+            relationships.add(pessoaService.createRelationship(pessoa.getId(), rel));
         }
         
         // Relacionamento com filhos
-        for (Pessoa filho : filhos) {
+        for (Pessoa child : children) {
             Relacionamento rel = new Relacionamento();
             rel.setPessoaId(pessoa.getId());
-            rel.setPessoaRelacionadaId(filho.getId());
+            rel.setPessoaRelacionadaId(child.getId());
             rel.setTipoRelacionamento(TipoRelacionamento.FILHO);
-            relacionamentos.add(pessoaService.criarRelacionamento(pessoa.getId(), rel));
+            relationships.add(pessoaService.createRelationship(pessoa.getId(), rel));
         }
         
         // Relacionamento com pai e mãe
-        for (Pessoa pessoaRel : pessoasRelacionamentos) {
+        for (Pessoa pessoaRel : relatedPeople) {
             if (formulario.getNomePai() != null && 
                 (pessoaRel.getNome().equals(formulario.getNomePai()) || pessoaRel.getId().toString().equals(formulario.getNomePai()))) {
                 Relacionamento rel = new Relacionamento();
                 rel.setPessoaId(pessoa.getId());
                 rel.setPessoaRelacionadaId(pessoaRel.getId());
                 rel.setTipoRelacionamento(TipoRelacionamento.PAI);
-                relacionamentos.add(pessoaService.criarRelacionamento(pessoa.getId(), rel));
+                relationships.add(pessoaService.createRelationship(pessoa.getId(), rel));
             }
             
             if (formulario.getNomeMae() != null && 
@@ -248,14 +248,14 @@ public class FormularioPessoaService {
                 rel.setPessoaId(pessoa.getId());
                 rel.setPessoaRelacionadaId(pessoaRel.getId());
                 rel.setTipoRelacionamento(TipoRelacionamento.MAE);
-                relacionamentos.add(pessoaService.criarRelacionamento(pessoa.getId(), rel));
+                relationships.add(pessoaService.createRelationship(pessoa.getId(), rel));
             }
         }
         
-        return relacionamentos;
+        return relationships;
     }
 
-    private TipoRelacionamento determinarTipoRelacionamentoParceiro(EstadoCivil estadoCivil) {
+    private TipoRelacionamento determineRelationshipType(EstadoCivil estadoCivil) {
         return switch (estadoCivil) {
             case CASADO -> TipoRelacionamento.CONJUGE;
             case SOLTEIRO_NAMORANDO, DIVORCIADO_NAMORANDO -> TipoRelacionamento.NAMORADO;

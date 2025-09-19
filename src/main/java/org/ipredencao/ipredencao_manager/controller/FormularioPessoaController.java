@@ -24,9 +24,9 @@ public class FormularioPessoaController {
     private FormularioPessoaService service;
 
     @PostMapping
-    public ResponseEntity<?> criar(@RequestBody FormularioPessoa formulario, HttpServletRequest request) {
+    public ResponseEntity<?> create(@RequestBody FormularioPessoa formulario, HttpServletRequest request) {
         try {
-            FormularioPessoa criado = service.criar(formulario);
+            FormularioPessoa criado = service.create(formulario);
             
             // Auditoria para usuário anônimo (sem autenticação)
             // TODO: salvar estes dados de quem criou.
@@ -41,7 +41,7 @@ public class FormularioPessoaController {
     }
 
     @PostMapping("/{id}/foto")
-    public ResponseEntity<?> uploadFoto(
+    public ResponseEntity<?> uploadPhoto(
         @PathVariable Long id,
         @RequestParam("foto") MultipartFile foto
     ) {
@@ -62,10 +62,10 @@ public class FormularioPessoaController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> atualizar(@PathVariable Long id, @RequestBody FormularioPessoa formulario) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody FormularioPessoa formulario) {
         try {
             formulario.setId(id);
-            FormularioPessoa atualizado = service.atualizar(formulario);
+            FormularioPessoa atualizado = service.update(formulario);
             return ResponseEntity.ok(atualizado);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
@@ -76,10 +76,10 @@ public class FormularioPessoaController {
 
     @PostMapping("/search")
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> buscarFormularioPessoas(@RequestBody FormularioPessoaQuery query) {
+    public ResponseEntity<?> searchForms(@RequestBody FormularioPessoaQuery query) {
         try {
-            List<FormularioPessoa> formularios = service.find(query);
-            return ResponseEntity.ok(formularios);
+            List<FormularioPessoa> forms = service.find(query);
+            return ResponseEntity.ok(forms);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new ErrorResponse("Erro na busca", e.getMessage()));
         }
@@ -87,7 +87,7 @@ public class FormularioPessoaController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<?> findById(@PathVariable Long id) {
         try {
             FormularioPessoa encontrado = service.findById(id);
             return ResponseEntity.ok(encontrado);
@@ -100,10 +100,10 @@ public class FormularioPessoaController {
 
     @PostMapping("/processar")
     @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
-    public ResponseEntity<ProcessarFormularioResponse> processarFormulario(
+    public ResponseEntity<ProcessarFormularioResponse> processForm(
             @RequestBody ProcessarFormularioRequest request) {
         try {
-            ProcessarFormularioResponse response = service.processarFormulario(request);
+            ProcessarFormularioResponse response = service.processForm(request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             ProcessarFormularioResponse errorResponse = new ProcessarFormularioResponse();

@@ -33,7 +33,7 @@ public class SecurityUtils {
             
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String jwt = authHeader.substring(7);
-                return jwtService.extrairUserId(jwt);
+                return jwtService.extractUserId(jwt);
             }
             
             return null;
@@ -80,7 +80,7 @@ public class SecurityUtils {
             
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String jwt = authHeader.substring(7);
-                return jwtService.extrairRole(jwt);
+                return jwtService.extractRole(jwt);
             }
             
             return null;

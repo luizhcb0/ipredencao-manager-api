@@ -27,9 +27,9 @@ public class AuthController {
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     
     @PostMapping("/login/google")
-    public ResponseEntity<?> loginGoogle(@RequestBody LoginGoogleRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> loginWithGoogle(@RequestBody LoginGoogleRequest request, HttpServletRequest httpRequest) {
         try {
-            LoginResponse response = authService.loginComGoogle(request.getIdToken(), httpRequest);
+            LoginResponse response = authService.loginWithGoogle(request.getIdToken(), httpRequest);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             log.error(e.getMessage(), e);
@@ -41,9 +41,9 @@ public class AuthController {
     }
     
     @PostMapping("/login/facebook")
-    public ResponseEntity<?> loginFacebook(@RequestBody LoginFacebookRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> loginWithFacebook(@RequestBody LoginFacebookRequest request, HttpServletRequest httpRequest) {
         try {
-            LoginResponse response = authService.loginComFacebook(request.getAccessToken(), httpRequest);
+            LoginResponse response = authService.loginWithFacebook(request.getAccessToken(), httpRequest);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
@@ -55,9 +55,9 @@ public class AuthController {
     }
     
     @PostMapping("/login/apple")
-    public ResponseEntity<?> loginApple(@RequestBody LoginAppleRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> loginWithApple(@RequestBody LoginAppleRequest request, HttpServletRequest httpRequest) {
         try {
-            LoginResponse response = authService.loginComApple(
+            LoginResponse response = authService.loginWithApple(
                 request.getIdToken(), 
                 request.getAuthorizationCode(),
                 request.getUser(),
@@ -72,9 +72,9 @@ public class AuthController {
     }
     
     @PostMapping("/login/email")
-    public ResponseEntity<?> loginEmail(@RequestBody LoginEmailRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> loginWithEmail(@RequestBody LoginEmailRequest request, HttpServletRequest httpRequest) {
         try {
-            LoginResponse response = authService.loginComEmail(request.getIdToken(), httpRequest);
+            LoginResponse response = authService.loginWithEmail(request.getIdToken(), httpRequest);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
