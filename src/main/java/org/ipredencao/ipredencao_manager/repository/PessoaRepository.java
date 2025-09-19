@@ -65,6 +65,47 @@ public class PessoaRepository {
         return pessoa;
     }
 
+    public void deleteRelationship(Long pessoaId, Long pessoaRelacionadaId, TipoRelacionamento tipoRelacionamento) {
+        // Tentar deletar na forma direta (pessoaId -> pessoaRelacionadaId)
+        int deleted = dsl.deleteFrom(PESSOA_RELACIONAMENTO)
+            .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaId)
+                .and(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(pessoaRelacionadaId))
+                .and(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoRelacionamento.valueOf(tipoRelacionamento.name()))))
+            .execute();
+        
+        // Se não encontrou na forma direta, tentar na forma invertida
+        if (deleted == 0) {
+            TipoRelacionamento tipoInvertido = inverterTipoRelacionamento(tipoRelacionamento);
+            dsl.deleteFrom(PESSOA_RELACIONAMENTO)
+                .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaRelacionadaId)
+                    .and(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(pessoaId))
+                    .and(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoRelacionamento.valueOf(tipoInvertido.name()))))
+                .execute();
+        }
+    }
+    
+    public void updateRelationship(Long pessoaId, Relacionamento existingRel, Relacionamento newRel) {
+        // Tentar atualizar na forma direta (pessoaId -> pessoaRelacionadaId)
+        int updated = dsl.update(PESSOA_RELACIONAMENTO)
+            .set(PESSOA_RELACIONAMENTO.INICIO_RELACIONAMENTO, DateTimeHelper.toDb(newRel.getInicioRelacionamento()))
+            .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaId)
+                .and(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(existingRel.getPessoaRelacionadaId()))
+                .and(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoRelacionamento.valueOf(existingRel.getTipoRelacionamento().name()))))
+            .execute();
+        
+        // Se não encontrou na forma direta, tentar na forma invertida
+        if (updated == 0) {
+            TipoRelacionamento tipoInvertido = inverterTipoRelacionamento(existingRel.getTipoRelacionamento());
+            dsl.update(PESSOA_RELACIONAMENTO)
+                .set(PESSOA_RELACIONAMENTO.INICIO_RELACIONAMENTO, DateTimeHelper.toDb(newRel.getInicioRelacionamento()))
+                .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(existingRel.getPessoaRelacionadaId())
+                    .and(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(pessoaId))
+                    .and(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoRelacionamento.valueOf(tipoInvertido.name()))))
+                .execute();
+        }
+    }
+
+
     private PessoaHistoryRecord insertHistory(PessoaRecord pessoaRecord) {
         PessoaHistoryRecord historyRecord = toHistoryRepository(pessoaRecord);
         return dsl.insertInto(PESSOA_HISTORY)
