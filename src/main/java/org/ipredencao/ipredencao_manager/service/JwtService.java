@@ -24,28 +24,28 @@ public class JwtService {
     @Autowired
     private JwtConfig jwtConfig;
     
-    public String extrairEmail(String token) {
-        return extrairClaim(token, Claims::getSubject);
+    public String extractEmail(String token) {
+        return extractClaim(token, Claims::getSubject);
     }
     
-    public String extrairRole(String token) {
-        return extrairClaim(token, claims -> claims.get("role", String.class));
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
     }
     
-    public Long extrairUserId(String token) {
-        return extrairClaim(token, claims -> claims.get("userId", Long.class));
+    public Long extractUserId(String token) {
+        return extractClaim(token, claims -> claims.get("userId", Long.class));
     }
     
-    public <T> T extrairClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extrairTodasClaims(token);
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
     
-    public String gerarToken(Usuario usuario) {
-        return gerarToken(new HashMap<>(), usuario);
+    public String generateToken(Usuario usuario) {
+        return generateToken(new HashMap<>(), usuario);
     }
     
-    public String gerarToken(Map<String, Object> extraClaims, Usuario usuario) {
+    public String generateToken(Map<String, Object> extraClaims, Usuario usuario) {
         extraClaims.put("role", usuario.getAccessProfile().name());
         extraClaims.put("userId", usuario.getId());
         extraClaims.put("name", usuario.getName());
@@ -60,7 +60,7 @@ public class JwtService {
                 .compact();
     }
     
-    public String gerarRefreshToken(Usuario usuario) {
+    public String generateRefreshToken(Usuario usuario) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("type", "refresh");
         claims.put("userId", usuario.getId());
@@ -84,14 +84,14 @@ public class JwtService {
     }
     
     public boolean isTokenExpirado(String token) {
-        return extrairExpiracao(token).before(new Date());
+        return extractExpiration(token).before(new Date());
     }
     
-    private Date extrairExpiracao(String token) {
-        return extrairClaim(token, Claims::getExpiration);
+    private Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
     }
     
-    private Claims extrairTodasClaims(String token) {
+    private Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .setSigningKey(getSignInKey())
                 .build()

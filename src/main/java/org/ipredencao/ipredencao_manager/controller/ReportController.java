@@ -34,8 +34,8 @@ public class ReportController {
     public ResponseEntity<?> getSummary() {
         try {
             log.info("Requisição para obter resumo de relatórios");
-            SummaryResponse resumo = reportService.generateSummary();
-            return ResponseEntity.ok(resumo);
+            SummaryResponse summary = reportService.generateSummary();
+            return ResponseEntity.ok(summary);
         } catch (Exception e) {
             log.error("Erro ao gerar resumo de relatórios: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
@@ -52,10 +52,10 @@ public class ReportController {
             if (query == null) {
                 query = PessoaQuery.builder().build(); // Query vazia retorna todas as pessoas
             }
-            List<Pessoa> pessoas = pessoaService.find(query);
+            List<Pessoa> people = pessoaService.find(query);
             
-            log.info("Retornando {} pessoas para geração de PDF", pessoas.size());
-            return ResponseEntity.ok(pessoas);
+            log.info("Retornando {} pessoas para geração de PDF", people.size());
+            return ResponseEntity.ok(people);
             
         } catch (Exception e) {
             log.error("Erro ao obter pessoas para PDF: {}", e.getMessage(), e);

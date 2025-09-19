@@ -111,7 +111,7 @@ public enum CategoriaEnum {
         throw new IllegalArgumentException("Categoria não encontrada para o ID: " + id);
     }
     
-    public static CategoriaEnum fromNome(String nome) {
+    public static CategoriaEnum fromName(String nome) {
         for (CategoriaEnum categoria : values()) {
             if (categoria.nome.equals(nome)) {
                 return categoria;

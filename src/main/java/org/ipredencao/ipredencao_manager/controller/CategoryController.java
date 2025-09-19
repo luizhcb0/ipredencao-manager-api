@@ -20,11 +20,11 @@ public class CategoryController {
      */
     @GetMapping("/agregadores")
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> listarAgregadoresCategorias() {
+    public ResponseEntity<?> listCategoryAggregators() {
         try {
-            List<AgregadorCategoriaEnum> agregadores = Arrays.asList(AgregadorCategoriaEnum.values());
+            List<AgregadorCategoriaEnum> aggregators = Arrays.asList(AgregadorCategoriaEnum.values());
             
-            return ResponseEntity.ok(agregadores);
+            return ResponseEntity.ok(aggregators);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(new ErrorResponse("Erro ao listar agregadores de categorias", e.getMessage()));
@@ -38,7 +38,7 @@ public class CategoryController {
      */
     @GetMapping("/agregadores/{idAgregador}")
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> listarCategoriasPorAgregador(@PathVariable Long idAgregador) {
+    public ResponseEntity<?> listCategoriesByAggregator(@PathVariable Long idAgregador) {
         try {
             // Buscar o agregador pelo ID
             AgregadorCategoriaEnum agregador;
@@ -50,11 +50,11 @@ public class CategoryController {
             }
             
             // Buscar categorias do agregador
-            CategoriaEnum[] categorias = CategoriaEnum.getByAgregadorCategoria(agregador);
+            CategoriaEnum[] categories = CategoriaEnum.getByAgregadorCategoria(agregador);
             
-            List<CategoriaEnum> resultado = Arrays.asList(categorias);
+            List<CategoriaEnum> result = Arrays.asList(categories);
             
-            return ResponseEntity.ok(resultado);
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(new ErrorResponse("Erro ao listar categorias", e.getMessage()));
@@ -67,11 +67,11 @@ public class CategoryController {
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> listarTodasCategorias() {
+    public ResponseEntity<?> listAllCategories() {
         try {
-            List<CategoriaEnum> categorias = Arrays.asList(CategoriaEnum.values());
+            List<CategoriaEnum> categories = Arrays.asList(CategoriaEnum.values());
             
-            return ResponseEntity.ok(categorias);
+            return ResponseEntity.ok(categories);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(new ErrorResponse("Erro ao listar categorias", e.getMessage()));

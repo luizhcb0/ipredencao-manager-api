@@ -67,7 +67,7 @@ public class PessoaService {
     }
 
     // Relacionamento qualificados
-    public Relacionamento criarRelacionamento(Long pessoaId, Relacionamento relacionamento) {
+    public Relacionamento createRelationship(Long pessoaId, Relacionamento relacionamento) {
         return pessoaRepository.insertRelationship(pessoaId, relacionamento);
     }
     
@@ -75,6 +75,6 @@ public class PessoaService {
      * Busca o histórico de alterações de uma pessoa
      */
     public List<PessoaHistory> findHistoryById(Long id) {
-        return pessoaRepository.findHistoryByPessoaId(id);
+        return pessoaRepository.findHistoryByPersonId(id);
     }
 }

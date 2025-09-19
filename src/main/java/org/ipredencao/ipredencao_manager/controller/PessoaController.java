@@ -34,7 +34,7 @@ public class PessoaController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> criarPessoa(@RequestBody Pessoa pessoa) {
+    public ResponseEntity<?> createPerson(@RequestBody Pessoa pessoa) {
         try {
             return ResponseEntity.ok(pessoaService.create(pessoa));
         } catch (IllegalArgumentException e) {
@@ -64,7 +64,7 @@ public class PessoaController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<?> findById(@PathVariable Long id) {
         try {
             Pessoa pessoa = pessoaService.findById(id);
             return ResponseEntity.ok(pessoa);
@@ -77,10 +77,10 @@ public class PessoaController {
 
     @PostMapping("/search")
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> buscarPessoas(@RequestBody PessoaQuery query) {
+    public ResponseEntity<?> searchPeople(@RequestBody PessoaQuery query) {
         try {
-            List<Pessoa> pessoas = pessoaService.find(query);
-            return ResponseEntity.ok(pessoas);
+            List<Pessoa> people = pessoaService.find(query);
+            return ResponseEntity.ok(people);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new ErrorResponse("Erro na busca", e.getMessage()));
         }
@@ -88,7 +88,7 @@ public class PessoaController {
     
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> atualizarPessoa(@PathVariable Long id, @RequestBody Pessoa pessoa) {
+    public ResponseEntity<?> updatePerson(@PathVariable Long id, @RequestBody Pessoa pessoa) {
         try {
             pessoa.setId(id);
             return ResponseEntity.ok(pessoaService.update(pessoa));
@@ -106,7 +106,7 @@ public class PessoaController {
      */
     @GetMapping("/{id}/history")
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
-    public ResponseEntity<?> buscarHistoricoPorId(@PathVariable Long id) {
+    public ResponseEntity<?> findHistoryById(@PathVariable Long id) {
         try {
             List<PessoaHistory> history = pessoaService.findHistoryById(id);
             PessoaHistoryResponse pessoaHistoryResponse = new PessoaHistoryResponse(id, history);
