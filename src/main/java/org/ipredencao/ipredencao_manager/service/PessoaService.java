@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
+import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.util.SecurityUtils;
 import java.util.List;
 import java.util.Map;
@@ -133,6 +134,8 @@ public class PessoaService {
         
         for (String key : toAdd) {
             Relacionamento rel = newMap.get(key);
+            // Processar pessoa relacionada se necessário
+            processRelatedPersonInRelationship(rel);
             pessoaRepository.insertRelationship(pessoaId, rel);
         }
         
@@ -147,5 +150,16 @@ public class PessoaService {
         return Objects.equals(rel1.getPessoaRelacionadaId(), rel2.getPessoaRelacionadaId()) &&
                rel1.getTipoRelacionamento() == rel2.getTipoRelacionamento() &&
                Objects.equals(rel1.getInicioRelacionamento(), rel2.getInicioRelacionamento());
+    }
+    
+    private void processRelatedPersonInRelationship(Relacionamento rel) {
+        // Se pessoaRelacionadaId é null mas nomePessoaRelacionada não é, criar nova pessoa
+        if (rel.getPessoaRelacionadaId() == null && rel.getNomePessoaRelacionada() != null && !rel.getNomePessoaRelacionada().trim().isEmpty()) {
+            Pessoa newPerson = new Pessoa();
+            newPerson.setNome(rel.getNomePessoaRelacionada().trim());
+            newPerson.setCategoria(CategoriaEnum.AGREGADO_FAMILIAR);
+            Pessoa createdPerson = pessoaRepository.insert(newPerson);
+            rel.setPessoaRelacionadaId(createdPerson.getId());
+        }
     }
 }
