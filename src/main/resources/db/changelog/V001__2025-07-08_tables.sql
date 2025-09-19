@@ -61,12 +61,11 @@ INSERT INTO categoria (nome, agregador_categoria_id) VALUES
 ('Membro comungante', 2),
 
 -- Categorias do agregador Membro não comungante
-('Membro não comungante, aguardando profissão de fé (admitindo)', 3),
-('Membro não comungante, aguardando exame para profissão de fé (admitindo)', 3),
-('Membro não comungante, em catequização final', 3),
-('Membro não comungante (especial), não requer profissão de fé', 3),
+('Aguardando profissão de fé', 3),
+('Aguardando exame para profissão de fé', 3),
+('Eespecial, não requer profissão de fé', 3),
 ('Membro não comungante', 3),
-('Membro não comungante, em idade para profissão de fé', 3),
+('Em idade para profissão de fé', 3),
 
 -- Categorias do agregador Rol à parte
 ('Membro em trânsito', 4),

@@ -8,7 +8,7 @@ public enum AgregadorCategoriaEnum {
     MEMBRO_COMUNGANTE(2L, "Membro comungante"),
     MEMBRO_NAO_COMUNGANTE(3L, "Membro não comungante"),
     ROL_A_PARTE(4L, "Rol à parte"),
-    ADMITINDO(5L, "Admitindo"),
+    ADMITENDO(5L, "Admitendo"),
     TRANSFERIDO(6L, "Transferido"),
     EXCLUIDO(7L, "Excluido"),
     MISSIONARIO(8L, "Missionário"),

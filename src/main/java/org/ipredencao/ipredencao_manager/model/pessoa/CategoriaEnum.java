@@ -12,12 +12,11 @@ public enum CategoriaEnum {
     MEMBRO_COMUNGANTE(3L, "Membro comungante", 2L),
     
     // Categorias do agregador Membro não comungante (id=3)
-    MEMBRO_NAO_COMUNGANTE_AGUARDANDO_PROFISSAO(4L, "Membro não comungante, aguardando profissão de fé (admitindo)", 3L),
-    MEMBRO_NAO_COMUNGANTE_AGUARDANDO_EXAME(5L, "Membro não comungante, aguardando exame para profissão de fé (admitindo)", 3L),
-    MEMBRO_NAO_COMUNGANTE_EM_CATEQUIZACAO(6L, "Membro não comungante, em catequização final", 3L),
-    MEMBRO_NAO_COMUNGANTE_ESPECIAL(7L, "Membro não comungante (especial), não requer profissão de fé", 3L),
+    AGUARDANDO_PROFISSAO(4L, "Aguardando profissão de fé", 3L),
+    AGUARDANDO_EXAME(5L, "Aguardando exame para profissão de fé", 3L),
+    MEMBRO_NAO_COMUNGANTE_ESPECIAL(7L, "Especial, não requer profissão de fé", 3L),
     MEMBRO_NAO_COMUNGANTE(8L, "Membro não comungante", 3L),
-    MEMBRO_NAO_COMUNGANTE_IDADE_PROFISSAO(9L, "Membro não comungante, em idade para profissão de fé", 3L),
+    MEMBRO_NAO_COMUNGANTE_IDADE_PROFISSAO(9L, "Em idade para profissão de fé", 3L),
     
     // Categorias do agregador Rol à parte (id=4)
     MEMBRO_EM_TRANSITO(10L, "Membro em trânsito", 4L),
@@ -26,7 +25,7 @@ public enum CategoriaEnum {
     MEMBRO_NAO_LOCALIZADO(13L, "Membro não localizado ou pedido de desligamento", 4L),
     MEMBRO_SOB_DISCIPLINA(14L, "Membro sob disciplina", 4L),
     
-    // Categorias do agregador Admitindo (id=5)
+    // Categorias do agregador Admitendo (id=5)
     AGUARDANDO_CARTA_TRANSFERENCIA(15L, "Aguardando carta de transferência", 5L),
     SOLICITAR_CARTA_TRANSFERENCIA(16L, "Solicitar carta de transferência", 5L),
     AGUARDANDO_BATISMO_INFANTIL(17L, "Aguardando batismo infantil", 5L),
