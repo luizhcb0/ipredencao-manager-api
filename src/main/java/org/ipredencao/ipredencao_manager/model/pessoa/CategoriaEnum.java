@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.model.pessoa;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
@@ -101,6 +102,7 @@ public enum CategoriaEnum {
             .toArray(CategoriaEnum[]::new);
     }
     
+    @JsonCreator
     public static CategoriaEnum fromId(Long id) {
         for (CategoriaEnum categoria : values()) {
             if (categoria.id.equals(id)) {
