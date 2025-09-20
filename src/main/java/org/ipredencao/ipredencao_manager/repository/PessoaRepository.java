@@ -245,16 +245,6 @@ public class PessoaRepository {
     }
     
     /**
-     * Busca uma pessoa por ID (método auxiliar para evitar recursão infinita)
-     */
-    private Pessoa findPersonById(Long id) {
-        PessoaRecord record = dsl.selectFrom(PESSOA)
-                .where(PESSOA.PESSOA_ID.eq(id))
-                .fetchOne();
-        return record != null ? fromRepository(record) : null;
-    }
-    
-    /**
      * Inverte o tipo de relacionamento para manter a perspectiva da pessoa atual
      * Ex: se A é FILHO de B, então B é PAI de A
      */
@@ -269,6 +259,7 @@ public class PessoaRepository {
             case MAE -> TipoRelacionamento.FILHO; // Se A é MÃE de B, então B é FILHO de A
             case IRMAO -> TipoRelacionamento.IRMAO; // Irmão é recíproco
             case RESPONSAVEL -> TipoRelacionamento.FILHO; // Se A é RESPONSÁVEL de B, então B é FILHO de A
+            case VIUVO ->  TipoRelacionamento.VIUVO; // Viúvo é recíproco
         };
     }
     
