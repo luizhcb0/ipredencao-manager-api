@@ -9,5 +9,6 @@ public enum TipoRelacionamento {
     PAI,
     MAE,
     IRMAO,
-    RESPONSAVEL
+    RESPONSAVEL,
+    VIUVO
 }

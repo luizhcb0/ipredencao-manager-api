@@ -268,8 +268,9 @@ public class FormularioPessoaService {
     private TipoRelacionamento determineRelationshipType(EstadoCivil estadoCivil) {
         return switch (estadoCivil) {
             case CASADO -> TipoRelacionamento.CONJUGE;
-            case SOLTEIRO_NAMORANDO, DIVORCIADO_NAMORANDO -> TipoRelacionamento.NAMORADO;
+            case SOLTEIRO_NAMORANDO, DIVORCIADO_NAMORANDO, VIUVO_NAMORANDO -> TipoRelacionamento.NAMORADO;
             case SOLTEIRO_NOIVO, VIUVO_NOIVO, DIVORCIADO_NOIVO -> TipoRelacionamento.NOIVO;
+            case VIUVO_SEM_RELACIONAMENTO -> TipoRelacionamento.VIUVO;
             default -> TipoRelacionamento.SEM_RELACIONAMENTO;
         };
     }
