@@ -56,9 +56,6 @@ dependencies {
 	implementation 'io.micrometer:micrometer-registry-prometheus'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
 	
-	// Cache (opcional)
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	
 	// Testing adicional
 	testImplementation 'org.springframework.security:spring-security-test'
 }
