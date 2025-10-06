@@ -1,0 +1,23 @@
+version: 1.0
+runtime: java21
+
+build:
+  commands:
+    pre-build:
+      - echo "Pre-build phase"
+    build:
+      - echo "Building Docker image"
+    post-build:
+      - echo "Post-build phase"
+
+run:
+  runtime-version: 21
+  command: java -jar app.jar
+  network:
+    port: 8080
+    env: SERVER_PORT
+  env:
+    - name: SPRING_PROFILES_ACTIVE
+      value: "prod"
+    - name: SERVER_PORT
+      value: "8080"
