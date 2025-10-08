@@ -9,8 +9,11 @@ COPY gradle ./gradle
 # Copy source
 COPY src ./src
 
-# Build application
-RUN gradle clean build -x test --no-daemon
+# Copy generated JOOQ code (must be generated locally first)
+COPY target ./target
+
+# Build application (skip tasks that require Docker/DB)
+RUN gradle clean build -x test -x composeUp -x update -x generateJooq --no-daemon
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine

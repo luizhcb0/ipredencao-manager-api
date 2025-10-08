@@ -1,3 +1,24 @@
+.PHONY: help
+help: ## Mostrar ajuda
+	@echo "Comandos disponíveis:"
+	@echo ""
+	@echo "Desenvolvimento:"
+	@echo "  make run          - Subir DB, gerar JOOQ e rodar app"
+	@echo "  make db-up        - Subir DB e rodar migrations"
+	@echo "  make jooq         - Gerar código JOOQ"
+	@echo "  make migrate      - Rodar migrations"
+	@echo "  make restart      - Reiniciar DB"
+	@echo "  make clean        - Limpar DB e volumes"
+	@echo ""
+	@echo "Docker:"
+	@echo "  make build        - Build imagem Docker"
+	@echo "  make test-docker  - Testar imagem localmente"
+	@echo ""
+	@echo "Deploy AWS:"
+	@echo "  make aws-login    - Login AWS SSO"
+	@echo "  make create-ecr   - Criar repositório ECR"
+	@echo "  make deploy       - Deploy para App Runner"
+
 # Detectar o sistema operacional
 ifeq ($(OS),Windows_NT)
     GRADLEW = gradlew.bat
@@ -58,4 +79,27 @@ unix-run:
 unix-restart:
 	docker compose down
 	docker compose up -d
-	./gradlew update 
+	./gradlew update
+
+# Docker commands
+build:
+	$(GRADLEW) generateJooq
+	docker build -t ipredencao-manager-api .
+
+deploy:
+	./scripts/deploy-apprunner.sh
+
+test-docker:
+	docker run -p 8080:8080 \
+		-e SPRING_PROFILES_ACTIVE=local \
+		-e DATABASE_URL=jdbc:postgresql://host.docker.internal:54329/ipredencao_manager \
+		-e DATABASE_USERNAME=ipredencao_manager \
+		-e DATABASE_PASSWORD=ipredencao_manager \
+		ipredencao-manager-api
+
+# AWS commands
+aws-login:
+	aws sso login
+
+create-ecr:
+	aws ecr create-repository --repository-name ipredencao-manager-api --region us-east-1 
