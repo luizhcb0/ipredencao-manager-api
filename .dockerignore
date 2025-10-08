@@ -2,7 +2,6 @@
 .gitignore
 .gradle
 build/
-target/
 *.md
 .env*
 .DS_Store
