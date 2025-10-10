@@ -4,7 +4,7 @@ set -e
 # Variáveis
 DB_NAME="ipredencao-prod-db"
 DB_USER="ipredencao_admin"
-DB_PASSWORD="${DB_PASSWORD:-CHANGE_ME}"  # Passar via env var
+DB_PASSWORD="ipredencao_manager"  # Passar via env var
 DB_INSTANCE_CLASS="db.t3.micro"
 DB_STORAGE=20
 AWS_REGION="us-east-1"
@@ -16,7 +16,7 @@ aws rds create-db-instance \
   --db-instance-identifier ${DB_NAME} \
   --db-instance-class ${DB_INSTANCE_CLASS} \
   --engine postgres \
-  --engine-version 16.1 \
+  --engine-version 16.10 \
   --master-username ${DB_USER} \
   --master-user-password ${DB_PASSWORD} \
   --allocated-storage ${DB_STORAGE} \
@@ -29,11 +29,13 @@ aws rds create-db-instance \
   --enable-performance-insights \
   --no-publicly-accessible \
   --region ${AWS_REGION} \
+  --profile personal \
   --tags Key=Project,Value=ipredencao Key=Environment,Value=production
 
 echo "⏳ Waiting for database to be available (this may take 5-10 minutes)..."
 aws rds wait db-instance-available \
   --db-instance-identifier ${DB_NAME} \
+  --profile personal \
   --region ${AWS_REGION}
 
 # Obter endpoint
@@ -41,6 +43,7 @@ DB_ENDPOINT=$(aws rds describe-db-instances \
   --db-instance-identifier ${DB_NAME} \
   --region ${AWS_REGION} \
   --query 'DBInstances[0].Endpoint.Address' \
+  --profile personal \
   --output text)
 
 echo "✅ Database created successfully!"
