@@ -3,8 +3,11 @@
 echo "Aguardando LocalStack estar pronto..."
 sleep 10
 
-echo "Criando bucket S3..."
-awslocal s3 mb s3://ipredencao-manager-photos
+# Usa variável de ambiente ou fallback para nome padrão
+BUCKET_NAME="${S3_BUCKET_NAME:-ipredencao-storage}"
+
+echo "Criando bucket S3: ${BUCKET_NAME}..."
+awslocal s3 mb s3://${BUCKET_NAME}
 
 echo "Verificando buckets criados..."
 awslocal s3 ls

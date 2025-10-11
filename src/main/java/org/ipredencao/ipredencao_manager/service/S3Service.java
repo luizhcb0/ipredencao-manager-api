@@ -5,6 +5,7 @@ import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.annotation.PostConstruct;
@@ -16,7 +17,8 @@ public class S3Service {
     @Autowired
     private AmazonS3 amazonS3;
     
-    private final String bucketName = "ipredencao-manager-photos";
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucketName;
 
     @PostConstruct
     public void initializeBucket() {

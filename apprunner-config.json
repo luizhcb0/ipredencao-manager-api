@@ -1,0 +1,44 @@
+{
+  "ServiceName": "ipredencao-manager-api",
+  "SourceConfiguration": {
+    "ImageRepository": {
+      "ImageIdentifier": "045935420308.dkr.ecr.us-east-1.amazonaws.com/ipredencao-manager-api:latest",
+      "ImageRepositoryType": "ECR",
+      "ImageConfiguration": {
+        "Port": "8080",
+        "RuntimeEnvironmentVariables": {
+          "SPRING_PROFILES_ACTIVE": "prod",
+          "SERVER_PORT": "8080",
+          "PORT": "8080",
+          "DB_URL": "jdbc:postgresql://ipredencao-prod-db.cqon6ha0kufq.us-east-1.rds.amazonaws.com:5432/ipredencao_manager",
+          "DB_USERNAME": "ipredencao_admin",
+          "DB_PASSWORD": "ipredencao_manager",
+          "AWS_REGION": "us-east-1",
+          "AWS_ACCESS_KEY_ID": "AKIAQVMPW4OKMX36BK5N",
+          "AWS_SECRET_ACCESS_KEY": "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",
+          "S3_BUCKET_NAME": "ipredencao-prod-storage",
+          "JWT_SECRET": "kko/GvS8+3QSzrKSfxO2sKBNv/2Pj7C6vQT4owDMWQw=",
+          "LIQUIBASE_ENABLED": "false",
+          "FIREBASE_SERVICE_ACCOUNT_KEY_CONTENT": "{\"type\":\"service_account\",\"project_id\":\"ipredencao-manager-api\",\"private_key_id\":\"ea12a3567dfa5567fd5542282a53bd3ad88bce57\",\"private_key\":\"-----BEGIN PRIVATE KEY-----\\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDiUB+2iW8I6qZi\\ngziZKv41g9EzbBDWbxPnkHW0t4AHz9mVbJEhyAW4FwE96M/SS95LdQXRr8Am1DHO\\n4LJ+HQke9nQyhz29kIetOjJCwpX2NI2whVLP9ZqPbZOM9HXurHrhXgUS7HNxXfBi\\ndofh+W9rOTYxvxqXr2xU67gxaNlpOB+Iwf7bsyqG+AxfexPuXo+0Hxim6n94j38e\\nGd5IiZOjDy5JEJrEGEhEjeVcBBUwkpMYd41GQdnbCEnXfuq1eJVUbSQ+O1naeXLF\\nL9k/jDe0kP6fxXjh0kFsfYOdTuKvMNJIgbo330XSBnby+0t3wCScnB7sCRm6A2la\\nMgsrb7XzAgMBAAECggEAE5MTkyHDAVXua0HnUNQ3paBPpW9461szMQm9LJLcl5Bi\\nRPrdeLsIx5nxyQ2MgCeAxC0Mgkz9xT4ASuEDf0X6pntxpHcvH2jTW2fXtg+HkgKM\\nqNJ3TbZ0FmjHZN82Hh08CacssCzUdV9HLfULnr+I5BDQP7BEWA9bwuKajWeAuolv\\nCApYRbfXsvd82Y7LOTdRFNQBIzZmM9VumZ5wpi/UgkpcWqRXqodiG1oZ8I3Kvkmj\\nlWUry1ryGlNGHQTDn3plSTUdjGKrGHUc9xaPww0+BR0x/zGq+zXMnvzWIJfITaRq\\nCWLx8lpWwOTIF6E95l4YIdAkoa/Pyp9Xij7oHrDMqQKBgQD0l03l8tLuRINtrQv8\\ndQjvhRiDQJGiv8eWDN7ijzaqa4f6AR0Gk6CWhjK8o4y3zYlSdUcyG0MN/0eX8fCT\\nuuoCeFu9NKgIoD62Z/7vdqoEXzvvHdxSc4pT2bmRZy+f+bz7z7lVpchFNclKdoet\\nlJwDsx/Vwzh0gkpVhScYN8DkGwKBgQDs3o8RQHwXu3VUBRLbxQBYwPCXYIrK31IK\\nfBqoasnQNuER3hsU4kR/SYNRPw+L/YSBSP05bkxXVB1Y5F1gvs6UJGBmz8Isb/w2\\nczTNzUOchZP3TkK+SwT7si1qnbo8+gVdIYIg550PgNL57nKZaUtxJXKw/oYEMi9C\\nO2ePOugjCQKBgQDNz4tC1OLcj1YwMY6GbkyIj2wi9XAWjF17S3U5Gt0a5cTTf6BW\\n6l4UivOie9RqzU6hzgGMjhgMbSRnHLQc+wjx7yjyup4yM/TRNAz2ntlNOH2MJYpA\\n7uwUxn45daRDbrexBAelpAwzAKFSQQ7F5uiozE8bZlvY3dGCyLouzKtIxQKBgQDV\\nvsP1em5AcC2hAu8QmEYG0RyKTVkRVtJOmczoe2zf0hXprLZdcw0Cm9C/CRu7ZKsk\\nizvOjmSfTU0qQPCuc6AweF7xh7sdpHRAoldc+0Ruwu9R9DIwS7wUcKWhFvHPQoKC\\nltE5ZigJrGM1m+GX5Ddqw7MqWpOOx8Zziu2ZhzuhGQKBgQCEzUJnPjFJiGo8Vjeo\\niUuxUypNa2VPlgZZ8k4WWtylxuS691WhmI58gaEoII5kvbmlBoH8DjYMpS0NrgXc\\nbjnREA13P0uBBmDi9NpPvZbWUc5pgz315r6mlnQ0ccOR2/Xwpz/cWoMu6Gjp4Jnj\\n0BGXgU/O4owYyRQ2NskmAhTGig==\\n-----END PRIVATE KEY-----\\n\",\"client_email\":\"firebase-adminsdk-fbsvc@ipredencao-manager-api.iam.gserviceaccount.com\",\"client_id\":\"116547315907331970479\",\"auth_uri\":\"https://accounts.google.com/o/oauth2/auth\",\"token_uri\":\"https://oauth2.googleapis.com/token\",\"auth_provider_x509_cert_url\":\"https://www.googleapis.com/oauth2/v1/certs\",\"client_x509_cert_url\":\"https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40ipredencao-manager-api.iam.gserviceaccount.com\",\"universe_domain\":\"googleapis.com\"}"
+        }
+      }
+    },
+    "AutoDeploymentsEnabled": true,
+    "AuthenticationConfiguration": {
+      "AccessRoleArn": "arn:aws:iam::045935420308:role/service-role/AppRunnerECRAccessRole"
+    }
+  },
+  "InstanceConfiguration": {
+    "Cpu": "4096",
+    "Memory": "10240"
+  },
+  "HealthCheckConfiguration": {
+    "Protocol": "HTTP",
+    "Path": "/actuator/health",
+    "Interval": 20,
+    "Timeout": 10,
+    "HealthyThreshold": 1,
+    "UnhealthyThreshold": 5
+  }
+}
+

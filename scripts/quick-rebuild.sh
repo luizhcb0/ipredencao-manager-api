@@ -17,7 +17,7 @@ AWS_PROFILE="personal"
 IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}"
 
 echo "📦 Building Docker image..."
-docker build -t ${IMAGE_URI} .
+docker buildx build --platform linux/amd64 -t ${IMAGE_URI} .
 
 echo "✅ Build concluído!"
 echo ""
