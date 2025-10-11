@@ -27,16 +27,32 @@ echo ""
 
 # Configurações
 IMAGE_NAME="045935420308.dkr.ecr.us-east-1.amazonaws.com/ipredencao-manager-api:latest"
-DB_HOST="host.docker.internal"  # Use seu IP no Linux
-DB_PORT="54329"                  # Porta mapeada do seu PostgreSQL local
+# DB_HOST="host.docker.internal"  # Use seu IP no Linux
+# DB_PORT="54329"                  # Porta mapeada do seu PostgreSQL local
+DB_HOST="ipredencao-prod-db.cqon6ha0kufq.us-east-1.rds.amazonaws.com"
+DB_PORT="5432"
 DB_NAME="ipredencao_manager"
-DB_USER="ipredencao_manager"
-DB_PASSWORD="ipredencao_manager"
+DB_USER="ipredencao_admin"
+DB_PASSWORD="${DB_PASSWORD:-ipredencao_manager}"  # Passar via env var se necessário
+AWS_ACCESS_KEY_ID="AKIAQVMPW4OKMX36BK5N"
+AWS_SECRET_ACCESS_KEY="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"
 
 echo "🚀 Rodando container..."
 echo "   Imagem: $IMAGE_NAME"
 echo "   Porta: 8080"
 echo ""
+
+# Verificar se as credenciais AWS estão configuradas
+if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
+    echo "⚠️  Credenciais AWS não encontradas!"
+    echo "   Configure as variáveis de ambiente:"
+    echo "   export AWS_ACCESS_KEY_ID='sua-access-key'"
+    echo "   export AWS_SECRET_ACCESS_KEY='sua-secret-key'"
+    echo ""
+    echo "   Ou use as credenciais do IAM user ipredencao-apprunner"
+    echo ""
+    exit 1
+fi
 
 docker run --rm -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=prod \
@@ -46,8 +62,10 @@ docker run --rm -p 8080:8080 \
   -e DB_PASSWORD="${DB_PASSWORD}" \
   -e FIREBASE_SERVICE_ACCOUNT_KEY_CONTENT="${FIREBASE_JSON}" \
   -e JWT_SECRET="test-secret-key-for-local-development-must-be-256-bits" \
-  -e S3_BUCKET_NAME="ipredencao-manager-photos" \
+  -e S3_BUCKET_NAME="ipredencao-prod-storage" \
   -e AWS_REGION="us-east-1" \
-  -e LIQUIBASE_ENABLED="false" \
+  -e AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
+  -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
+  -e ALLOWED_ORIGINS="http://localhost:3000,http://localhost:3001" \
   ${IMAGE_NAME}
 
