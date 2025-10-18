@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.model.pessoa;
 
+import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
 import org.joda.time.DateTime;
 import java.util.List;
@@ -27,10 +28,7 @@ public class Pessoa {
     private String igrejaBatismo;
     private String profissao;
     private String empresa;
-    private String enderecoCep;
-    private String enderecoLogradouro;
-    private String enderecoNumero;
-    private String enderecoComplemento;
+    private Endereco endereco;
     private Regiao regiao;
     private String fotoUrl;
     private Sexo sexo;
@@ -86,14 +84,8 @@ public class Pessoa {
     public void setProfissao(String profissao) { this.profissao = profissao; }
     public String getEmpresa() { return empresa; }
     public void setEmpresa(String empresa) { this.empresa = empresa; }
-    public String getEnderecoCep() { return enderecoCep; }
-    public void setEnderecoCep(String enderecoCep) { this.enderecoCep = enderecoCep; }
-    public String getEnderecoLogradouro() { return enderecoLogradouro; }
-    public void setEnderecoLogradouro(String enderecoLogradouro) { this.enderecoLogradouro = enderecoLogradouro; }
-    public String getEnderecoNumero() { return enderecoNumero; }
-    public void setEnderecoNumero(String enderecoNumero) { this.enderecoNumero = enderecoNumero; }
-    public String getEnderecoComplemento() { return enderecoComplemento; }
-    public void setEnderecoComplemento(String enderecoComplemento) { this.enderecoComplemento = enderecoComplemento; }
+    public Endereco getEndereco() { return endereco; }
+    public void setEndereco(Endereco endereco) { this.endereco = endereco; }
     public Regiao getRegiao() { return regiao; }
     public void setRegiao(Regiao regiao) { this.regiao = regiao; }
     public String getFotoUrl() { return fotoUrl; }

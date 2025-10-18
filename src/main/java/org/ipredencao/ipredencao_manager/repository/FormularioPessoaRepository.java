@@ -15,8 +15,8 @@ import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
-import org.joda.time.DateTime;
 import static org.ipredencao.ipredencao_manager.jooq.tables.FormularioPessoa.FORMULARIO_PESSOA;
 import org.ipredencao.ipredencao_manager.jooq.tables.records.FormularioPessoaRecord;
 
@@ -38,7 +38,6 @@ public class FormularioPessoaRepository {
         FormularioPessoaRecord record = toRepository(formulario);
         FormularioPessoaRecord updated = dsl.update(FORMULARIO_PESSOA)
                 .set(record)
-                .set(FORMULARIO_PESSOA.UPDATED_AT, DateTimeHelper.toDb(DateTime.now()))
                 .where(FORMULARIO_PESSOA.FORMULARIO_PESSOA_ID.eq(formulario.getId()))
                 .returning()
                 .fetchOne();
@@ -68,7 +67,7 @@ public class FormularioPessoaRepository {
     }
 
     private List<Condition> buildConditions(FormularioPessoaQuery query) {
-        List<Condition> conditions = new java.util.ArrayList<>();
+        List<Condition> conditions = new ArrayList<>();
 
         if (query.getId() != null) conditions.add(FORMULARIO_PESSOA.FORMULARIO_PESSOA_ID.eq(query.getId()));
         if (query.getIds() != null && !query.getIds().isEmpty()) conditions.add(FORMULARIO_PESSOA.FORMULARIO_PESSOA_ID.in(query.getIds()));
@@ -111,8 +110,6 @@ public class FormularioPessoaRepository {
         if (record.getEstadoCivil() != null)
             f.setEstadoCivil(EstadoCivil.valueOf(record.getEstadoCivil().name()));
         f.setIgrejaAnterior(record.getIgrejaAnterior());
-        f.setSituacaoIgrejaAnterior(record.getSituacaoIgrejaAnterior());
-        f.setTempoNaIgreja(record.getTempoNaIgreja());
         f.setMotivosParaAdmissao(record.getMotivosParaAdmissao());
         if (record.getTipoBatismo() != null)
             f.setTipoBatismo(TipoBatismo.valueOf(record.getTipoBatismo().name()));
@@ -166,8 +163,6 @@ public class FormularioPessoaRepository {
         if (f.getEstadoCivil() != null)
             record.setEstadoCivil(org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil.valueOf(f.getEstadoCivil().name()));
         record.setIgrejaAnterior(f.getIgrejaAnterior());
-        record.setSituacaoIgrejaAnterior(f.getSituacaoIgrejaAnterior());
-        record.setTempoNaIgreja(f.getTempoNaIgreja());
         record.setMotivosParaAdmissao(f.getMotivosParaAdmissao());
         if (f.getTipoBatismo() != null)
             record.setTipoBatismo(org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo.valueOf(f.getTipoBatismo().name()));

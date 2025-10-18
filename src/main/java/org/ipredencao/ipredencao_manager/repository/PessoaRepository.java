@@ -3,13 +3,13 @@ package org.ipredencao.ipredencao_manager.repository;
 import org.ipredencao.ipredencao_manager.jooq.tables.records.PessoaHistoryRecord;
 import org.ipredencao.ipredencao_manager.model.pessoa.Regiao;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
+import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistory;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistoryChange;
 import java.util.ArrayList;
 import java.util.Arrays;
 import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
-import org.joda.time.DateTime;
 import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -17,6 +17,7 @@ import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoRelacionamento;
 import org.ipredencao.ipredencao_manager.model.user.Usuario;
 import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
+
 import static org.ipredencao.ipredencao_manager.jooq.Tables.PESSOA_HISTORY;
 import static org.ipredencao.ipredencao_manager.jooq.tables.Pessoa.PESSOA;
 import static org.ipredencao.ipredencao_manager.jooq.tables.PessoaRelacionamento.PESSOA_RELACIONAMENTO;
@@ -38,6 +39,9 @@ public class PessoaRepository {
     @Autowired
     private UsuarioRepository usuarioRepository;
     
+    @Autowired
+    private EnderecoRepository enderecoRepository;
+    
     public Pessoa insert(Pessoa pessoa) {
         PessoaRecord pessoaRecord = toRepository(pessoa);
         
@@ -55,7 +59,6 @@ public class PessoaRepository {
         PessoaRecord pessoaRecord = toRepository(pessoa);
         PessoaRecord updated = dsl.update(PESSOA)
             .set(pessoaRecord)
-            .set(PESSOA.UPDATED_AT, DateTimeHelper.toDb(DateTime.now()))
             .where(PESSOA.PESSOA_ID.eq(pessoa.getId()))
             .returning()
             .fetchOne();
@@ -124,7 +127,7 @@ public class PessoaRepository {
                 .where(finalCondition)
                 .fetch()
                 .stream()
-                .map(PessoaRepository::fromRepository)
+                .map(this::fromRepository)
                 .toList();
         
         // Carregar relacionamentos para cada pessoa
@@ -265,7 +268,7 @@ public class PessoaRepository {
     
 
     private List<Condition> buildConditions(PessoaQuery query) {
-        List<Condition> conditions = new java.util.ArrayList<>();
+        List<Condition> conditions = new ArrayList<>();
         
         if (query.getId() != null) conditions.add(PESSOA.PESSOA_ID.eq(query.getId()));
         if (query.getIds() != null && !query.getIds().isEmpty()) conditions.add(PESSOA.PESSOA_ID.in(query.getIds()));
@@ -291,7 +294,7 @@ public class PessoaRepository {
         return conditions;
     }
 
-    private static Pessoa fromRepository(PessoaRecord pessoaRecord) {
+    private Pessoa fromRepository(PessoaRecord pessoaRecord) {
         if (pessoaRecord == null) return null;
         Pessoa p = new Pessoa();
         p.setId(pessoaRecord.getPessoaId());
@@ -306,8 +309,6 @@ public class PessoaRepository {
         if (pessoaRecord.getEstadoCivil() != null)
             p.setEstadoCivil(org.ipredencao.ipredencao_manager.model.pessoa.EstadoCivil.valueOf(pessoaRecord.getEstadoCivil().name()));
         p.setIgrejaAnterior(pessoaRecord.getIgrejaAnterior());
-        p.setSituacaoIgrejaAnterior(pessoaRecord.getSituacaoIgrejaAnterior());
-        p.setTempoNaIgreja(pessoaRecord.getTempoNaIgreja());
         p.setMotivosParaAdmissao(pessoaRecord.getMotivosParaAdmissao());
         if (pessoaRecord.getTipoBatismo() != null)
             p.setTipoBatismo(org.ipredencao.ipredencao_manager.model.pessoa.TipoBatismo.valueOf(pessoaRecord.getTipoBatismo().name()));
@@ -316,10 +317,10 @@ public class PessoaRepository {
         p.setIgrejaBatismo(pessoaRecord.getIgrejaBatismo());
         p.setProfissao(pessoaRecord.getProfissao());
         p.setEmpresa(pessoaRecord.getEmpresa());
-        p.setEnderecoCep(pessoaRecord.getEnderecoCep());
-        p.setEnderecoLogradouro(pessoaRecord.getEnderecoLogradouro());
-        p.setEnderecoNumero(pessoaRecord.getEnderecoNumero());
-        p.setEnderecoComplemento(pessoaRecord.getEnderecoComplemento());
+        if (pessoaRecord.getEnderecoId() != null) {
+            Endereco endereco = enderecoRepository.findById(pessoaRecord.getEnderecoId());
+            p.setEndereco(endereco);
+        }
         if (pessoaRecord.getRegiao() != null)
             p.setRegiao(Regiao.valueOf(pessoaRecord.getRegiao().name()));
         p.setFotoUrl(pessoaRecord.getFotoUrl());
@@ -354,8 +355,6 @@ public class PessoaRepository {
         if (pessoa.getEstadoCivil() != null)
             pessoaRecord.setEstadoCivil(EstadoCivil.valueOf(pessoa.getEstadoCivil().name()));
         pessoaRecord.setIgrejaAnterior(pessoa.getIgrejaAnterior());
-        pessoaRecord.setSituacaoIgrejaAnterior(pessoa.getSituacaoIgrejaAnterior());
-        pessoaRecord.setTempoNaIgreja(pessoa.getTempoNaIgreja());
         pessoaRecord.setMotivosParaAdmissao(pessoa.getMotivosParaAdmissao());
         if (pessoa.getTipoBatismo() != null)
             pessoaRecord.setTipoBatismo(TipoBatismo.valueOf(pessoa.getTipoBatismo().name()));
@@ -364,10 +363,7 @@ public class PessoaRepository {
         pessoaRecord.setIgrejaBatismo(pessoa.getIgrejaBatismo());
         pessoaRecord.setProfissao(pessoa.getProfissao());
         pessoaRecord.setEmpresa(pessoa.getEmpresa());
-        pessoaRecord.setEnderecoCep(pessoa.getEnderecoCep());
-        pessoaRecord.setEnderecoLogradouro(pessoa.getEnderecoLogradouro());
-        pessoaRecord.setEnderecoNumero(pessoa.getEnderecoNumero());
-        pessoaRecord.setEnderecoComplemento(pessoa.getEnderecoComplemento());
+        pessoaRecord.setEnderecoId(pessoa.getEndereco().getId());
         if (pessoa.getRegiao() != null)
             pessoaRecord.setRegiao(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(pessoa.getRegiao().name()));
         pessoaRecord.setFotoUrl(pessoa.getFotoUrl());
@@ -407,8 +403,6 @@ public class PessoaRepository {
         if (pessoaRecord.getEstadoCivil() != null)
             pessoaHistoryRecord.setEstadoCivil(pessoaRecord.getEstadoCivil());
         pessoaHistoryRecord.setIgrejaAnterior(pessoaRecord.getIgrejaAnterior());
-        pessoaHistoryRecord.setSituacaoIgrejaAnterior(pessoaRecord.getSituacaoIgrejaAnterior());
-        pessoaHistoryRecord.setTempoNaIgreja(pessoaRecord.getTempoNaIgreja());
         pessoaHistoryRecord.setMotivosParaAdmissao(pessoaRecord.getMotivosParaAdmissao());
         if (pessoaRecord.getTipoBatismo() != null)
             pessoaHistoryRecord.setTipoBatismo(pessoaRecord.getTipoBatismo());
@@ -417,10 +411,8 @@ public class PessoaRepository {
         pessoaHistoryRecord.setIgrejaBatismo(pessoaRecord.getIgrejaBatismo());
         pessoaHistoryRecord.setProfissao(pessoaRecord.getProfissao());
         pessoaHistoryRecord.setEmpresa(pessoaRecord.getEmpresa());
-        pessoaHistoryRecord.setEnderecoCep(pessoaRecord.getEnderecoCep());
-        pessoaHistoryRecord.setEnderecoLogradouro(pessoaRecord.getEnderecoLogradouro());
-        pessoaHistoryRecord.setEnderecoNumero(pessoaRecord.getEnderecoNumero());
-        pessoaHistoryRecord.setEnderecoComplemento(pessoaRecord.getEnderecoComplemento());
+        pessoaHistoryRecord.setEnderecoId(pessoaRecord.getEnderecoId());
+        
         if (pessoaRecord.getRegiao() != null)
             pessoaHistoryRecord.setRegiao(pessoaRecord.getRegiao());
         pessoaHistoryRecord.setFotoUrl(pessoaRecord.getFotoUrl());
@@ -465,10 +457,7 @@ public class PessoaRepository {
         compareAttribute(changes, "igrejaBatismo", previous.getIgrejaBatismo(), current.getIgrejaBatismo());
         compareAttribute(changes, "profissao", previous.getProfissao(), current.getProfissao());
         compareAttribute(changes, "empresa", previous.getEmpresa(), current.getEmpresa());
-        compareAttribute(changes, "enderecoCep", previous.getEnderecoCep(), current.getEnderecoCep());
-        compareAttribute(changes, "enderecoLogradouro", previous.getEnderecoLogradouro(), current.getEnderecoLogradouro());
-        compareAttribute(changes, "enderecoNumero", previous.getEnderecoNumero(), current.getEnderecoNumero());
-        compareAttribute(changes, "enderecoComplemento", previous.getEnderecoComplemento(), current.getEnderecoComplemento());
+        compareAttribute(changes, "enderecoId", previous.getEnderecoId(), current.getEnderecoId());
         compareAttribute(changes, "regiao", previous.getRegiao(), current.getRegiao());
         compareAttribute(changes, "fotoUrl", previous.getFotoUrl(), current.getFotoUrl());
         compareAttribute(changes, "chefeDeFamilia", previous.getChefeDeFamilia(), current.getChefeDeFamilia());
