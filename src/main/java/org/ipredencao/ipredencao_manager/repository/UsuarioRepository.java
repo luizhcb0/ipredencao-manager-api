@@ -1,12 +1,11 @@
 package org.ipredencao.ipredencao_manager.repository;
 
-import org.ipredencao.ipredencao_manager.jooq.tables.records.UsuariosRecord;
+import org.ipredencao.ipredencao_manager.jooq.tables.records.UsuarioRecord;
 import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
 import org.ipredencao.ipredencao_manager.model.auth.ProviderAutenticacao;
 import org.ipredencao.ipredencao_manager.model.user.Usuario;
 import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
-import org.joda.time.DateTime;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
@@ -14,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import java.util.ArrayList;
 import java.util.List;
-import static org.ipredencao.ipredencao_manager.jooq.tables.Usuarios.USUARIOS;
+import static org.ipredencao.ipredencao_manager.jooq.tables.Usuario.USUARIO;
 
 @Repository
 public class UsuarioRepository {
@@ -23,9 +22,9 @@ public class UsuarioRepository {
     private DSLContext dsl;
     
     public Usuario insert(Usuario usuario) {
-        UsuariosRecord record = toRepository(usuario);
+        UsuarioRecord record = toRepository(usuario);
         
-        UsuariosRecord saved = dsl.insertInto(USUARIOS)
+        UsuarioRecord saved = dsl.insertInto(USUARIO)
                 .set(record)
                 .returning()
                 .fetchOne();
@@ -34,28 +33,27 @@ public class UsuarioRepository {
     }
     
     public Usuario update(Usuario usuario) {
-        UsuariosRecord record = toRepository(usuario);
+        UsuarioRecord record = toRepository(usuario);
         
-        dsl.update(USUARIOS)
+        dsl.update(USUARIO)
             .set(record)
-            .set(USUARIOS.UPDATED_AT, DateTimeHelper.toDb(DateTime.now()))
-            .where(USUARIOS.ID.eq(usuario.getId()))
+            .where(USUARIO.ID.eq(usuario.getId()))
             .execute();
             
         return usuario;
     }
     
     public Usuario findByFirebaseUid(String firebaseUid) {
-        UsuariosRecord record = dsl.selectFrom(USUARIOS)
-                .where(USUARIOS.FIREBASE_UID.eq(firebaseUid))
+        UsuarioRecord record = dsl.selectFrom(USUARIO)
+                .where(USUARIO.FIREBASE_UID.eq(firebaseUid))
                 .fetchOne();
         
         return fromRepository(record);
     }
     
     public Usuario findByEmail(String email) {
-        UsuariosRecord record = dsl.selectFrom(USUARIOS)
-                .where(USUARIOS.EMAIL.eq(email))
+        UsuarioRecord record = dsl.selectFrom(USUARIO)
+                .where(USUARIO.EMAIL.eq(email))
                 .fetchOne();
         
         return fromRepository(record);
@@ -67,7 +65,7 @@ public class UsuarioRepository {
         Condition finalCondition = conditions.stream()
             .reduce(DSL.noCondition(), Condition::and);
         
-        return dsl.selectFrom(USUARIOS)
+        return dsl.selectFrom(USUARIO)
                 .where(finalCondition)
                 .fetch()
                 .stream()
@@ -78,25 +76,25 @@ public class UsuarioRepository {
     private List<Condition> buildConditions(UsuarioQuery query) {
         List<Condition> conditions = new ArrayList<>();
         
-        if (query.getId() != null) conditions.add(USUARIOS.ID.eq(query.getId()));
+        if (query.getId() != null) conditions.add(USUARIO.ID.eq(query.getId()));
         if (query.getEmail() != null && !query.getEmail().trim().isEmpty()) 
-            conditions.add(USUARIOS.EMAIL.eq(query.getEmail()));
+            conditions.add(USUARIO.EMAIL.eq(query.getEmail()));
         if (query.getFirebaseUid() != null && !query.getFirebaseUid().trim().isEmpty()) 
-            conditions.add(USUARIOS.FIREBASE_UID.eq(query.getFirebaseUid()));
+            conditions.add(USUARIO.FIREBASE_UID.eq(query.getFirebaseUid()));
         if (query.getAccessProfile() != null) 
-            conditions.add(USUARIOS.ACCESS_PROFILE.eq(
+            conditions.add(USUARIO.ACCESS_PROFILE.eq(
                 org.ipredencao.ipredencao_manager.jooq.enums.PerfilAcesso.valueOf(query.getAccessProfile().name())
             ));
-        if (query.getActive() != null) conditions.add(USUARIOS.ACTIVE.eq(query.getActive()));
+        if (query.getActive() != null) conditions.add(USUARIO.ACTIVE.eq(query.getActive()));
         if (query.getProvider() != null)
-            conditions.add(USUARIOS.PROVIDER.eq(
+            conditions.add(USUARIO.PROVIDER.eq(
                 org.ipredencao.ipredencao_manager.jooq.enums.ProviderAutenticacao.valueOf(query.getProvider().name())
             ));
         
         return conditions;
     }
     
-    private static Usuario fromRepository(UsuariosRecord record) {
+    private static Usuario fromRepository(UsuarioRecord record) {
         if (record == null) return null;
         
         Usuario u = new Usuario();
@@ -122,8 +120,8 @@ public class UsuarioRepository {
         return u;
     }
     
-    private static UsuariosRecord toRepository(Usuario usuario) {
-        UsuariosRecord record = new UsuariosRecord();
+    private static UsuarioRecord toRepository(Usuario usuario) {
+        UsuarioRecord record = new UsuarioRecord();
         
         record.setFirebaseUid(usuario.getFirebaseUid());
         record.setEmail(usuario.getEmail());

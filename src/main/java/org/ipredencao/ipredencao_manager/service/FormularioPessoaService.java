@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.service;
 
+import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoa;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoaQuery;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.ProcessarFormularioRequest;
@@ -10,6 +11,8 @@ import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoRelacionamento;
 import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
+import org.ipredencao.ipredencao_manager.repository.EnderecoRepository;
+import org.ipredencao.ipredencao_manager.model.endereco.EnderecoQuery;
 import org.ipredencao.ipredencao_manager.repository.FormularioPessoaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,12 +31,10 @@ public class FormularioPessoaService {
     private S3Service s3Service;
     @Autowired
     private PessoaService pessoaService;
+    @Autowired
+    private EnderecoRepository enderecoRepository;
 
     public FormularioPessoa create(FormularioPessoa formulario) {
-        // Validar se o email já existe
-        if (!repository.find(FormularioPessoaQuery.builder().email(formulario.getEmail()).build()).isEmpty()) {
-            throw new IllegalArgumentException("Já existe um formulário cadastrado com este email: " + formulario.getEmail());
-        }
         return repository.insert(formulario);
     }
 
@@ -139,10 +140,33 @@ public class FormularioPessoaService {
     private Pessoa createOrUpdatePerson(FormularioPessoa formulario, Long pessoaId, Pessoa familyHead) {
         Pessoa person;
         
+        Endereco endereco = null;
+        if (formulario.getPropagarEnderecoChefeFamilia() && familyHead != null && familyHead.getEndereco().getId() != null) {
+            endereco = familyHead.getEndereco();
+        } else {
+            endereco = new Endereco();
+            endereco.setCep(formulario.getEnderecoCep());
+            endereco.setLogradouro(formulario.getEnderecoLogradouro());
+            endereco.setNumero(formulario.getEnderecoNumero());
+            endereco.setComplemento(formulario.getEnderecoComplemento());
+            
+            // Tentar reutilizar endereço existente
+            List<Endereco> enderecos = enderecoRepository.find(EnderecoQuery.builder()
+                .cep(endereco.getCep())
+                .build());
+            
+            if (!enderecos.isEmpty()) {
+                endereco = enderecos.getFirst();
+            } else {
+                endereco = enderecoRepository.insert(endereco);
+            }
+        }
+        
         if (pessoaId != null) {
             // Atualizar pessoa existente
             person = pessoaService.findById(pessoaId);
             mapFormToPerson(formulario, person);
+            person.setEndereco(endereco);
             
             // Se tem chefe de família, definir
             if (familyHead != null) {
@@ -157,6 +181,7 @@ public class FormularioPessoaService {
             // Criar nova pessoa
             person = new Pessoa();
             mapFormToPerson(formulario, person);
+            person.setEndereco(endereco);
 
             // Se tem chefe de família, definir
             if (familyHead != null) {
@@ -170,16 +195,6 @@ public class FormularioPessoaService {
                 person.setChefeDeFamiliaId(person.getId());
                 person = pessoaService.update(person);
             }
-        }
-        
-        // Propagar endereço do chefe de família se solicitado
-        if (Boolean.TRUE.equals(formulario.getPropagarEnderecoChefeFamilia()) && familyHead != null) {
-            person.setEnderecoCep(familyHead.getEnderecoCep());
-            person.setEnderecoLogradouro(familyHead.getEnderecoLogradouro());
-            person.setEnderecoNumero(familyHead.getEnderecoNumero());
-            person.setEnderecoComplemento(familyHead.getEnderecoComplemento());
-            person.setRegiao(familyHead.getRegiao());
-            person = pessoaService.update(person);
         }
         
         return person;
@@ -198,8 +213,6 @@ public class FormularioPessoaService {
         pessoa.setRg(formulario.getRg());
         pessoa.setEstadoCivil(formulario.getEstadoCivil());
         pessoa.setIgrejaAnterior(formulario.getIgrejaAnterior());
-        pessoa.setSituacaoIgrejaAnterior(formulario.getSituacaoIgrejaAnterior());
-        pessoa.setTempoNaIgreja(formulario.getTempoNaIgreja());
         pessoa.setMotivosParaAdmissao(formulario.getMotivosParaAdmissao());
         pessoa.setTipoBatismo(formulario.getTipoBatismo());
         pessoa.setDataBatismo(formulario.getDataBatismo());
@@ -207,10 +220,6 @@ public class FormularioPessoaService {
         pessoa.setIgrejaBatismo(formulario.getIgrejaBatismo());
         pessoa.setProfissao(formulario.getProfissao());
         pessoa.setEmpresa(formulario.getEmpresa());
-        pessoa.setEnderecoCep(formulario.getEnderecoCep());
-        pessoa.setEnderecoLogradouro(formulario.getEnderecoLogradouro());
-        pessoa.setEnderecoNumero(formulario.getEnderecoNumero());
-        pessoa.setEnderecoComplemento(formulario.getEnderecoComplemento());
         pessoa.setRegiao(formulario.getRegiao());
         pessoa.setFotoUrl(formulario.getFotoUrl());
         pessoa.setSexo(formulario.getSexo());

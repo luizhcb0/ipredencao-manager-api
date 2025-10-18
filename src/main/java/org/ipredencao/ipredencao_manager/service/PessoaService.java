@@ -1,7 +1,9 @@
 package org.ipredencao.ipredencao_manager.service;
 
+import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistory;
 import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
+import org.ipredencao.ipredencao_manager.repository.EnderecoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
@@ -26,6 +28,8 @@ public class PessoaService {
     private S3Service s3Service;
     @Autowired
     private SecurityUtils securityUtils;
+    @Autowired
+    private EnderecoRepository enderecoRepository;
 
     public PessoaService(PessoaRepository pessoaRepository) {
         this.pessoaRepository = pessoaRepository;
@@ -70,8 +74,12 @@ public class PessoaService {
         Long currentUserId = securityUtils.getCurrentUserId();
         pessoa.setUpdatedByUserId(currentUserId);
         
-        // Buscar pessoa existente para comparar relacionamentos
+        // Buscar pessoa existente para comparar relacionamentos e endereço
         Pessoa current = findById(pessoa.getId());
+        
+        // Verificar e atualizar endereço
+        Endereco updatedAddress = updateAddress(current.getEndereco(), pessoa.getEndereco());
+        pessoa.setEndereco(updatedAddress);
         
         // Atualizar pessoa no banco
         Pessoa updated = pessoaRepository.update(pessoa);
@@ -160,6 +168,15 @@ public class PessoaService {
             newPerson.setCategoria(CategoriaEnum.AGREGADO_FAMILIAR);
             Pessoa createdPerson = pessoaRepository.insert(newPerson);
             rel.setPessoaRelacionadaId(createdPerson.getId());
+        }
+    }
+    
+    // TODO: Implementar a lógica para atualizar o endereço
+    private Endereco updateAddress(Endereco enderecoAtual, Endereco novoEndereco) {
+        if (enderecoAtual.equals(novoEndereco)) {
+            return enderecoAtual;
+        } else {
+            return enderecoRepository.insert(novoEndereco);
         }
     }
 }

@@ -109,6 +109,17 @@ INSERT INTO categoria (nome, agregador_categoria_id) VALUES
 -- Categorias do agregador Pessoa referenciada
 ('Agregado ou familiar', 10);
 
+CREATE TABLE IF NOT EXISTS endereco (
+    id BIGSERIAL PRIMARY KEY,
+    cep VARCHAR(12),
+    logradouro VARCHAR(255),
+    numero VARCHAR(20),
+    complemento VARCHAR(255),
+    added_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_by BIGINT
+);
+
 
 CREATE TABLE IF NOT EXISTS pessoa (
     pessoa_id BIGSERIAL PRIMARY KEY,
@@ -119,21 +130,14 @@ CREATE TABLE IF NOT EXISTS pessoa (
     emails_secundarios VARCHAR(255)[],
     telefone VARCHAR(30),
     telefones_secundarios VARCHAR(255)[],
-    endereco_cep VARCHAR(12),
-    endereco_logradouro VARCHAR(255),
-    endereco_numero VARCHAR(20),
-    endereco_complemento VARCHAR(255),
     campus VARCHAR(255),
     data_nascimento TIMESTAMP,
     cpf VARCHAR(20),
     rg VARCHAR(20),
+    endereco_id BIGINT REFERENCES endereco(id),
     estado_civil estado_civil,
-    igreja_anterior VARCHAR(255),
-    situacao_igreja_anterior VARCHAR(255),
---  Se for cadastramento de pedido de membresia.
-    tempo_na_igreja VARCHAR(100),
-    motivos_para_admissao VARCHAR(255),
---
+    igreja_anterior TEXT,
+    motivos_para_admissao TEXT,
     tipo_batismo tipo_batismo,
     data_batismo TIMESTAMP,
     data_profissao_de_fe TIMESTAMP,
@@ -149,6 +153,8 @@ CREATE TABLE IF NOT EXISTS pessoa (
     updated_by BIGINT
 );
 
+INSERT INTO pessoa (nome) VALUES ('Não declarado');
+
 CREATE TABLE IF NOT EXISTS pessoa_history (
     history_id BIGSERIAL PRIMARY KEY,
     pessoa_id BIGINT REFERENCES pessoa(pessoa_id),
@@ -159,21 +165,14 @@ CREATE TABLE IF NOT EXISTS pessoa_history (
     emails_secundarios VARCHAR(255)[],
     telefone VARCHAR(30),
     telefones_secundarios VARCHAR(255)[],
-    endereco_cep VARCHAR(12),
-    endereco_logradouro VARCHAR(255),
-    endereco_numero VARCHAR(20),
-    endereco_complemento VARCHAR(255),
     campus VARCHAR(255),
     data_nascimento TIMESTAMP,
     cpf VARCHAR(20),
     rg VARCHAR(20),
+    endereco_id BIGINT REFERENCES endereco(id),
     estado_civil estado_civil,
-    igreja_anterior VARCHAR(255),
-    situacao_igreja_anterior VARCHAR(255),
---  Se for cadastramento de pedido de membresia.
-    tempo_na_igreja VARCHAR(100),
-    motivos_para_admissao VARCHAR(255),
---
+    igreja_anterior TEXT,
+    motivos_para_admissao TEXT,
     tipo_batismo tipo_batismo,
     data_batismo TIMESTAMP,
     data_profissao_de_fe TIMESTAMP,
@@ -204,7 +203,7 @@ CREATE TABLE IF NOT EXISTS pessoa_relacionamento_history (
     pessoa_relacionada_id BIGINT NOT NULL REFERENCES pessoa(pessoa_id) ON DELETE CASCADE,
     tipo_relacionamento tipo_relacionamento NOT NULL,
     inicio_relacionamento TIMESTAMP
-    );
+);
 
 -- muito parecido com pessoa, porem provisorio
 CREATE TABLE IF NOT EXISTS formulario_pessoa (
@@ -230,10 +229,8 @@ CREATE TABLE IF NOT EXISTS formulario_pessoa (
     nome_pai VARCHAR(255),
     nome_mae VARCHAR(255),
     nome_filhos VARCHAR(255)[],
-    igreja_anterior VARCHAR(255),
-    situacao_igreja_anterior VARCHAR(255),
-    tempo_na_igreja VARCHAR(100),
-    motivos_para_admissao VARCHAR(255),
+    igreja_anterior TEXT,
+    motivos_para_admissao TEXT,
     tipo_batismo tipo_batismo,
     data_batismo TIMESTAMP,
     data_profissao_de_fe TIMESTAMP,
@@ -250,3 +247,27 @@ CREATE TABLE IF NOT EXISTS formulario_pessoa (
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+--  updated_at trigger
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER trigger_formulario_pessoa_updated_at
+    BEFORE UPDATE ON formulario_pessoa
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trigger_pessoa_updated_at
+    BEFORE UPDATE ON pessoa
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trigger_endereco_updated_at
+    BEFORE UPDATE ON endereco
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
