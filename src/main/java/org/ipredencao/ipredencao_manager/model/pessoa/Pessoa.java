@@ -1,10 +1,12 @@
 package org.ipredencao.ipredencao_manager.model.pessoa;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
 import org.joda.time.DateTime;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Pessoa {
     private Long id;
     private String nome;

@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.model.formulario_pessoa;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.ipredencao.ipredencao_manager.model.pessoa.EstadoCivil;
 import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
 import org.ipredencao.ipredencao_manager.model.pessoa.Regiao;
@@ -9,6 +10,7 @@ import org.ipredencao.ipredencao_manager.model.pessoa.TipoBatismo;
 import org.joda.time.DateTime;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class FormularioPessoa {
     private Long id;
     private String nome;
