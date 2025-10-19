@@ -153,8 +153,6 @@ CREATE TABLE IF NOT EXISTS pessoa (
     updated_by BIGINT
 );
 
-INSERT INTO pessoa (nome) VALUES ('Não declarado');
-
 CREATE TABLE IF NOT EXISTS pessoa_history (
     history_id BIGSERIAL PRIMARY KEY,
     pessoa_id BIGINT REFERENCES pessoa(pessoa_id),
