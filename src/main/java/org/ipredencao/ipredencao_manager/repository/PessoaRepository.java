@@ -78,7 +78,7 @@ public class PessoaRepository {
         
         // Se não encontrou na forma direta, tentar na forma invertida
         if (deleted == 0) {
-            TipoRelacionamento tipoInvertido = inverterTipoRelacionamento(tipoRelacionamento);
+            TipoRelacionamento tipoInvertido = inverterTipoRelacionamento(tipoRelacionamento, pessoaId);
             dsl.deleteFrom(PESSOA_RELACIONAMENTO)
                 .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaRelacionadaId)
                     .and(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(pessoaId))
@@ -98,7 +98,7 @@ public class PessoaRepository {
         
         // Se não encontrou na forma direta, tentar na forma invertida
         if (updated == 0) {
-            TipoRelacionamento tipoInvertido = inverterTipoRelacionamento(existingRel.getTipoRelacionamento());
+            TipoRelacionamento tipoInvertido = inverterTipoRelacionamento(existingRel.getTipoRelacionamento(), pessoaId);
             dsl.update(PESSOA_RELACIONAMENTO)
                 .set(PESSOA_RELACIONAMENTO.INICIO_RELACIONAMENTO, DateTimeHelper.toDb(newRel.getInicioRelacionamento()))
                 .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(existingRel.getPessoaRelacionadaId())
@@ -229,7 +229,7 @@ public class PessoaRepository {
             rel.setPessoaRelacionadaId(record.getPessoaId()); // Outra pessoa
             if (record.getTipoRelacionamento() != null) {
                 TipoRelacionamento tipoOriginal = TipoRelacionamento.valueOf(record.getTipoRelacionamento().name());
-                rel.setTipoRelacionamento(inverterTipoRelacionamento(tipoOriginal));
+                rel.setTipoRelacionamento(inverterTipoRelacionamento(tipoOriginal, record.getPessoaId()));
             }
         }
         
@@ -249,15 +249,23 @@ public class PessoaRepository {
     
     /**
      * Inverte o tipo de relacionamento para manter a perspectiva da pessoa atual
-     * Ex: se A é FILHO de B, então B é PAI de A
+     * Ex: se A é FILHO de B, então B é PAI de A (se B for masculino) ou MAE (se B for feminino)
+     * 
+     * @param tipo Tipo de relacionamento original
+     * @param pessoaRelacionadaId ID da pessoa relacionada (necessário para verificar sexo em alguns casos)
+     * @return Tipo de relacionamento invertido
      */
-    private TipoRelacionamento inverterTipoRelacionamento(TipoRelacionamento tipo) {
+    private TipoRelacionamento inverterTipoRelacionamento(TipoRelacionamento tipo, Long pessoaRelacionadaId) {
         return switch (tipo) {
             case SEM_RELACIONAMENTO -> TipoRelacionamento.SEM_RELACIONAMENTO; // Sem relacionamento é recíproco
             case CONJUGE -> TipoRelacionamento.CONJUGE; // Cônjuge é recíproco
             case NOIVO -> TipoRelacionamento.NOIVO; // Noivo é recíproco
             case NAMORADO -> TipoRelacionamento.NAMORADO; // Namorado é recíproco
-            case FILHO -> TipoRelacionamento.PAI; // Se A é FILHO de B, então B é PAI de A
+            case FILHO -> {
+                // Se A é FILHO de B, verificar o sexo de B para saber se é PAI ou MAE
+                Sexo sexo = find(PessoaQuery.builder().id(pessoaRelacionadaId).build()).getFirst().getSexo();
+                yield (sexo == Sexo.FEMININO) ? TipoRelacionamento.MAE : TipoRelacionamento.PAI;
+            }
             case PAI -> TipoRelacionamento.FILHO; // Se A é PAI de B, então B é FILHO de A
             case MAE -> TipoRelacionamento.FILHO; // Se A é MÃE de B, então B é FILHO de A
             case IRMAO -> TipoRelacionamento.IRMAO; // Irmão é recíproco
@@ -265,7 +273,6 @@ public class PessoaRepository {
             case VIUVO ->  TipoRelacionamento.VIUVO; // Viúvo é recíproco
         };
     }
-    
 
     private List<Condition> buildConditions(PessoaQuery query) {
         List<Condition> conditions = new ArrayList<>();
