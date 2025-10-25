@@ -69,41 +69,24 @@ public class PessoaRepository {
     }
 
     public void deleteRelationship(Long pessoaId, Long pessoaRelacionadaId, TipoRelacionamento tipoRelacionamento) {
-        // Tentar deletar na forma direta (pessoaId -> pessoaRelacionadaId)
-        int deleted = dsl.deleteFrom(PESSOA_RELACIONAMENTO)
-            .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaId)
-                .and(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(pessoaRelacionadaId))
-                .and(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoRelacionamento.valueOf(tipoRelacionamento.name()))))
-            .execute();
-        
-        // Se não encontrou na forma direta, tentar na forma invertida
-        if (deleted == 0) {
-            TipoRelacionamento tipoInvertido = inverterTipoRelacionamento(tipoRelacionamento, pessoaId);
+        PessoaRelacionamentoRecord record = findRelationshipRecord(pessoaId, pessoaRelacionadaId, tipoRelacionamento);
+        if (record != null) {
             dsl.deleteFrom(PESSOA_RELACIONAMENTO)
-                .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaRelacionadaId)
-                    .and(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(pessoaId))
-                    .and(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoRelacionamento.valueOf(tipoInvertido.name()))))
+                .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(record.getPessoaId())
+                    .and(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(record.getPessoaRelacionadaId()))
+                    .and(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO.eq(record.getTipoRelacionamento())))
                 .execute();
         }
     }
     
     public void updateRelationship(Long pessoaId, Relacionamento existingRel, Relacionamento newRel) {
-        // Tentar atualizar na forma direta (pessoaId -> pessoaRelacionadaId)
-        int updated = dsl.update(PESSOA_RELACIONAMENTO)
-            .set(PESSOA_RELACIONAMENTO.INICIO_RELACIONAMENTO, DateTimeHelper.toDb(newRel.getInicioRelacionamento()))
-            .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaId)
-                .and(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(existingRel.getPessoaRelacionadaId()))
-                .and(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoRelacionamento.valueOf(existingRel.getTipoRelacionamento().name()))))
-            .execute();
-        
-        // Se não encontrou na forma direta, tentar na forma invertida
-        if (updated == 0) {
-            TipoRelacionamento tipoInvertido = inverterTipoRelacionamento(existingRel.getTipoRelacionamento(), pessoaId);
+        PessoaRelacionamentoRecord record = findRelationshipRecord(pessoaId, existingRel.getPessoaRelacionadaId(), existingRel.getTipoRelacionamento());
+        if (record != null) {
             dsl.update(PESSOA_RELACIONAMENTO)
                 .set(PESSOA_RELACIONAMENTO.INICIO_RELACIONAMENTO, DateTimeHelper.toDb(newRel.getInicioRelacionamento()))
-                .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(existingRel.getPessoaRelacionadaId())
-                    .and(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(pessoaId))
-                    .and(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoRelacionamento.valueOf(tipoInvertido.name()))))
+                .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(record.getPessoaId())
+                    .and(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(record.getPessoaRelacionadaId()))
+                    .and(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO.eq(record.getTipoRelacionamento())))
                 .execute();
         }
     }
@@ -189,6 +172,89 @@ public class PessoaRepository {
                 .returning()
                 .fetchOne();
         return mapRelationship(saved, pessoaId);
+    }
+    
+    /**
+     * Busca um relacionamento existente considerando ambas as direções.
+     * Para tipos simétricos (CONJUGE, NOIVO, etc), verifica A→B ou B→A.
+     * Para tipos assimétricos (PAI/MAE ↔ FILHO), verifica o tipo complementar.
+     * 
+     * @param pessoaId ID da primeira pessoa
+     * @param pessoaRelacionadaId ID da segunda pessoa
+     * @param tipo Tipo do relacionamento
+     * @return O relacionamento existente ou null se não encontrado
+     */
+    public Relacionamento findExistingRelationship(Long pessoaId, Long pessoaRelacionadaId, TipoRelacionamento tipo) {
+        PessoaRelacionamentoRecord record = findRelationshipRecord(pessoaId, pessoaRelacionadaId, tipo);
+        return record != null ? mapRelationship(record, pessoaId) : null;
+    }
+    
+    /**
+     * Método auxiliar que busca um record de relacionamento considerando ambas as direções.
+     * Centraliza a lógica de busca usada por findExistingRelationship, deleteRelationship e updateRelationship.
+     * 
+     * @param pessoaId ID da primeira pessoa
+     * @param pessoaRelacionadaId ID da segunda pessoa
+     * @param tipo Tipo do relacionamento
+     * @return O record do relacionamento ou null se não encontrado
+     */
+    private PessoaRelacionamentoRecord findRelationshipRecord(Long pessoaId, Long pessoaRelacionadaId, TipoRelacionamento tipo) {
+        // Verificar se relacionamento existe na forma direta (pessoaId → pessoaRelacionadaId)
+        PessoaRelacionamentoRecord directRecord = dsl.selectFrom(PESSOA_RELACIONAMENTO)
+            .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaId)
+                .and(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(pessoaRelacionadaId))
+                .and(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO.eq(
+                    org.ipredencao.ipredencao_manager.jooq.enums.TipoRelacionamento.valueOf(tipo.name()))))
+            .fetchOne();
+        
+        if (directRecord != null) {
+            return directRecord;
+        }
+        
+        // Verificar se relacionamento existe na forma inversa
+        List<TipoRelacionamento> tiposInversos = getTiposRelacionamentoInversos(tipo, pessoaRelacionadaId);
+        
+        for (TipoRelacionamento tipoInverso : tiposInversos) {
+            PessoaRelacionamentoRecord inverseRecord = dsl.selectFrom(PESSOA_RELACIONAMENTO)
+                .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaRelacionadaId)
+                    .and(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(pessoaId))
+                    .and(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO.eq(
+                        org.ipredencao.ipredencao_manager.jooq.enums.TipoRelacionamento.valueOf(tipoInverso.name()))))
+                .fetchOne();
+            
+            if (inverseRecord != null) {
+                return inverseRecord;
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Retorna os tipos de relacionamento que representam o inverso do tipo fornecido.
+     * Para tipos simétricos, retorna o mesmo tipo.
+     * Para tipos assimétricos, retorna o(s) tipo(s) complementar(es).
+     */
+    private List<TipoRelacionamento> getTiposRelacionamentoInversos(TipoRelacionamento tipo, Long pessoaRelacionadaId) {
+        List<TipoRelacionamento> tipos = new ArrayList<>();
+        
+        switch (tipo) {
+            // Tipos simétricos - retorna o mesmo tipo
+            case SEM_RELACIONAMENTO, CONJUGE, NOIVO, NAMORADO, IRMAO, VIUVO -> tipos.add(tipo);
+            
+            // Tipos assimétricos
+            case FILHO -> {
+                // Se estamos criando A→FILHO→B, verificar se existe B→PAI→A ou B→MAE→A
+                tipos.add(TipoRelacionamento.PAI);
+                tipos.add(TipoRelacionamento.MAE);
+            }
+            case PAI, MAE, RESPONSAVEL -> {
+                // Se estamos criando A→PAI/MAE/RESPONSAVEL→B, verificar se existe B→FILHO→A
+                tipos.add(TipoRelacionamento.FILHO);
+            }
+        }
+        
+        return tipos;
     }
     
     /**
@@ -370,7 +436,8 @@ public class PessoaRepository {
         pessoaRecord.setIgrejaBatismo(pessoa.getIgrejaBatismo());
         pessoaRecord.setProfissao(pessoa.getProfissao());
         pessoaRecord.setEmpresa(pessoa.getEmpresa());
-        pessoaRecord.setEnderecoId(pessoa.getEndereco().getId());
+        if (pessoa.getEndereco() != null)
+            pessoaRecord.setEnderecoId(pessoa.getEndereco().getId());
         if (pessoa.getRegiao() != null)
             pessoaRecord.setRegiao(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(pessoa.getRegiao().name()));
         pessoaRecord.setFotoUrl(pessoa.getFotoUrl());

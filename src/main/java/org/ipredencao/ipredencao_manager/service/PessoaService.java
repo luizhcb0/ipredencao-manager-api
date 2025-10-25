@@ -93,7 +93,25 @@ public class PessoaService {
     }
 
     // Relacionamento qualificados
+    /**
+     * Cria um relacionamento entre duas pessoas.
+     * Se o relacionamento já existir (em qualquer direção), retorna o existente.
+     * Comportamento idempotente para evitar duplicações.
+     */
     public Relacionamento createRelationship(Long pessoaId, Relacionamento relacionamento) {
+        // Verificar se relacionamento já existe (em qualquer direção)
+        Relacionamento existingRelationship = pessoaRepository.findExistingRelationship(
+            pessoaId, 
+            relacionamento.getPessoaRelacionadaId(), 
+            relacionamento.getTipoRelacionamento()
+        );
+        
+        // Se já existe, retornar o existente (comportamento idempotente)
+        if (existingRelationship != null) {
+            return existingRelationship;
+        }
+        
+        // Se não existe, criar novo
         return pessoaRepository.insertRelationship(pessoaId, relacionamento);
     }
     
@@ -173,10 +191,13 @@ public class PessoaService {
     
     // TODO: Implementar a lógica para atualizar o endereço
     private Endereco updateAddress(Endereco enderecoAtual, Endereco novoEndereco) {
-        if (enderecoAtual.equals(novoEndereco)) {
+        if (enderecoAtual == null) {
+            return novoEndereco;
+        }
+        if (novoEndereco.equals(enderecoAtual)) {
             return enderecoAtual;
         } else {
-            return enderecoRepository.insert(novoEndereco);
+            return novoEndereco;
         }
     }
 }

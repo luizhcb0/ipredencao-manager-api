@@ -141,7 +141,7 @@ public class FormularioPessoaService {
         Pessoa person;
         
         Endereco endereco = null;
-        if (formulario.getPropagarEnderecoChefeFamilia() && familyHead != null && familyHead.getEndereco().getId() != null) {
+        if (formulario.getPropagarEnderecoChefeFamilia() && familyHead != null && familyHead.getEndereco() != null) {
             endereco = familyHead.getEndereco();
         } else {
             endereco = new Endereco();
