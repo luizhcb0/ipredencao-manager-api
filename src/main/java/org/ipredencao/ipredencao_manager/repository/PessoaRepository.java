@@ -362,8 +362,12 @@ public class PessoaRepository {
             conditions.add(PESSOA.DATA_NASCIMENTO.lessOrEqual(DateTimeHelper.toDb(query.getDataNascimentoTo())));
         if (query.getTipoBatismo() != null) 
             conditions.add(PESSOA.TIPO_BATISMO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo.valueOf(query.getTipoBatismo().name())));
-        if (query.getCategoria() != null) 
-            conditions.add(PESSOA.CATEGORIA_ID.eq(query.getCategoria().getId()));
+        if (query.getCategorias() != null && !query.getCategorias().isEmpty()) {
+            List<Long> categoriaIds = query.getCategorias().stream()
+                .map(CategoriaEnum::getId)
+                .toList();
+            conditions.add(PESSOA.CATEGORIA_ID.in(categoriaIds));
+        }
         return conditions;
     }
 
