@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.model.pessoa;
 
+import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
 import org.joda.time.DateTime;
 import java.util.List;
 
@@ -20,6 +21,7 @@ public class PessoaQuery {
     private TipoBatismo tipoBatismo;
     private List<CategoriaEnum> categorias;
     private Long enderecoId;
+    private PaginationParameters pagination;
 
     // Construtor padrão para Jackson
     public PessoaQuery() {}
@@ -42,6 +44,7 @@ public class PessoaQuery {
         this.tipoBatismo = builder.tipoBatismo;
         this.categorias = builder.categorias;
         this.enderecoId = builder.enderecoId;
+        this.pagination = builder.pagination;
     }
 
     // Builder pattern
@@ -62,6 +65,7 @@ public class PessoaQuery {
         private TipoBatismo tipoBatismo;
         private List<CategoriaEnum> categorias;
         private Long enderecoId;
+        private PaginationParameters pagination;
 
         public Builder id(Long id) {
             this.id = id;
@@ -143,6 +147,11 @@ public class PessoaQuery {
             return this;
         }
 
+        public Builder pagination(PaginationParameters pagination) {
+            this.pagination = pagination;
+            return this;
+        }
+
         public PessoaQuery build() {
             return new PessoaQuery(this);
         }
@@ -169,8 +178,7 @@ public class PessoaQuery {
     public TipoBatismo getTipoBatismo() { return tipoBatismo; }
     public List<CategoriaEnum> getCategorias() { return categorias; }
     public Long getEnderecoId() { return enderecoId; }
-
-
+    public PaginationParameters getPagination() { return pagination; }
 
     // Setters para Jackson
     public void setId(Long id) { this.id = id; }
@@ -189,4 +197,5 @@ public class PessoaQuery {
     public void setTipoBatismo(TipoBatismo tipoBatismo) { this.tipoBatismo = tipoBatismo; }
     public void setCategorias(List<CategoriaEnum> categorias) { this.categorias = categorias; }
     public void setEnderecoId(Long enderecoId) { this.enderecoId = enderecoId; }
+    public void setPagination(PaginationParameters pagination) { this.pagination = pagination; }
 }

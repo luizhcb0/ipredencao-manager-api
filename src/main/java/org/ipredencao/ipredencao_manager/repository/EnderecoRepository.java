@@ -1,13 +1,10 @@
 package org.ipredencao.ipredencao_manager.repository;
 
-import org.ipredencao.ipredencao_manager.jooq.tables.Pessoa;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
 import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import static org.ipredencao.ipredencao_manager.jooq.tables.Endereco.ENDERECO;
-import static org.ipredencao.ipredencao_manager.jooq.tables.Pessoa.PESSOA;
-
 import org.ipredencao.ipredencao_manager.jooq.tables.records.EnderecoRecord;
 import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.jooq.Condition;
@@ -55,6 +52,51 @@ public class EnderecoRepository {
     }
 
     public List<Endereco> find(EnderecoQuery query) {
+        List<Condition> conditions = buildConditions(query);
+        
+        Condition finalCondition = conditions.stream()
+            .reduce(DSL.noCondition(), Condition::and);
+
+        // Montar query com ou sem paginação
+        if (query.getPagination() != null) {
+            int limit = query.getPagination().getLimit() != null ? query.getPagination().getLimit() : Integer.MAX_VALUE;
+            int offset = query.getPagination().getOffset() != null ? query.getPagination().getOffset() : 0;
+            
+            return dsl.selectFrom(ENDERECO)
+                    .where(finalCondition)
+                    .limit(limit)
+                    .offset(offset)
+                    .fetch()
+                    .stream()
+                    .map(EnderecoRepository::fromRepository)
+                    .toList();
+        } else {
+            return dsl.selectFrom(ENDERECO)
+                    .where(finalCondition)
+                    .fetch()
+                    .stream()
+                    .map(EnderecoRepository::fromRepository)
+                    .toList();
+        }
+    }
+    
+    /**
+     * Conta o total de endereços que atendem aos critérios da query
+     * (usado para paginação)
+     */
+    public long count(EnderecoQuery query) {
+        List<Condition> conditions = buildConditions(query);
+        
+        Condition finalCondition = conditions.stream()
+            .reduce(DSL.noCondition(), Condition::and);
+        
+        return dsl.selectCount()
+            .from(ENDERECO)
+            .where(finalCondition)
+            .fetchOne(0, long.class);
+    }
+    
+    private List<Condition> buildConditions(EnderecoQuery query) {
         List<Condition> conditions = new ArrayList<>();
         
         if (query.getId() != null) conditions.add(ENDERECO.ID.eq(query.getId()));
@@ -63,15 +105,7 @@ public class EnderecoRepository {
         if (query.getNumero() != null && !query.getNumero().trim().isEmpty()) conditions.add(ENDERECO.NUMERO.eq(query.getNumero()));
         if (query.getComplemento() != null && !query.getComplemento().trim().isEmpty()) conditions.add(ENDERECO.COMPLEMENTO.likeIgnoreCase("%" + query.getComplemento() + "%"));
         
-        Condition finalCondition = conditions.stream()
-            .reduce(DSL.noCondition(), Condition::and);
-
-        return dsl.selectFrom(ENDERECO)
-                .where(finalCondition)
-                .fetch()
-                .stream()
-                .map(EnderecoRepository::fromRepository)
-                .toList();
+        return conditions;
     }
 
     private static Endereco fromRepository(EnderecoRecord record) {

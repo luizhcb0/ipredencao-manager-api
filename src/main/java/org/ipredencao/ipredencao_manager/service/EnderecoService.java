@@ -2,6 +2,9 @@ package org.ipredencao.ipredencao_manager.service;
 
 import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.ipredencao.ipredencao_manager.model.endereco.EnderecoQuery;
+import org.ipredencao.ipredencao_manager.model.pagination.PageInfo;
+import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
+import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.ipredencao.ipredencao_manager.repository.EnderecoRepository;
@@ -145,6 +148,36 @@ public class EnderecoService {
         return enderecos;
     }
     
+    /**
+     * Busca endereços com paginação
+     */
+    public PagedResponse<Endereco> findPaginated(EnderecoQuery query) {
+        // Validar e aplicar defaults de paginação
+        applyPaginationDefaults(query);
+        
+        // Buscar dados
+        List<Endereco> enderecos = enderecoRepository.find(query);
+        
+        // Carregar pessoas vinculadas para cada endereço
+        for (Endereco endereco : enderecos) {
+            List<Long> pessoaIds = pessoaRepository.find(PessoaQuery.builder().enderecoId(endereco.getId()).build()).stream().map(Pessoa::getId).toList();
+            endereco.setPessoaIds(pessoaIds);
+        }
+        
+        // Contar total (sem paginação)
+        EnderecoQuery countQuery = cloneQueryWithoutPagination(query);
+        long total = enderecoRepository.count(countQuery);
+        
+        // Construir resposta paginada
+        PageInfo pageInfo = new PageInfo(
+            query.getPagination().getLimit(),
+            query.getPagination().getOffset(),
+            total
+        );
+        
+        return new PagedResponse<>(enderecos, pageInfo);
+    }
+    
     // Métodos privados auxiliares
     
     private void validateEndereco(Endereco endereco) {
@@ -178,6 +211,43 @@ public class EnderecoService {
                 throw new IllegalArgumentException("Pessoa com ID " + pessoaId + " não encontrada");
             }
         }
+    }
+    
+    // Métodos auxiliares para paginação
+    
+    private void applyPaginationDefaults(EnderecoQuery query) {
+        if (query.getPagination() == null) {
+            query.setPagination(new PaginationParameters());
+        }
+        
+        PaginationParameters p = query.getPagination();
+        
+        if (p.getLimit() == null) {
+            p.setLimit(PaginationParameters.DEFAULT_LIMIT);
+        }
+        if (p.getLimit() > PaginationParameters.MAX_LIMIT) {
+            p.setLimit(PaginationParameters.MAX_LIMIT);
+        }
+        if (p.getLimit() < PaginationParameters.MIN_LIMIT) {
+            p.setLimit(PaginationParameters.MIN_LIMIT);
+        }
+        
+        if (p.getOffset() == null) {
+            p.setOffset(PaginationParameters.DEFAULT_OFFSET);
+        }
+        if (p.getOffset() < 0) {
+            p.setOffset(PaginationParameters.DEFAULT_OFFSET);
+        }
+    }
+    
+    private EnderecoQuery cloneQueryWithoutPagination(EnderecoQuery query) {
+        // Criar nova query sem paginação para count
+        return EnderecoQuery.builder()
+            .id(query.getId())
+            .cep(query.getCep())
+            .logradouro(query.getLogradouro())
+            .numero(query.getNumero())
+            .build();
     }
 }
 

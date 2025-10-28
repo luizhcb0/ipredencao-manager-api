@@ -106,12 +106,28 @@ public class PessoaRepository {
         Condition finalCondition = conditions.stream()
             .reduce(DSL.noCondition(), Condition::and);
         
-        List<Pessoa> people = dsl.selectFrom(PESSOA)
-                .where(finalCondition)
-                .fetch()
-                .stream()
-                .map(this::fromRepository)
-                .toList();
+        // Montar query com ou sem paginação
+        List<Pessoa> people;
+        if (query.getPagination() != null) {
+            int limit = query.getPagination().getLimit() != null ? query.getPagination().getLimit() : Integer.MAX_VALUE;
+            int offset = query.getPagination().getOffset() != null ? query.getPagination().getOffset() : 0;
+            
+            people = dsl.selectFrom(PESSOA)
+                    .where(finalCondition)
+                    .limit(limit)
+                    .offset(offset)
+                    .fetch()
+                    .stream()
+                    .map(this::fromRepository)
+                    .toList();
+        } else {
+            people = dsl.selectFrom(PESSOA)
+                    .where(finalCondition)
+                    .fetch()
+                    .stream()
+                    .map(this::fromRepository)
+                    .toList();
+        }
         
         // Carregar relacionamentos para cada pessoa
         for (Pessoa pessoa : people) {
@@ -120,6 +136,22 @@ public class PessoaRepository {
         }
         
         return people;
+    }
+    
+    /**
+     * Conta o total de pessoas que atendem aos critérios da query
+     * (usado para paginação)
+     */
+    public long count(PessoaQuery query) {
+        List<Condition> conditions = buildConditions(query);
+        
+        Condition finalCondition = conditions.stream()
+            .reduce(DSL.noCondition(), Condition::and);
+        
+        return dsl.selectCount()
+            .from(PESSOA)
+            .where(finalCondition)
+            .fetchOne(0, long.class);
     }
 
     public List<PessoaHistory> findHistoryByPersonId(Long pessoaId) {
@@ -367,6 +399,9 @@ public class PessoaRepository {
                 .map(CategoriaEnum::getId)
                 .toList();
             conditions.add(PESSOA.CATEGORIA_ID.in(categoriaIds));
+        }
+        if (query.getEnderecoId() != null) {
+            conditions.add(PESSOA.ENDERECO_ID.eq(query.getEnderecoId()));
         }
         return conditions;
     }

@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.controller;
 
+import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistory;
 import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
 import org.slf4j.Logger;
@@ -80,8 +81,8 @@ public class PessoaController {
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> searchPeople(@RequestBody PessoaQuery query) {
         try {
-            List<Pessoa> people = pessoaService.find(query);
-            return ResponseEntity.ok(people);
+            PagedResponse<Pessoa> response = pessoaService.findPaginated(query);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new ErrorResponse("Erro na busca", e.getMessage()));
         }

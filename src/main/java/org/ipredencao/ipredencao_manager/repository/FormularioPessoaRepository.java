@@ -58,12 +58,43 @@ public class FormularioPessoaRepository {
         Condition finalCondition = conditions.stream()
             .reduce(DSL.noCondition(), Condition::and);
 
-        return dsl.selectFrom(FORMULARIO_PESSOA)
+        // Montar query com ou sem paginação
+        if (query.getPagination() != null) {
+            int limit = query.getPagination().getLimit() != null ? query.getPagination().getLimit() : Integer.MAX_VALUE;
+            int offset = query.getPagination().getOffset() != null ? query.getPagination().getOffset() : 0;
+            
+            return dsl.selectFrom(FORMULARIO_PESSOA)
+                    .where(finalCondition)
+                    .limit(limit)
+                    .offset(offset)
+                    .fetch()
+                    .stream()
+                    .map(FormularioPessoaRepository::fromRepository)
+                    .toList();
+        } else {
+            return dsl.selectFrom(FORMULARIO_PESSOA)
+                    .where(finalCondition)
+                    .fetch()
+                    .stream()
+                    .map(FormularioPessoaRepository::fromRepository)
+                    .toList();
+        }
+    }
+    
+    /**
+     * Conta o total de formulários que atendem aos critérios da query
+     * (usado para paginação)
+     */
+    public long count(FormularioPessoaQuery query) {
+        List<Condition> conditions = buildConditions(query);
+
+        Condition finalCondition = conditions.stream()
+            .reduce(DSL.noCondition(), Condition::and);
+
+        return dsl.selectCount()
+            .from(FORMULARIO_PESSOA)
             .where(finalCondition)
-            .fetch()
-            .stream()
-            .map(FormularioPessoaRepository::fromRepository)
-            .toList();
+            .fetchOne(0, long.class);
     }
 
     private List<Condition> buildConditions(FormularioPessoaQuery query) {

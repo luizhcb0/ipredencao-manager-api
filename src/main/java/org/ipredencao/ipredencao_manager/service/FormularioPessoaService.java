@@ -5,6 +5,9 @@ import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPesso
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoaQuery;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.ProcessarFormularioRequest;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.ProcessarFormularioResponse;
+import org.ipredencao.ipredencao_manager.model.pagination.PageInfo;
+import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
+import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.EstadoCivil;
 import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
@@ -58,6 +61,30 @@ public class FormularioPessoaService {
 
     public List<FormularioPessoa> find(FormularioPessoaQuery query) {
         return repository.find(query);
+    }
+    
+    /**
+     * Busca formulários com paginação
+     */
+    public PagedResponse<FormularioPessoa> findPaginated(FormularioPessoaQuery query) {
+        // Validar e aplicar defaults de paginação
+        applyPaginationDefaults(query);
+        
+        // Buscar dados
+        List<FormularioPessoa> formularios = repository.find(query);
+        
+        // Contar total (sem paginação)
+        FormularioPessoaQuery countQuery = cloneQueryWithoutPagination(query);
+        long total = repository.count(countQuery);
+        
+        // Construir resposta paginada
+        PageInfo pageInfo = new PageInfo(
+            query.getPagination().getLimit(),
+            query.getPagination().getOffset(),
+            total
+        );
+        
+        return new PagedResponse<>(formularios, pageInfo);
     }
 
     @Transactional
@@ -305,5 +332,54 @@ public class FormularioPessoaService {
             relatedPeople.add(createdPerson);
             return createdPerson;
         }
+    }
+    
+    // Métodos auxiliares para paginação
+    
+    private void applyPaginationDefaults(FormularioPessoaQuery query) {
+        if (query.getPagination() == null) {
+            query.setPagination(new PaginationParameters());
+        }
+        
+        PaginationParameters p = query.getPagination();
+        
+        if (p.getLimit() == null) {
+            p.setLimit(PaginationParameters.DEFAULT_LIMIT);
+        }
+        if (p.getLimit() > PaginationParameters.MAX_LIMIT) {
+            p.setLimit(PaginationParameters.MAX_LIMIT);
+        }
+        if (p.getLimit() < PaginationParameters.MIN_LIMIT) {
+            p.setLimit(PaginationParameters.MIN_LIMIT);
+        }
+        
+        if (p.getOffset() == null) {
+            p.setOffset(PaginationParameters.DEFAULT_OFFSET);
+        }
+        if (p.getOffset() < 0) {
+            p.setOffset(PaginationParameters.DEFAULT_OFFSET);
+        }
+    }
+    
+    private FormularioPessoaQuery cloneQueryWithoutPagination(FormularioPessoaQuery query) {
+        // Criar nova query sem paginação para count
+        return FormularioPessoaQuery.builder()
+            .id(query.getId())
+            .ids(query.getIds())
+            .nome(query.getNome())
+            .apelido(query.getApelido())
+            .email(query.getEmail())
+            .telefone(query.getTelefone())
+            .cpf(query.getCpf())
+            .rg(query.getRg())
+            .estadoCivil(query.getEstadoCivil())
+            .campus(query.getCampus())
+            .regiao(query.getRegiao())
+            .dataNascimentoFrom(query.getDataNascimentoFrom())
+            .dataNascimentoTo(query.getDataNascimentoTo())
+            .tipoBatismo(query.getTipoBatismo())
+            .categoria(query.getCategoria())
+            .status(query.getStatus())
+            .build();
     }
 }
