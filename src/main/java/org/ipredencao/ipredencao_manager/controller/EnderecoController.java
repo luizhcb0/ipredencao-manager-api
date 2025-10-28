@@ -3,14 +3,13 @@ package org.ipredencao.ipredencao_manager.controller;
 import org.ipredencao.ipredencao_manager.model.ErrorResponse;
 import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.ipredencao.ipredencao_manager.model.endereco.EnderecoQuery;
-import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
+import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.service.EnderecoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -91,14 +90,14 @@ public class EnderecoController {
     }
     
     /**
-     * Busca endereços com filtros
+     * Busca endereços com filtros e paginação
      */
     @PostMapping("/search")
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> search(@RequestBody EnderecoQuery query) {
         try {
-            List<Endereco> enderecos = enderecoService.find(query);
-            return ResponseEntity.ok(enderecos);
+            PagedResponse<Endereco> response = enderecoService.findPaginated(query);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new ErrorResponse("Erro na busca", e.getMessage()));
         }

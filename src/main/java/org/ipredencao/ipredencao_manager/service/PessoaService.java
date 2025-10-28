@@ -1,5 +1,8 @@
 package org.ipredencao.ipredencao_manager.service;
 
+import org.ipredencao.ipredencao_manager.model.pagination.PageInfo;
+import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
+import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistory;
 import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
 import org.springframework.stereotype.Service;
@@ -62,6 +65,30 @@ public class PessoaService {
 
     public List<Pessoa> find(PessoaQuery query) {
         return pessoaRepository.find(query);
+    }
+    
+    /**
+     * Busca pessoas com paginação
+     */
+    public PagedResponse<Pessoa> findPaginated(PessoaQuery query) {
+        // Validar e aplicar defaults de paginação
+        applyPaginationDefaults(query);
+        
+        // Buscar dados
+        List<Pessoa> pessoas = pessoaRepository.find(query);
+        
+        // Contar total (sem paginação)
+        PessoaQuery countQuery = cloneQueryWithoutPagination(query);
+        long total = pessoaRepository.count(countQuery);
+        
+        // Construir resposta paginada
+        PageInfo pageInfo = new PageInfo(
+            query.getPagination().getLimit(),
+            query.getPagination().getOffset(),
+            total
+        );
+        
+        return new PagedResponse<>(pessoas, pageInfo);
     }
 
     @Transactional
@@ -179,5 +206,54 @@ public class PessoaService {
             Pessoa createdPerson = pessoaRepository.insert(newPerson);
             rel.setPessoaRelacionadaId(createdPerson.getId());
         }
+    }
+    
+    // Métodos auxiliares para paginação
+    
+    private void applyPaginationDefaults(PessoaQuery query) {
+        if (query.getPagination() == null) {
+            query.setPagination(new PaginationParameters());
+        }
+        
+        PaginationParameters p = query.getPagination();
+        
+        if (p.getLimit() == null) {
+            p.setLimit(PaginationParameters.DEFAULT_LIMIT);
+        }
+        if (p.getLimit() > PaginationParameters.MAX_LIMIT) {
+            p.setLimit(PaginationParameters.MAX_LIMIT);
+        }
+        if (p.getLimit() < PaginationParameters.MIN_LIMIT) {
+            p.setLimit(PaginationParameters.MIN_LIMIT);
+        }
+        
+        if (p.getOffset() == null) {
+            p.setOffset(PaginationParameters.DEFAULT_OFFSET);
+        }
+        if (p.getOffset() < 0) {
+            p.setOffset(PaginationParameters.DEFAULT_OFFSET);
+        }
+    }
+    
+    private PessoaQuery cloneQueryWithoutPagination(PessoaQuery query) {
+        // Criar nova query sem paginação para count
+        return PessoaQuery.builder()
+            .id(query.getId())
+            .ids(query.getIds())
+            .nome(query.getNome())
+            .apelido(query.getApelido())
+            .email(query.getEmail())
+            .telefone(query.getTelefone())
+            .cpf(query.getCpf())
+            .rg(query.getRg())
+            .estadoCivil(query.getEstadoCivil())
+            .campus(query.getCampus())
+            .regiao(query.getRegiao())
+            .dataNascimentoFrom(query.getDataNascimentoFrom())
+            .dataNascimentoTo(query.getDataNascimentoTo())
+            .tipoBatismo(query.getTipoBatismo())
+            .categorias(query.getCategorias())
+            .enderecoId(query.getEnderecoId())
+            .build();
     }
 }

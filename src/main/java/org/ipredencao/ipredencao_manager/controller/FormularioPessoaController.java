@@ -5,6 +5,7 @@ import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPesso
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.ProcessarFormularioRequest;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.ProcessarFormularioResponse;
 import org.ipredencao.ipredencao_manager.model.*;
+import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.service.FormularioPessoaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -78,8 +78,8 @@ public class FormularioPessoaController {
     @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> searchForms(@RequestBody FormularioPessoaQuery query) {
         try {
-            List<FormularioPessoa> forms = service.find(query);
-            return ResponseEntity.ok(forms);
+            PagedResponse<FormularioPessoa> response = service.findPaginated(query);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new ErrorResponse("Erro na busca", e.getMessage()));
         }

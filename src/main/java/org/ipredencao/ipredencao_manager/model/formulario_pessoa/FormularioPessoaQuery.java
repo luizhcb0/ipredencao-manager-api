@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.model.formulario_pessoa;
 
+import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
 import org.ipredencao.ipredencao_manager.model.pessoa.EstadoCivil;
 import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
 import org.ipredencao.ipredencao_manager.model.pessoa.Regiao;
@@ -25,6 +26,7 @@ public class FormularioPessoaQuery {
     private TipoBatismo tipoBatismo;
     private CategoriaEnum categoria;
     private FormPessoaStatus status;
+    private PaginationParameters pagination;
 
     // Construtor padrão para Jackson
     public FormularioPessoaQuery() {}
@@ -47,6 +49,7 @@ public class FormularioPessoaQuery {
         this.tipoBatismo = builder.tipoBatismo;
         this.categoria = builder.categoria;
         this.status = builder.status;
+        this.pagination = builder.pagination;
     }
 
     // Builder pattern
@@ -67,6 +70,7 @@ public class FormularioPessoaQuery {
         private TipoBatismo tipoBatismo;
         private CategoriaEnum categoria;
         private FormPessoaStatus status;
+        private PaginationParameters pagination;
 
         public Builder id(Long id) {
             this.id = id;
@@ -148,6 +152,11 @@ public class FormularioPessoaQuery {
             return this;
         }
 
+        public Builder pagination(PaginationParameters pagination) {
+            this.pagination = pagination;
+            return this;
+        }
+
         public FormularioPessoaQuery build() {
             return new FormularioPessoaQuery(this);
         }
@@ -174,6 +183,7 @@ public class FormularioPessoaQuery {
     public TipoBatismo getTipoBatismo() { return tipoBatismo; }
     public CategoriaEnum getCategoria() { return categoria; }
     public FormPessoaStatus getStatus() { return status; }
+    public PaginationParameters getPagination() { return pagination; }
 
     // Setters para Jackson
     public void setId(Long id) { this.id = id; }
@@ -192,4 +202,5 @@ public class FormularioPessoaQuery {
     public void setTipoBatismo(TipoBatismo tipoBatismo) { this.tipoBatismo = tipoBatismo; }
     public void setCategoria(CategoriaEnum categoria) { this.categoria = categoria; }
     public void setStatus(FormPessoaStatus status) { this.status = status; }
+    public void setPagination(PaginationParameters pagination) { this.pagination = pagination; }
 }
