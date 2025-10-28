@@ -19,6 +19,7 @@ public class PessoaQuery {
     private DateTime dataNascimentoTo;
     private TipoBatismo tipoBatismo;
     private List<CategoriaEnum> categorias;
+    private Long enderecoId;
 
     // Construtor padrão para Jackson
     public PessoaQuery() {}
@@ -40,6 +41,7 @@ public class PessoaQuery {
         this.dataNascimentoTo = builder.dataNascimentoTo;
         this.tipoBatismo = builder.tipoBatismo;
         this.categorias = builder.categorias;
+        this.enderecoId = builder.enderecoId;
     }
 
     // Builder pattern
@@ -59,6 +61,7 @@ public class PessoaQuery {
         private DateTime dataNascimentoTo;
         private TipoBatismo tipoBatismo;
         private List<CategoriaEnum> categorias;
+        private Long enderecoId;
 
         public Builder id(Long id) {
             this.id = id;
@@ -135,6 +138,11 @@ public class PessoaQuery {
             return this;
         }
 
+        public Builder enderecoId(Long enderecoId) {
+            this.enderecoId = enderecoId;
+            return this;
+        }
+
         public PessoaQuery build() {
             return new PessoaQuery(this);
         }
@@ -160,6 +168,7 @@ public class PessoaQuery {
     public DateTime getDataNascimentoTo() { return dataNascimentoTo; }
     public TipoBatismo getTipoBatismo() { return tipoBatismo; }
     public List<CategoriaEnum> getCategorias() { return categorias; }
+    public Long getEnderecoId() { return enderecoId; }
 
 
 
@@ -179,4 +188,5 @@ public class PessoaQuery {
     public void setDataNascimentoTo(DateTime dataNascimentoTo) { this.dataNascimentoTo = dataNascimentoTo; }
     public void setTipoBatismo(TipoBatismo tipoBatismo) { this.tipoBatismo = tipoBatismo; }
     public void setCategorias(List<CategoriaEnum> categorias) { this.categorias = categorias; }
+    public void setEnderecoId(Long enderecoId) { this.enderecoId = enderecoId; }
 }

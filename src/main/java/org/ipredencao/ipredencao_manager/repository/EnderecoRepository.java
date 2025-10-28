@@ -1,10 +1,13 @@
 package org.ipredencao.ipredencao_manager.repository;
 
+import org.ipredencao.ipredencao_manager.jooq.tables.Pessoa;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
 import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import static org.ipredencao.ipredencao_manager.jooq.tables.Endereco.ENDERECO;
+import static org.ipredencao.ipredencao_manager.jooq.tables.Pessoa.PESSOA;
+
 import org.ipredencao.ipredencao_manager.jooq.tables.records.EnderecoRecord;
 import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.jooq.Condition;
@@ -62,15 +65,13 @@ public class EnderecoRepository {
         
         Condition finalCondition = conditions.stream()
             .reduce(DSL.noCondition(), Condition::and);
-        
-        List<Endereco> addresses = dsl.selectFrom(ENDERECO)
+
+        return dsl.selectFrom(ENDERECO)
                 .where(finalCondition)
                 .fetch()
                 .stream()
                 .map(EnderecoRepository::fromRepository)
                 .toList();
-        
-        return addresses;
     }
 
     private static Endereco fromRepository(EnderecoRecord record) {
@@ -102,6 +103,15 @@ public class EnderecoRepository {
         record.setUpdatedBy(endereco.getUpdatedByUserId());
         
         return record;
+    }
+    
+    /**
+     * Deleta um endereço
+     */
+    public void delete(Long id) {
+        dsl.deleteFrom(ENDERECO)
+            .where(ENDERECO.ID.eq(id))
+            .execute();
     }
 }
 
