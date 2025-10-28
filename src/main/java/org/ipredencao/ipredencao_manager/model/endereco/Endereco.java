@@ -1,6 +1,7 @@
 package org.ipredencao.ipredencao_manager.model.endereco;
 
 import org.joda.time.DateTime;
+import java.util.List;
 
 public class Endereco {
     private Long id;
@@ -11,6 +12,7 @@ public class Endereco {
     private DateTime addedAt;
     private DateTime updatedAt;
     private Long updatedByUserId;
+    private List<Long> pessoaIds;
 
     // Getters e Setters
     public Long getId() {
@@ -75,6 +77,14 @@ public class Endereco {
 
     public void setUpdatedByUserId(Long updatedByUserId) {
         this.updatedByUserId = updatedByUserId;
+    }
+
+    public List<Long> getPessoaIds() {
+        return pessoaIds;
+    }
+
+    public void setPessoaIds(List<Long> pessoaIds) {
+        this.pessoaIds = pessoaIds;
     }
 
     @Override
