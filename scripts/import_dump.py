@@ -648,6 +648,7 @@ def create_pessoa_payload(row: pd.Series, contacts: Dict, categoria_id: int, cam
         'cpf': clean_cpf(row.get('CPF')),
         'rg': str(row['RG']).strip() if not pd.isna(row.get('RG')) else None,
         'dataNascimento': parse_date(row.get('DataNascimento')),
+        'dataFalecimento': parse_date(row.get('DataFalecimento')),
         'estadoCivil': map_estado_civil(row.get('EstadoCivil')),
         'categoria': get_categoria_id(categoria_id),
         'campus': campus,
