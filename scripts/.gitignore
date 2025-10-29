@@ -1,0 +1,17 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Arquivos de checkpoint e mapeamento (não commitar)
+import_checkpoint.json
+id_mapping.json
+
+# Logs
+import_dump.log
+*.log
+
+

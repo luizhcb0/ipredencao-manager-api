@@ -117,6 +117,9 @@ public class EnderecoRepository {
         endereco.setLogradouro(record.getLogradouro());
         endereco.setNumero(record.getNumero());
         endereco.setComplemento(record.getComplemento());
+        endereco.setCidade(record.getCidade());
+        endereco.setEstado(record.getEstado());
+        endereco.setCoordenadas(record.getCoordenadas());
         endereco.setAddedAt(DateTimeHelper.fromDb(record.getAddedAt()));
         endereco.setUpdatedAt(DateTimeHelper.fromDb(record.getUpdatedAt()));
         endereco.setUpdatedByUserId(record.getUpdatedBy());
@@ -134,6 +137,9 @@ public class EnderecoRepository {
         record.setLogradouro(endereco.getLogradouro());
         record.setNumero(endereco.getNumero());
         record.setComplemento(endereco.getComplemento());
+        record.setCidade(endereco.getCidade());
+        record.setEstado(endereco.getEstado());
+        record.setCoordenadas(endereco.getCoordenadas());
         record.setUpdatedBy(endereco.getUpdatedByUserId());
         
         return record;

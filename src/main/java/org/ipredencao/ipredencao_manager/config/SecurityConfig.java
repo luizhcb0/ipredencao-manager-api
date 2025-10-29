@@ -57,6 +57,8 @@ public class SecurityConfig {
                 
                 // Dados do sistema (apenas autenticados com roles específicos)
                 .requestMatchers("/api/categorias/**").hasAnyRole("BOLETIM", "PRESBITERO", "ADMIN")
+
+                .requestMatchers("/api/enderecos/**").hasAnyRole("BOLETIM", "PRESBITERO", "ADMIN")
                 
                 .anyRequest().authenticated()
             )

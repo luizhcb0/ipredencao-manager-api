@@ -1,5 +1,7 @@
 package org.ipredencao.ipredencao_manager.service;
 
+import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
+import org.ipredencao.ipredencao_manager.model.endereco.EnderecoQuery;
 import org.ipredencao.ipredencao_manager.model.pagination.PageInfo;
 import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
@@ -29,6 +31,8 @@ public class PessoaService {
     private S3Service s3Service;
     @Autowired
     private SecurityUtils securityUtils;
+    @Autowired
+    private EnderecoService enderecoService;
 
     public PessoaService(PessoaRepository pessoaRepository) {
         this.pessoaRepository = pessoaRepository;
@@ -40,7 +44,54 @@ public class PessoaService {
         Long currentUserId = securityUtils.getCurrentUserId();
         pessoa.setUpdatedByUserId(currentUserId);
         
+        // Criar ou reutilizar endereço se fornecido e não tem ID
+        if (pessoa.getEndereco() != null && pessoa.getEndereco().getId() == null) {
+            // Verificar se o endereço tem CEP E logradouro (ambos obrigatórios)
+            boolean hasCep = pessoa.getEndereco().getCep() != null && !pessoa.getEndereco().getCep().trim().isEmpty();
+            boolean hasLogradouro = pessoa.getEndereco().getLogradouro() != null && !pessoa.getEndereco().getLogradouro().trim().isEmpty();
+            
+            if (hasCep && hasLogradouro) {
+                // Buscar endereço existente pelo logradouro
+                Endereco enderecoExistente = buscarEnderecoExistente(pessoa.getEndereco());
+                
+                if (enderecoExistente != null) {
+                    // Reutilizar endereço existente
+                    pessoa.setEndereco(enderecoExistente);
+                } else {
+                    // Criar novo endereço
+                    pessoa.getEndereco().setUpdatedByUserId(currentUserId);
+                    Endereco enderecoCriado = enderecoService.create(pessoa.getEndereco());
+                    pessoa.setEndereco(enderecoCriado);
+                }
+            } else {
+                // Endereço sem dados suficientes (precisa CEP E logradouro), remover
+                pessoa.setEndereco(null);
+            }
+        }
+        
         return pessoaRepository.insert(pessoa);
+    }
+    
+    /**
+     * Busca um endereço existente pelo logradouro (e CEP se disponível)
+     */
+    private Endereco buscarEnderecoExistente(Endereco endereco) {
+        if (endereco.getLogradouro() == null || endereco.getLogradouro().trim().isEmpty()) {
+            return null;
+        }
+        
+        // Buscar por logradouro e CEP (se disponível)
+        EnderecoQuery.Builder queryBuilder = EnderecoQuery.builder()
+            .logradouro(endereco.getLogradouro().trim());
+        
+        if (endereco.getCep() != null && !endereco.getCep().trim().isEmpty()) {
+            queryBuilder.cep(endereco.getCep().trim());
+        }
+        
+        List<Endereco> enderecos = enderecoService.find(queryBuilder.build());
+        
+        // Retornar o primeiro encontrado, ou null se nenhum foi encontrado
+        return enderecos.isEmpty() ? null : enderecos.get(0);
     }
 
     @Transactional

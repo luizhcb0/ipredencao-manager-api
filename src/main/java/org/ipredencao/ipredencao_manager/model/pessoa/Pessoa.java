@@ -17,6 +17,7 @@ public class Pessoa {
     private List<String> telefonesSecundarios;
     private String campus;
     private DateTime dataNascimento;
+    private DateTime dataFalecimento;
     private String cpf;
     private String rg;
     private EstadoCivil estadoCivil;
@@ -28,8 +29,8 @@ public class Pessoa {
     private DateTime dataBatismo;
     private DateTime dataProfissaoDeFe;
     private String igrejaBatismo;
-    private String profissao;
-    private String empresa;
+    private List<String> profissao;
+    private List<String> empresa;
     private Endereco endereco;
     private Regiao regiao;
     private String fotoUrl;
@@ -60,6 +61,8 @@ public class Pessoa {
     public void setCampus(String campus) { this.campus = campus; }
     public DateTime getDataNascimento() { return dataNascimento; }
     public void setDataNascimento(DateTime dataNascimento) { this.dataNascimento = dataNascimento; }
+    public DateTime getDataFalecimento() { return dataFalecimento; }
+    public void setDataFalecimento(DateTime dataFalecimento) { this.dataFalecimento = dataFalecimento; }
     public String getCpf() { return cpf; }
     public void setCpf(String cpf) { this.cpf = cpf; }
     public String getRg() { return rg; }
@@ -82,10 +85,10 @@ public class Pessoa {
     public void setDataProfissaoDeFe(DateTime dataProfissaoDeFe) { this.dataProfissaoDeFe = dataProfissaoDeFe; }
     public String getIgrejaBatismo() { return igrejaBatismo; }
     public void setIgrejaBatismo(String igrejaBatismo) { this.igrejaBatismo = igrejaBatismo; }
-    public String getProfissao() { return profissao; }
-    public void setProfissao(String profissao) { this.profissao = profissao; }
-    public String getEmpresa() { return empresa; }
-    public void setEmpresa(String empresa) { this.empresa = empresa; }
+    public List<String> getProfissao() { return profissao; }
+    public void setProfissao(List<String> profissao) { this.profissao = profissao; }
+    public List<String> getEmpresa() { return empresa; }
+    public void setEmpresa(List<String> empresa) { this.empresa = empresa; }
     public Endereco getEndereco() { return endereco; }
     public void setEndereco(Endereco endereco) { this.endereco = endereco; }
     public Regiao getRegiao() { return regiao; }

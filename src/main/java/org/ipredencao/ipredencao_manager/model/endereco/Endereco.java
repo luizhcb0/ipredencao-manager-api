@@ -9,6 +9,9 @@ public class Endereco {
     private String logradouro;
     private String numero;
     private String complemento;
+    private String cidade;
+    private String estado;
+    private String coordenadas;
     private DateTime addedAt;
     private DateTime updatedAt;
     private Long updatedByUserId;
@@ -53,6 +56,30 @@ public class Endereco {
 
     public void setComplemento(String complemento) {
         this.complemento = complemento;
+    }
+
+    public String getCidade() {
+        return cidade;
+    }
+
+    public void setCidade(String cidade) {
+        this.cidade = cidade;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
+    public String getCoordenadas() {
+        return coordenadas;
+    }
+
+    public void setCoordenadas(String coordenadas) {
+        this.coordenadas = coordenadas;
     }
 
     public DateTime getAddedAt() {

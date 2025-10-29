@@ -1,0 +1,408 @@
+idPessoa,Nome,Categoria
+1,Leni Candido da Cruz,01.Membro
+17,Cláudio Silva da Cruz,01.Membro
+27,Tânia Mara Eller da Cruz,01.Membro
+28,Eliane Silva da Cruz,01.Membro
+33,Charles Ludwig Grimm,01.Membro
+38,Sayro Lucas Maulepes Santos,01.Membro
+56,Emanuelle Carvalho Brasil de Albuquerque Neves,01.Membro
+71,Thiago Sousa dos Santos Gonçalves,01.Membro
+72,Victor Mustafá Braz,01.Membro
+83,Dayane Oliveira de Queiroz,01.Membro
+92,Bruno de Sousa Oliveira,01.Membro
+96,Luciana Eller Cruz,01.Membro
+97,Bruno Paulino de Oliveira,01.Membro
+99,Gabriela Seabra Gomes Mustafá,01.Membro
+103,Lucas Real Gomes,01.Membro
+122,Gabriel Caires Cavicchioli,01.Membro
+124,Fernanda Alves da Silva,01.Membro
+128,Leonardo Real Gomes,01.Membro
+129,Thiago Ribeiro Pereira,01.Membro
+132,Leonardo de Morais Melo,01.Membro
+133,Debora dos Anjos Vieira Rodrigues,01.Membro
+256,Flávia Carvalho Brasil de Albuquerque,08.Agregado não membro (p.ex. familiar frequente)
+311,Ernane Alves Vilela,08.Agregado não membro (p.ex. familiar frequente)
+312,Maria Denise Simões,08.Agregado não membro (p.ex. familiar frequente)
+344,Luis Marcos Fidyk,01.Membro
+345,Licionir de Jesus Fidyk,01.Membro
+366,Carlos Patrício Bezerra da Silva,01.Membro
+367,Élida Maria Alves,01.Membro
+368,Ysmael Jonnathas Celestino da Silva,01.Membro
+383,Caroline Fuzaro Silva Melo,01.Membro
+487,Nicolas Ribeiro Melo de Oliveira,"02.90.Rol à parte, membro a transferir"
+525,Pâmela Souza Peres Santos,01.Membro
+529,Arnaldo Dellon Araújo Pereira,01.Membro
+585,Elton Antônio Peres,"45.Visitante frequente, mas sem intenção de admissão"
+586,Miriam Souza Peres,"45.Visitante frequente, mas sem intenção de admissão"
+590,Nayane Fernandes Mesquita,"02.90.Rol à parte, membro a transferir"
+617,André Barbosa dos Santos,01.Membro
+618,Luanna Josy Santos Barbosa,01.Membro
+621,Maria Luísa Mateus Santos,03.96.Membro não comungante
+623,Estevão Campos Barboza,01.Membro
+624,Thamires Kely Mendonça de Melo Barboza,01.Membro
+630,Ricardo da Cruz Mendes Júnior,01.Membro
+631,Isabella Vasconcelos Bandeira Mendes,01.Membro
+648,Graziella Soares Grimm,01.Membro
+663,Lucas Souza Costa,01.Membro
+664,Ana Karolina Almeida Costa,01.Membro
+665,Alice Almeida Costa,03.96.Membro não comungante
+666,Ivan Costa Júnior,01.Membro
+667,Rozineide Souza Costa,01.Membro
+697,Igor de Alcantara Rabelo,01.Membro
+711,Jéssica Louise Costa Dantas,01.Membro
+716,Thiago Dantas Nascimento dos Santos,01.Membro
+755,Célia Regina Menezes de Oliveira,01.Membro
+868,Giulia Celeste Lopes de Oliveira,"03.99.Membro não comungante, rol à parte (transf)"
+899,Hiago Faustino Moura,01.Membro
+900,Daniella Caetano Freitas Faustino,01.Membro
+943,Carlos Alberto de Jesus Gonçalves,01.Membro
+944,Geovana Coimbra Gonçalves,01.Membro
+947,Rodrigo Perin Fernandes,01.Membro
+949,Lilian Perin Fernandes,01.Membro
+1027,Jesilayne Profeta Vidal,"02.90.Rol à parte, membro a transferir"
+1048,Alan Gonçalves da Silva,01.Membro
+1063,Laís Gomes Silveira Caires Cavicchioli,01.Membro
+1086,André Carlos da Silva,01.Membro
+1114,Fernanda Cristina Real Gomes Rodrigues,01.Membro
+1119,Ana Paula Maia Ferreira,01.Membro
+1156,Matheus Paixão de Oliveira,01.Membro
+1157,Bruna Larissa Pontes da Silva Paixão,01.Membro
+1163,Gabriela Lohanna Silva Correia Oliveira,01.Membro
+1165,Waldir Gomes de Oliveira,01.Membro
+1166,Rosilene Paixão de Oliveira,01.Membro
+1185,Elaine Souza Perin,01.Membro
+1281,Alex Ferreira Martins,01.Membro
+1282,Lívia Fernandes Martins,01.Membro
+1283,Samuel Ferreira de Andrade,01.Membro
+1284,Glayciane de Almeida Andrade,01.Membro
+1286,Lídia Laiane dos Santos Silva Hessen,01.Membro
+1288,Levi Santos Hessen,03.96.Membro não comungante
+1316,Michael Rodrigues da Silva,01.Membro
+1317,Pâmela Silva Barbosa de Faria,01.Membro
+1357,Rebeca Fernandes de Deus Martins,01.Membro
+1360,Renato Vieira Urany,01.Membro
+1361,Andreza Monteiro Urany,01.Membro
+1371,Daniel Gomide da Silva,01.Membro
+1372,Selma Leite de Souza,01.Membro
+1373,Gabriel Simões Vilela,01.Membro
+1375,Gabriel Gomide Leite de Souza,03.96.Membro não comungante
+1382,Vinícius Simões Vilela,06.98.Possível admissão: em avaliação
+1383,José Alves de Urany,"45.Visitante frequente, mas sem intenção de admissão"
+1384,Lucilene Vieira de Urany,"45.Visitante frequente, mas sem intenção de admissão"
+1403,Charlyson Willian Freitas Lúcio,01.Membro
+1404,Bruna Bugana Freitas,01.Membro
+1416,Eloah Bugana Freitas,03.96.Membro não comungante
+1468,Júlia Caroline Vieira Coelho,01.Membro
+1469,Giuliana Paixão de Oliveira Alcantara,01.Membro
+1495,André Bezerra dos Santos,01.Membro
+1508,Assis Rodrigues da Silva Filho,01.Membro
+1514,Anne Graziella Grimm,03.96.Membro não comungante
+1549,Kethelyn Nayara de Almeida Frank,01.Membro
+1552,Hudson Eduardo de Almeida Frank,01.Membro
+1615,Alice Gomide da Silva,03.96.Membro não comungante
+1640,Glayciene Ferreira de Almeida,01.Membro
+1646,Maria Fernandes Martins,03.96.Membro não comungante
+1654,Victoria Luzia Seabra Mustafá,03.96.Membro não comungante
+1677,Laura Beatriz Andrade Rodrigues,01.Membro
+1678,Pedro Augusto Andrade Rodrigues,01.Membro
+1679,Kerlen Andrade Rodrigues,01.Membro
+1717,Miguel Celestino Alves da Silva,03.96.Membro não comungante
+1721,Milena Rocha Luna Bezerra,01.Membro
+1750,Guilherme dos Santos,01.Membro
+1751,Leilyane Leal Maciel de Souza,01.Membro
+1766,Juseneuda dos Santos,06.99.Possível admissão: aguardando ficha cadastral
+1768,Marta Rocha Luna da Costa,43.Visitante frequente
+1788,Josué Pereira dos Santos,01.Membro
+1789,Rosilene Rocha da Silva Santos,01.Membro
+1804,Rafael de Oliveira Domingues,01.Membro
+1825,Giovana Paixão de Oliveira Domingues,01.Membro
+1826,Lucas da Silva Martins,01.Membro
+1853,Beatriz Rocha dos Santos,03.96.Membro não comungante
+1854,Lucas Rocha dos Santos,03.96.Membro não comungante
+1873,Rosemeire Ferreira Rocha,01.Membro
+1963,Nicolas Mateus Santos,03.96.Membro não comungante
+2014,Lara Monteiro Urany,03.96.Membro não comungante
+2032,Filipe Bernardes Costa Ribeiro,"02.95.Rol à parte, membro não localizado ou pedido de desligamento"
+2047,Daniel Vasconcelos Mendes,03.96.Membro não comungante
+2085,Helena Solveig Peres Santos,03.96.Membro não comungante
+2109,Daniella Pimenta da Silva,01.Membro
+2133,Estêvão Caetano Faustino Moura,03.96.Membro não comungante
+2138,Renata Menezes de Oliveira,44.Visitante frequente (menor de idade)
+2232,Maria Eduarda Augusta de Queiroz,01.Membro
+2233,Paulo Leonardo de Almeida Silva,01.Membro
+2274,Nícolas Pacheco de Miranda,01.Membro
+2280,Natan Vieira Urany,01.Membro
+2291,Cíntia Magalhães da Silva,01.Membro
+2308,Pedro Henrique Alves da Silva,01.Membro
+2310,Daniel Barbosa Guimarães,01.Membro
+2360,Davi Costa Dantas,03.96.Membro não comungante
+2361,Ana Gabrielle Farias Teixeira Real,01.Membro
+2363,Rita de Cássia Farias Teixeira,01.Membro
+2495,Giuliane dos Santos Alves,"02.90.Rol à parte, membro a transferir"
+2498,Walder José Alves Pereira,01.Membro
+2499,Josélia dos Santos Alves,01.Membro
+2613,Laís Marine de Oliveira Brasileiro,01.Membro
+2663,Thayse Cardoso Gomes,01.Membro
+2665,Marcus Vinícius Jacobina Rodrigues,01.Membro
+2682,Felipe Bruno Netto Simões,01.Membro
+2732,Elci Soares de Brito,01.Membro
+2733,Leonaldo da Silva Torres,01.Membro
+2734,Harumi Nepomuceno Okuyama,01.Membro
+2753,João Pedro Nascimento de Oliveira,01.Membro
+2754,Clécia de Oliveira Nascimento,01.Membro
+2761,Sergio Carlos do Nascimento,01.Membro
+2765,Cleonice de Souza Costa do Nascimento,01.Membro
+2766,Marielly de Souza do Nascimento,01.Membro
+2767,Isaac de Souza Carlos do Nascimento,01.Membro
+2816,Neyane Tavares de Oliveira Paz,01.Membro
+2817,Wellington Patrício Paz,01.Membro
+2820,Georlando Silva Aragão Paz,01.Membro
+2821,Rildarci de Oliveira Patrício Paz,01.Membro
+2862,Júlia Almeida Costa,03.96.Membro não comungante
+2903,Liliane Perin Fernandes,01.Membro
+2907,Philippe José dos Santos Alves,01.Membro
+2932,Larissa Alves Maciel,01.Membro
+2941,Daniel Souza de Urany,01.Membro
+2942,Fernanda da Rocha Silva Urany,01.Membro
+2943,Nicolas Paixão Urany,06.97.Possível admissão: batismo de menor sobrestado (credobatismo)
+3008,Israel Pereira da Rocha Pouso,01.Membro
+3044,Ariorlando Gonçalves de Brito,01.Membro
+3073,Giovanna Campos Ribeiro,01.Membro
+3078,Elisa Bugana Freitas,03.96.Membro não comungante
+3084,Cecília Paulino de Oliveira,03.96.Membro não comungante
+3088,Thiago Silva Ferreira,01.Membro
+3091,Sarah Rodrigues Ferreira,01.Membro
+3106,Sofia Fuzaro Melo,03.96.Membro não comungante
+3110,Beatriz Lima Bezerra de Souza,01.Membro
+3120,André Nogueira Martins,01.Membro
+3147,Nadim Junio Ferreira de Almeida,01.Membro
+3164,Karen Valentim Alves,01.Membro
+3175,Sonia Rodrigues da Silva,01.Membro
+3206,Nicholas Malta Santana,01.Membro
+3207,Laís Lima de Souza,01.Membro
+3216,Maria Antônia Gomes da Silva Turbiani,01.Membro
+3217,Suzana Lopes Alves Barreto,01.Membro
+3237,Manoel Rodrigues Neto,01.Membro
+3238,Nathalia Emanuelle Gasparini de Magalhães Rodrigues,01.Membro
+3239,Sara Gasparini Rodrigues,03.96.Membro não comungante
+3240,Thomas Gasparini Rodrigues,03.96.Membro não comungante
+3241,Gustavo Levy Brasileiro de Paula,44.Visitante frequente (menor de idade)
+3256,Aldenisa Celia da Costa da Silva,01.Membro
+3257,Levi Monteiro Urany,03.96.Membro não comungante
+3286,Diego Nícollas da Costa dos Santos,01.Membro
+3293,Mateus Pereira da Silva,01.Membro
+3294,Camila Aquino da Silva,01.Membro
+3313,Cecília dos Anjos Vieira Rodrigues,03.96.Membro não comungante
+3324,Daniel França Rodrigues Soares,"02.90.Rol à parte, membro a transferir"
+3325,Anderson Barbosa de Lima,01.Membro
+3349,Rayssa de Sousa França,"02.90.Rol à parte, membro a transferir"
+3352,Cecília Dulci Mesquita,08.Agregado não membro (p.ex. familiar frequente)
+3353,Davi Dulci Mororó,"03.97.Membro não comungante, em idade para profissão de fé"
+3354,Rodrigo Dulci de Lima,"03.97.Membro não comungante, em idade para profissão de fé"
+3355,Renzo Dulci de Lima,03.96.Membro não comungante
+3359,Mércia Cristina Sena Suzano Cavalcante,01.Membro
+3367,Lucas Henrique da Silva,"02.90.Rol à parte, membro a transferir"
+3368,Tainan Marcos da Silva Dutra,"02.90.Rol à parte, membro a transferir"
+3396,Júlio César Mendes Paz,01.Membro
+3397,Mariana Paulo Nascimento Paz,01.Membro
+3398,Carlos Henrique Sousa Dias,01.Membro
+3412,Fábio Sena Suzano,01.Membro
+3448,Ester Soares Fidyk,01.Membro
+3451,Gustavo Rocha Carvalho,"02.90.Rol à parte, membro a transferir"
+3452,Hélio José Soares Junior,01.Membro
+3455,Lorena de Freitas Fidyk,01.Membro
+3456,Micaela Nunes Martins dos Reis,"02.01.Rol à parte, membro em trânsito"
+3461,Samuel Gomes Cavicchioli,03.96.Membro não comungante
+3468,Herbet Leonardo Alves dos Santos,01.Membro
+3469,Norrany Lemos Paiva dos Santos,01.Membro
+3470,Aurora Lemos Paiva dos Santos,03.96.Membro não comungante
+3471,Ravi Lemos Paiva dos Santos,03.96.Membro não comungante
+3475,Janete Rocha da Costa,01.Membro
+3511,Luísa Celestino Alves da Silva,03.96.Membro não comungante
+3521,Mariana Barros da Cruz Sena Suzano,03.96.Membro não comungante
+3522,Kelly Cristina Barros da Cruz Sena,01.Membro
+3527,Ana Carolina Pereira Santos,01.Membro
+3558,Eliel Darlon Barreto de Souza,"02.90.Rol à parte, membro a transferir"
+3574,Théo Nascimento Paz,03.96.Membro não comungante
+3618,Yasmine Karen Henrique de Sousa,01.Membro
+3626,Oliver Matias Peres Santos,03.96.Membro não comungante
+3640,Ermesson Alves de Moraes,01.Membro
+3641,Yasmin Alcântara Belarmino da Silva,01.Membro
+3642,João Pedro Belarmino Alves,03.96.Membro não comungante
+3643,Felipe Cesar Belarmino Alves,03.96.Membro não comungante
+3644,Davi Belarmino Alves,03.96.Membro não comungante
+3680,João Victor de Araújo Oliveira,01.Membro
+3690,Ana Maria Martins de Araújo,43.Visitante frequente
+3693,Marianne Aquino da Silva,03.96.Membro não comungante
+3753,Maitê Fernandes Martins,03.96.Membro não comungante
+3765,Marta Gonçalves da Silva,43.Visitante frequente
+3786,Raphael Araujo da Silva,01.Membro
+3817,Thaís Ribeiro Pereira,01.Membro
+3971,Wanderson da Silva Viana,01.Membro
+3976,Mayumi Nepomuceno Okuyama Torres,03.96.Membro não comungante
+3993,Melissa Fernandes Martins,03.96.Membro não comungante
+4013,Bento Magalhães Urany,03.96.Membro não comungante
+4025,Júlia Gasparini Rodrigues,03.96.Membro não comungante
+4039,Sara Vieira Paulino,43.Visitante frequente
+4049,Maitê Seabra Mustafá,03.96.Membro não comungante
+4053,Juliana Rocha Carvalho,01.Membro
+4084,Gabriele de Araújo Ferreira,01.Membro
+4091,Joyce Alves Rodrigues de Santana,01.Membro
+4117,Juliana de Assis Fontoura,01.Membro
+4118,Vitória de Assis Fontoura,01.Membro
+4123,Thaísa Neves Barreto,"02.03.Rol à parte, membro ausente (doença etc.)"
+4124,Caio Augusto Silva de Oliveira,"02.03.Rol à parte, membro ausente (doença etc.)"
+4215,Pedro Costa Dantas,03.96.Membro não comungante
+4220,Ana dos Anjos Vieira Rodrigues,03.96.Membro não comungante
+4221,Débora Valentim Alves,03.96.Membro não comungante
+4243,Emanuel Carvalho Abreu,01.Membro
+4244,Ludmila Santos Silva,01.Membro
+4245,João Miguel Silva Abreu,03.96.Membro não comungante
+4246,Isabel Silva Abreu,03.96.Membro não comungante
+4263,Brunna Cristina de Oliveira Paz,01.Membro
+4264,Rodrigo Paz Cunha Freitas,01.Membro
+4274,Tiago Melo Barboza,03.96.Membro não comungante
+4275,Antônio Faria Rodrigues da Silva,03.96.Membro não comungante
+4297,Lorena Lôbo Becker,01.Membro
+4323,Valter Araújo Diniz Filho,01.Membro
+4324,Ana Paula Gonçalves Fagundes Diniz,01.Membro
+4325,Vítor Augusto Fagundes Diniz,03.96.Membro não comungante
+4327,Luiz Alberto Fagundes Diniz,03.96.Membro não comungante
+4329,Ana Teresa Fagundes Diniz,03.96.Membro não comungante
+4339,Arthur Rocha Luna Bezerra,03.96.Membro não comungante
+4347,Paula Vitória Santos Viana,01.Membro
+4348,Álefe Bruno Joazeiro da Silva Viana,01.Membro
+4351,Lemoell Tayano Galdino Honorato,01.Membro
+4352,Lilian Raabe Honorato Galdino,06.01.Possível admissão: em catequização
+4353,Ana Letícia Galdino Honorato,06.98.Possível admissão: em avaliação
+4354,Emanuell Davi Galdino Honorato,06.98.Possível admissão: em avaliação
+4355,Benjamim Galdino Honorato,06.98.Possível admissão: em avaliação
+4402,Douglas Henrique Martins,"02.03.Rol à parte, membro ausente (doença etc.)"
+4403,Mariana Pires Aragão,01.Membro
+4419,Antonia de Maria Martins Linhares,01.Membro
+4425,Fortunato Bernardo Zau Mpongo,01.Membro
+4426,Kelly Afonso Clemente Mpongo,01.Membro
+4427,Bernardo Clemente Mpongo,03.96.Membro não comungante
+4430,Liz da Graça Clemente Mpongo,03.96.Membro não comungante
+4445,Ezequiel Agostini Perin,03.96.Membro não comungante
+4447,Mathias Pontes Paixão,03.96.Membro não comungante
+4452,Elizabeth Oliveira Miranda,01.Membro
+4453,Lucília Pereira dos Santos Silva,01.Membro
+4455,João de Almeida Frank,03.96.Membro não comungante
+4500,Lara Fernanda Nunes Pimenta,44.Visitante frequente (menor de idade)
+4501,Lucas de Azevedo Carvalho,00.Pastores da Igreja
+4502,Mariana de Paiva Poganski Carvalho,01.Membro
+4504,Mateus Almeida de Queiroz,03.96.Membro não comungante
+4505,Esdras Nogueira Lima,03.96.Membro não comungante
+4508,Fargone Maciel Flor,01.Membro
+4513,Davi Poganski Carvalho,03.96.Membro não comungante
+4514,Ester Poganski Carvalho,03.96.Membro não comungante
+4515,Sara Poganski Carvalho,03.96.Membro não comungante
+4521,Sandra Tereza de Azevedo Carvalho,01.Membro
+4535,Gustavo Seabra Mustafá,03.96.Membro não comungante
+4553,Rosângela Feitosa Fernandes,01.Membro
+4554,Rodrigo Samuel Fernandes Albuquerque,03.96.Membro não comungante
+4561,Elias Bugana Freitas,03.96.Membro não comungante
+4570,Marcos Antonio Costa Cavalcanti Filho,01.Membro
+4571,Rebeca de Azevedo Carvalho Cavalcanti,01.Membro
+4572,Arthur Carvalho Cavalcanti,03.96.Membro não comungante
+4574,Raíssa Gabriela dos Reis,"02.90.Rol à parte, membro a transferir"
+4575,Dante dos Reis,"03.99.Membro não comungante, rol à parte (transf)"
+4576,Heitor Josué dos Reis,"03.99.Membro não comungante, rol à parte (transf)"
+4577,Natan Simeão dos Reis,"03.99.Membro não comungante, rol à parte (transf)"
+4621,Arthur Paixão Urany,06.97.Possível admissão: batismo de menor sobrestado (credobatismo)
+4635,Henrique Fuzaro Melo,03.96.Membro não comungante
+4645,Juliana Maia,43.Visitante frequente
+4646,Maria Laura Maia de Brito,44.Visitante frequente (menor de idade)
+4650,Eduardo Rodrigues Mendonça,01.Membro
+4651,Gabriella Dutra de Souza,01.Membro
+4674,Bruna Lucena Aragão,43.Visitante frequente
+4681,Leandro Mariscal de Albuquerque,43.Visitante frequente
+4684,Nielsen de Almeida e Bastos,01.Membro
+4685,Pollyana de Jesus Souza Barros Guimarães Barroso,43.Visitante frequente
+4686,Samuel Lucena Aragão,43.Visitante frequente
+4687,Suely Ribeiro dos Santos Amorim,43.Visitante frequente
+4692,Esdras (completar o nome),"05.10.Admitendo, menor aguardando batismo infantil"
+4693,Beatriz Giuliane Barbosa Ramos,01.Membro
+4694,Caio Lucas Barbosa,01.Membro
+4713,Carolina Barros Guimarães Barroso,44.Visitante frequente (menor de idade)
+4716,Leonardo Amorim Batista da Silva,43.Visitante frequente
+4717,Sarah Ribeiro de Amorim,44.Visitante frequente (menor de idade)
+4718,Vinicius Ribeiro de Amorim,44.Visitante frequente (menor de idade)
+4726,Ana Victória de Araújo Oliveira,01.Membro
+4754,Leonardo Almeida Cunha,01.Membro
+4755,Larissa Tavares de Moraes Lima Cunha,01.Membro
+4785,Aurora Tavares Cunha,03.96.Membro não comungante
+4832,Elileide Lopes da Silva Ribeiro,01.Membro
+4833,Elisa de Oliveira Paz,"05.10.Admitendo, menor aguardando batismo infantil"
+4865,Andressa Pereira da Rocha Pouso,01.Membro
+4895,Júlia Santos Seta,01.Membro
+4897,Kamilly Vitória Araújo Moura,06.01.Possível admissão: em catequização
+4929,Sarah Castro,43.Visitante frequente
+4941,Daniel Nunes Moura,01.Membro
+4942,Camila Biagi Moura,01.Membro
+5018,Pedro Gomes Cavicchioli,"05.10.Admitendo, menor aguardando batismo infantil"
+5031,Murillo Henrique Costa Silva,01.Membro
+5032,Maria Beatriz Nunes Paulino,01.Membro
+5033,Maria Olívia Paulino Costa,"04.00.Admissão, rotina de admissão"
+5045,Thomas Gomes Cavicchioli,"05.10.Admitendo, menor aguardando batismo infantil"
+5066,Ana Clara Rodrigues Ferreira,"05.10.Admitendo, menor aguardando batismo infantil"
+5069,Tales Claudino da Silva,"05.15.Admitendo, não presbiteriano aguardando votos de membresia"
+5070,Mayara Alves Guimarães,"05.15.Admitendo, não presbiteriano aguardando votos de membresia"
+5072,Estêvão Claudino Guimarães,"05.10.Admitendo, menor aguardando batismo infantil"
+5132,Érick Rodrigo Carvalho de Souza,06.01.Possível admissão: em catequização
+5133,Letícia da Silva Bezerra,06.01.Possível admissão: em catequização
+5150,Sabrina Santos Monteiro,01.Membro
+5151,Gabriel Santos da Silva Cristino,01.Membro
+5154,Liz de Oliveira Pouso,44.Visitante frequente (menor de idade)
+5155,Lorenzo de Oliveira Pouso,44.Visitante frequente (menor de idade)
+5158,Beatriz Magalhães Urany,"05.10.Admitendo, menor aguardando batismo infantil"
+5162,Horácio César Pereira dos Santos,06.01.Possível admissão: em catequização
+5163,Maria da Conceição Passos Lima dos Santos,06.01.Possível admissão: em catequização
+5174,Pedro Henrique Nunes da Silva,01.Membro
+5175,Joysse Vasconcelos França,01.Membro
+5176,Mateus Correia Oliveira,"05.10.Admitendo, menor aguardando batismo infantil"
+5190,Filipe Martins Neves,01.Membro
+5204,Laís (filha da Renata),44.Visitante frequente (menor de idade)
+5205,Laura (filha da Renata),44.Visitante frequente (menor de idade)
+5206,Sophia Nascimento Paz,"05.10.Admitendo, menor aguardando batismo infantil"
+5208,Paulo José de Farias,01.Membro
+5210,Matteo Paixão Urany,06.97.Possível admissão: batismo de menor sobrestado (credobatismo)
+5223,Alice Gasparini Rodrigues,"05.10.Admitendo, menor aguardando batismo infantil"
+5224,Catarina Paulino de Oliveira,"05.10.Admitendo, menor aguardando batismo infantil"
+5253,Benjamim Alexandre Andrade Lima,06.98.Possível admissão: em avaliação
+5270,Daniel Bello Boaventura,01.Membro
+5271,Amanda Araújo Ferreira Bello,01.Membro
+5272,Edison Martins Jorge Ribeiro,01.Membro
+5280,Newton Marcos da Silva Almeida Júnior,06.01.Possível admissão: em catequização
+5332,Luiz Fernando Monte Ribeiro,06.01.Possível admissão: em catequização
+5335,Thays Rodrigues Veghini Ribeiro,06.01.Possível admissão: em catequização
+5337,Victor de Oliveira Silva,"04.98.Admissão, aguardando carta de transferência"
+5338,Marina Diniz Reis Silva,"04.98.Admissão, aguardando carta de transferência"
+5339,(gest 2026-xx-xx) (bebê de Norrany Santos e Herbet Leonardo),06.95.Possível admissão: gestação
+5342,(gest 2026-xx-xx) (bebê de Daniella Caetano e Hiago Moura),06.95.Possível admissão: gestação
+5354,Lucas Veghini Monte Ribeiro,06.94.Possível admissão: filhos de pais em catequização
+5355,Liz Veghini Monte Ribeiro,06.94.Possível admissão: filhos de pais em catequização
+5382,Lucas Silva Abreu,"05.10.Admitendo, menor aguardando batismo infantil"
+5383,(gest 2026-xx-xx) (bebê de Thays Veghini e Luiz Fernando),06.95.Possível admissão: gestação
+5384,(gest 2026-xx-xx) (bebê de Fernanda Alves e Ysmael Silva),06.95.Possível admissão: gestação
+5386,(gest 2026-xx-xx) Manuela (bebê de Camila Biagi e Daniel Moura),06.95.Possível admissão: gestação
+5390,Claydson Ferreira Melo,06.01.Possível admissão: em catequização
+5392,Nathan Pitaluga Melo,"05.10.Admitendo, menor aguardando batismo infantil"
+5395,João Victor (namorado da Marielly),43.Visitante frequente
+5407,Eduardo Patruni,06.01.Possível admissão: em catequização
+5410,Larissa Cristina Araújo Barrozo,06.98.Possível admissão: em avaliação
+5411,IPV - Emilene,43.Visitante frequente
+5430,(gest 2026-xx-xx) (bebê de Isabella Mendes e Ricardo Mendes),06.95.Possível admissão: gestação
+5437,(gest 2026-xx-xx) (bebê de Ana Paula Diniz e Valter Diniz),06.95.Possível admissão: gestação
+5438,Gabriela Souza,06.98.Possível admissão: em avaliação
+5444,(gest 2026-xx-xx) (bebê de Kethelyn Frank e Hudson Frank),06.95.Possível admissão: gestação
+5454,(gest 2026-xx-xx) (bebê de Manu Albuquerque e Filipe Neves),06.95.Possível admissão: gestação
+5457,(gest 2026-xx-xx) (bebê de Mayara Guimarães e Tales Claudino),06.95.Possível admissão: gestação
+5458,(gest 2026-xx-xx) (bebê de Thamires Barboza e Estevão Barboza),06.95.Possível admissão: gestação
+5459,(gest 2026-xx-xx) (bebê de Karen Alves e Philippe Alves),06.95.Possível admissão: gestação
+5460,(gest 2026-xx-xx) (bebê de Pâmela Silva e Michael Silva),06.95.Possível admissão: gestação
+5464,Cleyton Lira (completar o nome),06.98.Possível admissão: em avaliação
+5465,Virgínia (esposa do Clayton),06.98.Possível admissão: em avaliação
+5466,Davi (filho de Clayton e Virgínia),06.98.Possível admissão: em avaliação
+5471,Lara Araújo Barrozo,06.98.Possível admissão: em avaliação

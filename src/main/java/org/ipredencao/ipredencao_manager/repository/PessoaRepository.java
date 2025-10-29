@@ -50,20 +50,15 @@ public class PessoaRepository {
                 .returning()
                 .fetchOne();
 
-        insertHistory(saved);
-
         return fromRepository(saved);
     }
 
     public Pessoa update(Pessoa pessoa) {
         PessoaRecord pessoaRecord = toRepository(pessoa);
-        PessoaRecord updated = dsl.update(PESSOA)
+        dsl.update(PESSOA)
             .set(pessoaRecord)
             .where(PESSOA.PESSOA_ID.eq(pessoa.getId()))
-            .returning()
-            .fetchOne();
-
-        insertHistory(updated);
+            .execute();
 
         return pessoa;
     }
@@ -89,15 +84,6 @@ public class PessoaRepository {
                     .and(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO.eq(record.getTipoRelacionamento())))
                 .execute();
         }
-    }
-
-
-    private PessoaHistoryRecord insertHistory(PessoaRecord pessoaRecord) {
-        PessoaHistoryRecord historyRecord = toHistoryRepository(pessoaRecord);
-        return dsl.insertInto(PESSOA_HISTORY)
-            .set(historyRecord)
-            .returning()
-            .fetchOne();
     }
 
     public List<Pessoa> find(PessoaQuery query) {
@@ -377,8 +363,22 @@ public class PessoaRepository {
         
         if (query.getId() != null) conditions.add(PESSOA.PESSOA_ID.eq(query.getId()));
         if (query.getIds() != null && !query.getIds().isEmpty()) conditions.add(PESSOA.PESSOA_ID.in(query.getIds()));
-        if (query.getNome() != null && !query.getNome().trim().isEmpty()) conditions.add(PESSOA.NOME.likeIgnoreCase("%" + query.getNome() + "%"));
-        if (query.getApelido() != null && !query.getApelido().trim().isEmpty()) conditions.add(PESSOA.APELIDO.likeIgnoreCase("%" + query.getApelido() + "%"));
+        
+        // Busca por nome ignorando acentos e case
+        if (query.getNome() != null && !query.getNome().trim().isEmpty()) {
+            conditions.add(
+                DSL.lower(DSL.function("unaccent", String.class, PESSOA.NOME))
+                    .like(DSL.lower(DSL.function("unaccent", String.class, DSL.inline("%" + query.getNome() + "%"))))
+            );
+        }
+        
+        // Busca por apelido ignorando acentos e case
+        if (query.getApelido() != null && !query.getApelido().trim().isEmpty()) {
+            conditions.add(
+                DSL.lower(DSL.function("unaccent", String.class, PESSOA.APELIDO))
+                    .like(DSL.lower(DSL.function("unaccent", String.class, DSL.inline("%" + query.getApelido() + "%"))))
+            );
+        }
         if (query.getEmail() != null && !query.getEmail().trim().isEmpty()) conditions.add(PESSOA.EMAIL.eq(query.getEmail()));
         if (query.getTelefone() != null && !query.getTelefone().trim().isEmpty()) conditions.add(PESSOA.TELEFONE.eq(query.getTelefone()));
         if (query.getCpf() != null && !query.getCpf().trim().isEmpty()) conditions.add(PESSOA.CPF.eq(query.getCpf()));
@@ -416,6 +416,7 @@ public class PessoaRepository {
         p.setTelefone(pessoaRecord.getTelefone());
         p.setCampus(pessoaRecord.getCampus());
         p.setDataNascimento(DateTimeHelper.fromDb(pessoaRecord.getDataNascimento()));
+        p.setDataFalecimento(DateTimeHelper.fromDb(pessoaRecord.getDataFalecimento()));
         p.setCpf(pessoaRecord.getCpf());
         p.setRg(pessoaRecord.getRg());
         if (pessoaRecord.getEstadoCivil() != null)
@@ -427,8 +428,15 @@ public class PessoaRepository {
         p.setDataBatismo(DateTimeHelper.fromDb(pessoaRecord.getDataBatismo()));
         p.setDataProfissaoDeFe(DateTimeHelper.fromDb(pessoaRecord.getDataProfissaoDeFe()));
         p.setIgrejaBatismo(pessoaRecord.getIgrejaBatismo());
-        p.setProfissao(pessoaRecord.getProfissao());
-        p.setEmpresa(pessoaRecord.getEmpresa());
+        
+        // Converter arrays do PostgreSQL para List
+        if (pessoaRecord.getProfissao() != null && pessoaRecord.getProfissao().length > 0) {
+            p.setProfissao(Arrays.asList(pessoaRecord.getProfissao()));
+        }
+        if (pessoaRecord.getEmpresa() != null && pessoaRecord.getEmpresa().length > 0) {
+            p.setEmpresa(Arrays.asList(pessoaRecord.getEmpresa()));
+        }
+        
         if (pessoaRecord.getEnderecoId() != null) {
             Endereco endereco = enderecoRepository.findById(pessoaRecord.getEnderecoId());
             p.setEndereco(endereco);
@@ -462,6 +470,7 @@ public class PessoaRepository {
         pessoaRecord.setTelefone(pessoa.getTelefone());
         pessoaRecord.setCampus(pessoa.getCampus());
         pessoaRecord.setDataNascimento(DateTimeHelper.toDb(pessoa.getDataNascimento()));
+        pessoaRecord.setDataFalecimento(DateTimeHelper.toDb(pessoa.getDataFalecimento()));
         pessoaRecord.setCpf(pessoa.getCpf());
         pessoaRecord.setRg(pessoa.getRg());
         if (pessoa.getEstadoCivil() != null)
@@ -473,8 +482,15 @@ public class PessoaRepository {
         pessoaRecord.setDataBatismo(DateTimeHelper.toDb(pessoa.getDataBatismo()));
         pessoaRecord.setDataProfissaoDeFe(DateTimeHelper.toDb(pessoa.getDataProfissaoDeFe()));
         pessoaRecord.setIgrejaBatismo(pessoa.getIgrejaBatismo());
-        pessoaRecord.setProfissao(pessoa.getProfissao());
-        pessoaRecord.setEmpresa(pessoa.getEmpresa());
+        
+        // Converter List para arrays do PostgreSQL
+        if (pessoa.getProfissao() != null && !pessoa.getProfissao().isEmpty()) {
+            pessoaRecord.setProfissao(pessoa.getProfissao().toArray(new String[0]));
+        }
+        if (pessoa.getEmpresa() != null && !pessoa.getEmpresa().isEmpty()) {
+            pessoaRecord.setEmpresa(pessoa.getEmpresa().toArray(new String[0]));
+        }
+        
         if (pessoa.getEndereco() != null)
             pessoaRecord.setEnderecoId(pessoa.getEndereco().getId());
         if (pessoa.getRegiao() != null)
@@ -497,53 +513,6 @@ public class PessoaRepository {
         pessoaRecord.setUpdatedBy(pessoa.getUpdatedByUserId());
         
         return pessoaRecord;
-    }
-
-    private static PessoaHistoryRecord toHistoryRepository(PessoaRecord pessoaRecord) {
-        PessoaHistoryRecord pessoaHistoryRecord = new PessoaHistoryRecord();
-        
-        // Mapear o pessoa_id (campo obrigatório na tabela history)
-        pessoaHistoryRecord.setPessoaId(pessoaRecord.getPessoaId());
-        
-        pessoaHistoryRecord.setNome(pessoaRecord.getNome());
-        pessoaHistoryRecord.setApelido(pessoaRecord.getApelido());
-        pessoaHistoryRecord.setEmail(pessoaRecord.getEmail());
-        pessoaHistoryRecord.setTelefone(pessoaRecord.getTelefone());
-        pessoaHistoryRecord.setCampus(pessoaRecord.getCampus());
-        pessoaHistoryRecord.setDataNascimento(pessoaRecord.getDataNascimento());
-        pessoaHistoryRecord.setCpf(pessoaRecord.getCpf());
-        pessoaHistoryRecord.setRg(pessoaRecord.getRg());
-        if (pessoaRecord.getEstadoCivil() != null)
-            pessoaHistoryRecord.setEstadoCivil(pessoaRecord.getEstadoCivil());
-        pessoaHistoryRecord.setIgrejaAnterior(pessoaRecord.getIgrejaAnterior());
-        pessoaHistoryRecord.setMotivosParaAdmissao(pessoaRecord.getMotivosParaAdmissao());
-        if (pessoaRecord.getTipoBatismo() != null)
-            pessoaHistoryRecord.setTipoBatismo(pessoaRecord.getTipoBatismo());
-        pessoaHistoryRecord.setDataBatismo(pessoaRecord.getDataBatismo());
-        pessoaHistoryRecord.setDataProfissaoDeFe(pessoaRecord.getDataProfissaoDeFe());
-        pessoaHistoryRecord.setIgrejaBatismo(pessoaRecord.getIgrejaBatismo());
-        pessoaHistoryRecord.setProfissao(pessoaRecord.getProfissao());
-        pessoaHistoryRecord.setEmpresa(pessoaRecord.getEmpresa());
-        pessoaHistoryRecord.setEnderecoId(pessoaRecord.getEnderecoId());
-        
-        if (pessoaRecord.getRegiao() != null)
-            pessoaHistoryRecord.setRegiao(pessoaRecord.getRegiao());
-        pessoaHistoryRecord.setFotoUrl(pessoaRecord.getFotoUrl());
-        if (pessoaRecord.getSexo() != null)
-            pessoaHistoryRecord.setSexo(pessoaRecord.getSexo());
-        pessoaHistoryRecord.setChefeDeFamilia(pessoaRecord.getChefeDeFamilia());
-        pessoaHistoryRecord.setCategoriaId(pessoaRecord.getCategoriaId());
-
-        // Mapear arrays do PostgreSQL
-        if (pessoaRecord.getEmailsSecundarios() != null && pessoaRecord.getEmailsSecundarios().length > 0) {
-            pessoaHistoryRecord.setEmailsSecundarios(pessoaRecord.getEmailsSecundarios());
-        }
-        if (pessoaRecord.getTelefonesSecundarios() != null && pessoaRecord.getTelefonesSecundarios().length > 0) {
-            pessoaHistoryRecord.setTelefonesSecundarios(pessoaRecord.getTelefonesSecundarios());
-        }
-        pessoaHistoryRecord.setUpdatedBy(pessoaRecord.getUpdatedBy());
-
-        return pessoaHistoryRecord;
     }
 
     /**

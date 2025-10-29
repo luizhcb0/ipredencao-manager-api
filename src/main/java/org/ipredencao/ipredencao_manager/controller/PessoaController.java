@@ -40,13 +40,16 @@ public class PessoaController {
         try {
             return ResponseEntity.ok(pessoaService.create(pessoa));
         } catch (IllegalArgumentException e) {
+            log.error("Erro IllegalArgumentException ao criar pessoa", e);
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         } catch (Exception e) {
+            log.error("Erro interno ao criar pessoa", e);
             return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
         }
     }
 
     @PostMapping("/{id}/foto")
+    @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> uploadPhoto(
         @PathVariable Long id,
         @RequestParam("foto") MultipartFile foto
