@@ -1,5 +1,7 @@
 package org.ipredencao.ipredencao_manager.filter;
 
+import org.ipredencao.ipredencao_manager.model.user.Usuario;
+import org.ipredencao.ipredencao_manager.repository.UsuarioRepository;
 import org.ipredencao.ipredencao_manager.service.JwtService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private JwtService jwtService;
     
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+    
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
                                   FilterChain filterChain) throws ServletException, IOException {
@@ -47,10 +52,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 
                 if (jwtService.isTokenValido(jwt)) {
-                    String role = jwtService.extractRole(jwt);
+                    // VALIDAÇÃO DE SEGURANÇA: Verificar se o usuário existe e está ativo
+                    Long userId = jwtService.extractUserId(jwt);
+                    Usuario usuario = usuarioRepository.findById(userId);
+                    
+                    if (usuario == null) {
+                        log.warn("Token válido mas usuário não existe: userId={}", userId);
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"error\":\"Token inválido: usuário não existe\"}");
+                        return;
+                    }
+                    
+                    if (!usuario.getActive()) {
+                        log.warn("Token válido mas usuário está inativo: userId={}, email={}", userId, userEmail);
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"error\":\"Token inválido: usuário inativo\"}");
+                        return;
+                    }
+                    
+                    String tokenRole = jwtService.extractRole(jwt);
+                    String actualRole = usuario.getAccessProfile().name();
+                    
+                    // VALIDAÇÃO DE SEGURANÇA: Verificar se a role no token ainda é válida
+                    if (!tokenRole.equals(actualRole)) {
+                        log.warn("Role no token não corresponde à role atual do usuário. Token: {}, Atual: {}, userId={}", 
+                                 tokenRole, actualRole, userId);
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"error\":\"Token inválido: permissões alteradas\"}");
+                        return;
+                    }
                     
                     List<SimpleGrantedAuthority> authorities = List.of(
-                        new SimpleGrantedAuthority("ROLE_" + role)
+                        new SimpleGrantedAuthority("ROLE_" + actualRole)
                     );
                     
                     UsernamePasswordAuthenticationToken authToken = 
@@ -59,7 +95,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                     
-                    log.debug("Usuário autenticado: {} com role: {}", userEmail, role);
+                    log.debug("Usuário autenticado: {} com role: {}", userEmail, actualRole);
                 }
             }
         } catch (Exception e) {
