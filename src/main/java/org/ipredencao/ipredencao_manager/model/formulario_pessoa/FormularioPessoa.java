@@ -30,8 +30,8 @@ public class FormularioPessoa {
     private DateTime dataBatismo;
     private DateTime dataProfissaoDeFe;
     private String igrejaBatismo;
-    private String profissao;
-    private String empresa;
+    private List<String> profissao;
+    private List<String> empresa;
     private String enderecoCep;
     private String enderecoLogradouro;
     private String enderecoNumero;
@@ -88,10 +88,10 @@ public class FormularioPessoa {
     public void setDataProfissaoDeFe(DateTime dataProfissaoDeFe) { this.dataProfissaoDeFe = dataProfissaoDeFe; }
     public String getIgrejaBatismo() { return igrejaBatismo; }
     public void setIgrejaBatismo(String igrejaBatismo) { this.igrejaBatismo = igrejaBatismo; }
-    public String getProfissao() { return profissao; }
-    public void setProfissao(String profissao) { this.profissao = profissao; }
-    public String getEmpresa() { return empresa; }
-    public void setEmpresa(String empresa) { this.empresa = empresa; }
+    public List<String> getProfissao() { return profissao; }
+    public void setProfissao(List<String> profissao) { this.profissao = profissao; }
+    public List<String> getEmpresa() { return empresa; }
+    public void setEmpresa(List<String> empresa) { this.empresa = empresa; }
     public String getEnderecoCep() { return enderecoCep; }
     public void setEnderecoCep(String enderecoCep) { this.enderecoCep = enderecoCep; }
     public String getEnderecoLogradouro() { return enderecoLogradouro; }

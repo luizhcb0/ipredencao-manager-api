@@ -1,0 +1,25 @@
+{
+  "nome": "Rafael Gomes Barnabé",
+  "apelido": "Rafael Barnabé",
+  "sexo": "MASCULINO",
+  "cpf": "17565461180",
+  "rg": "2.378.215 SSP/DF",
+  "dataNascimento": "1986-02-13T00:00:00.000Z",
+  "estadoCivil": "DIVORCIADO_SEM_RELACIONAMENTO",
+  "campus": "SEDE",
+  "igrejaAnterior": "37.0",
+  "dataBatismo": "1994-06-30",
+  "dataProfissaoDeFe": "1994-06-30",
+  "igrejaBatismo": "Igreja Cristã Manancial da Vida, Brasília-DF",
+  "tipoBatismo": "ADULTO",
+  "telefone": "985546234",
+  "email": "rgbarnabe@gmail.com",
+  "emailsSecundarios": [
+    "rafael.barnabe@cidadania.gov.br"
+  ],
+  "regiao": "SUDOESTE_OCTOGONAL",
+  "endereco": {
+    "logradouro": "CNB 5, Lote 14, Ed. Ana Lúcia, ap, 108 - Taguatinga Norte",
+    "cep": "72115055"
+  }
+}

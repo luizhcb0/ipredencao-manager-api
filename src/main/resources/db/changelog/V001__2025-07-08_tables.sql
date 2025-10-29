@@ -1,3 +1,7 @@
+-- Extensões necessárias
+CREATE EXTENSION IF NOT EXISTS unaccent;
+
+-- Tipos personalizados
 CREATE TYPE sexo AS ENUM ('MASCULINO', 'FEMININO');
 CREATE TYPE estado_civil AS ENUM (
     'CASADO',
@@ -42,7 +46,8 @@ INSERT INTO agregador_categoria (nome) VALUES
 ('Excluido'),
 ('Missionário'),
 ('Possível admissão: gestação'),
-('Pessoa referenciada');
+('Pessoa referenciada'),
+('Ex-membro da igreja');
 
 -- Tabela de categorias
 CREATE TABLE IF NOT EXISTS categoria (
@@ -107,7 +112,10 @@ INSERT INTO categoria (nome, agregador_categoria_id) VALUES
 ('Gestação mantida em sigilo temporariamente', 9),
 
 -- Categorias do agregador Pessoa referenciada
-('Agregado ou familiar', 10);
+('Agregado ou familiar', 10),
+
+-- Categorias do agregador Ex-membro da igreja
+('Ex-membro', 11);
 
 CREATE TABLE IF NOT EXISTS endereco (
     id BIGSERIAL PRIMARY KEY,
@@ -115,6 +123,9 @@ CREATE TABLE IF NOT EXISTS endereco (
     logradouro VARCHAR(255),
     numero VARCHAR(20),
     complemento VARCHAR(255),
+    cidade VARCHAR(100),
+    estado VARCHAR(32),
+    coordenadas VARCHAR(64),
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_by BIGINT
@@ -132,8 +143,9 @@ CREATE TABLE IF NOT EXISTS pessoa (
     telefones_secundarios VARCHAR(255)[],
     campus VARCHAR(255),
     data_nascimento TIMESTAMP,
-    cpf VARCHAR(20),
-    rg VARCHAR(20),
+    data_falecimento TIMESTAMP,
+    cpf VARCHAR(60),
+    rg VARCHAR(60),
     endereco_id BIGINT REFERENCES endereco(id),
     estado_civil estado_civil,
     igreja_anterior TEXT,
@@ -142,8 +154,8 @@ CREATE TABLE IF NOT EXISTS pessoa (
     data_batismo TIMESTAMP,
     data_profissao_de_fe TIMESTAMP,
     igreja_batismo VARCHAR(255),
-    profissao VARCHAR(100),
-    empresa VARCHAR(100),
+    profissao VARCHAR(100)[],
+    empresa VARCHAR(100)[],
     regiao regiao,
     foto_url VARCHAR(500),
     chefe_de_familia BIGINT REFERENCES pessoa(pessoa_id),
@@ -165,8 +177,9 @@ CREATE TABLE IF NOT EXISTS pessoa_history (
     telefones_secundarios VARCHAR(255)[],
     campus VARCHAR(255),
     data_nascimento TIMESTAMP,
-    cpf VARCHAR(20),
-    rg VARCHAR(20),
+    data_falecimento TIMESTAMP,
+    cpf VARCHAR(60),
+    rg VARCHAR(60),
     endereco_id BIGINT REFERENCES endereco(id),
     estado_civil estado_civil,
     igreja_anterior TEXT,
@@ -175,8 +188,8 @@ CREATE TABLE IF NOT EXISTS pessoa_history (
     data_batismo TIMESTAMP,
     data_profissao_de_fe TIMESTAMP,
     igreja_batismo VARCHAR(255),
-    profissao VARCHAR(100),
-    empresa VARCHAR(100),
+    profissao VARCHAR(100)[],
+    empresa VARCHAR(100)[],
     regiao regiao,
     foto_url VARCHAR(500),
     chefe_de_familia BIGINT REFERENCES pessoa(pessoa_id),
@@ -209,7 +222,7 @@ CREATE TABLE IF NOT EXISTS formulario_pessoa (
     nome VARCHAR(255) NOT NULL,
     sexo sexo NOT NULL,
     apelido VARCHAR(255),
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL,
     emails_secundarios VARCHAR(255)[],
     telefone VARCHAR(30) NOT NULL,
     telefones_secundarios VARCHAR(255)[],
@@ -219,8 +232,8 @@ CREATE TABLE IF NOT EXISTS formulario_pessoa (
     endereco_complemento VARCHAR(255),
     campus VARCHAR(255) NOT NULL,
     data_nascimento TIMESTAMP NOT NULL,
-    cpf VARCHAR(20) NOT NULL,
-    rg VARCHAR(20) NOT NULL,
+    cpf VARCHAR(60) NOT NULL,
+    rg VARCHAR(60)NOT NULL,
     estado_civil estado_civil,
     nome_pessoa_relacionada VARCHAR(255),
     inicio_relacionamento TIMESTAMP,
@@ -233,8 +246,8 @@ CREATE TABLE IF NOT EXISTS formulario_pessoa (
     data_batismo TIMESTAMP,
     data_profissao_de_fe TIMESTAMP,
     igreja_batismo VARCHAR(255),
-    profissao VARCHAR(100),
-    empresa VARCHAR(100),
+    profissao VARCHAR(100)[],
+    empresa VARCHAR(100)[],
     regiao regiao,
     foto_url VARCHAR(500),
     chefe_de_familia VARCHAR(255),
@@ -269,3 +282,75 @@ CREATE TRIGGER trigger_endereco_updated_at
     BEFORE UPDATE ON endereco
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger para histórico de pessoa
+CREATE OR REPLACE FUNCTION insert_pessoa_history()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO pessoa_history (
+        pessoa_id,
+        nome,
+        sexo,
+        apelido,
+        email,
+        emails_secundarios,
+        telefone,
+        telefones_secundarios,
+        campus,
+        data_nascimento,
+        data_falecimento,
+        cpf,
+        rg,
+        endereco_id,
+        estado_civil,
+        igreja_anterior,
+        motivos_para_admissao,
+        tipo_batismo,
+        data_batismo,
+        data_profissao_de_fe,
+        igreja_batismo,
+        profissao,
+        empresa,
+        regiao,
+        foto_url,
+        chefe_de_familia,
+        categoria_id,
+        updated_by
+    ) VALUES (
+        NEW.pessoa_id,
+        NEW.nome,
+        NEW.sexo,
+        NEW.apelido,
+        NEW.email,
+        NEW.emails_secundarios,
+        NEW.telefone,
+        NEW.telefones_secundarios,
+        NEW.campus,
+        NEW.data_nascimento,
+        NEW.data_falecimento,
+        NEW.cpf,
+        NEW.rg,
+        NEW.endereco_id,
+        NEW.estado_civil,
+        NEW.igreja_anterior,
+        NEW.motivos_para_admissao,
+        NEW.tipo_batismo,
+        NEW.data_batismo,
+        NEW.data_profissao_de_fe,
+        NEW.igreja_batismo,
+        NEW.profissao,
+        NEW.empresa,
+        NEW.regiao,
+        NEW.foto_url,
+        NEW.chefe_de_familia,
+        NEW.categoria_id,
+        NEW.updated_by
+    );
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER trigger_pessoa_history
+    AFTER INSERT OR UPDATE ON pessoa
+    FOR EACH ROW
+    EXECUTE FUNCTION insert_pessoa_history();

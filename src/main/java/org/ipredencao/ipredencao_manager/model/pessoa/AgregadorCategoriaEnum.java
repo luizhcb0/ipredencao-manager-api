@@ -13,7 +13,8 @@ public enum AgregadorCategoriaEnum {
     EXCLUIDO(7L, "Excluido"),
     MISSIONARIO(8L, "Missionário"),
     POSSIVEL_ADMISSAO_GESTACAO(9L, "Possível admissão: gestação"),
-    PESSOA_REFERENCIADA(10L, "Pessoa referenciada");
+    PESSOA_REFERENCIADA(10L, "Pessoa referenciada"),
+    EX_MEMBRO_DA_IGREJA(11L, "Ex-membro da igreja");
     
     private final Long id;
     private final String nome;

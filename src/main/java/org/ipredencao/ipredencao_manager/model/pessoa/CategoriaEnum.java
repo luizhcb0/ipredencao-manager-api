@@ -59,7 +59,10 @@ public enum CategoriaEnum {
     GESTACAO_SIGILO_TEMPORARIO(35L, "Gestação mantida em sigilo temporariamente", 9L),
     
     // Categorias do agregador Pessoa referenciada (id=10)
-    AGREGADO_FAMILIAR(36L, "Agregado ou familiar", 10L);
+    AGREGADO_FAMILIAR(36L, "Agregado ou familiar", 10L),
+    
+    // Categorias do agregador Ex-membro da igreja (id=11)
+    EX_MEMBRO(37L, "Ex-membro", 11L);
 
     private final Long id;
     private final String nome;

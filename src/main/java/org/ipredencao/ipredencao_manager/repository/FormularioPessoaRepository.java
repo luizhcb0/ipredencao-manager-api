@@ -14,6 +14,7 @@ import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
@@ -147,8 +148,15 @@ public class FormularioPessoaRepository {
         f.setDataBatismo(DateTimeHelper.fromDb(record.getDataBatismo()));
         f.setDataProfissaoDeFe(DateTimeHelper.fromDb(record.getDataProfissaoDeFe()));
         f.setIgrejaBatismo(record.getIgrejaBatismo());
-        f.setProfissao(record.getProfissao());
-        f.setEmpresa(record.getEmpresa());
+        
+        // Converter arrays do PostgreSQL para List
+        if (record.getProfissao() != null && record.getProfissao().length > 0) {
+            f.setProfissao(Arrays.asList(record.getProfissao()));
+        }
+        if (record.getEmpresa() != null && record.getEmpresa().length > 0) {
+            f.setEmpresa(Arrays.asList(record.getEmpresa()));
+        }
+        
         f.setEnderecoCep(record.getEnderecoCep());
         f.setEnderecoLogradouro(record.getEnderecoLogradouro());
         f.setEnderecoNumero(record.getEnderecoNumero());
@@ -200,8 +208,15 @@ public class FormularioPessoaRepository {
         record.setDataBatismo(DateTimeHelper.toDb(f.getDataBatismo()));
         record.setDataProfissaoDeFe(DateTimeHelper.toDb(f.getDataProfissaoDeFe()));
         record.setIgrejaBatismo(f.getIgrejaBatismo());
-        record.setProfissao(f.getProfissao());
-        record.setEmpresa(f.getEmpresa());
+        
+        // Converter List para arrays do PostgreSQL
+        if (f.getProfissao() != null && !f.getProfissao().isEmpty()) {
+            record.setProfissao(f.getProfissao().toArray(new String[0]));
+        }
+        if (f.getEmpresa() != null && !f.getEmpresa().isEmpty()) {
+            record.setEmpresa(f.getEmpresa().toArray(new String[0]));
+        }
+        
         record.setEnderecoCep(f.getEnderecoCep());
         record.setEnderecoLogradouro(f.getEnderecoLogradouro());
         record.setEnderecoNumero(f.getEnderecoNumero());
