@@ -51,6 +51,14 @@ public class UsuarioRepository {
         return fromRepository(record);
     }
     
+    public Usuario findById(Long id) {
+        UsuarioRecord record = dsl.selectFrom(USUARIO)
+                .where(USUARIO.ID.eq(id))
+                .fetchOne();
+        
+        return fromRepository(record);
+    }
+    
     public Usuario findByEmail(String email) {
         UsuarioRecord record = dsl.selectFrom(USUARIO)
                 .where(USUARIO.EMAIL.eq(email))

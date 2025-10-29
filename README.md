@@ -1,10 +1,24 @@
 # ipredencao-manager-api
 
-#Generate JOOQ classes
-./gradlew generateJooq
+## 🚀 Getting Started
 
-#Run
+### Generate JOOQ classes
+```bash
+./gradlew generateJooq
+```
+
+### Run
+```bash
 ./gradlew bootRun
+```
+
+## 📚 Documentação
+
+- **[Configuração de CORS](docs/CORS_CONFIGURATION.md)** - Detalhes sobre a configuração de CORS
+- **[Tratamento de Erros](docs/ERROR_HANDLING.md)** - Como erros são tratados na API
+- **[Configuração S3](docs/S3_SETUP.md)** - Setup do Amazon S3 / LocalStack
+- **[Integração de Autenticação (Frontend)](docs/FRONTEND_AUTH_INTEGRATION.md)** - Guia completo de integração JWT
+- **[Logout Automático (Frontend)](docs/FRONTEND_LOGOUT_AUTOMATICO.md)** - Guia rápido para implementar logout automático
 
 ## LocalStack (S3 Local)
 
