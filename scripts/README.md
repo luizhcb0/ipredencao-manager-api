@@ -38,25 +38,79 @@ curl http://localhost:8080/api/auth/health
 
 ### Importação Completa
 
-Execute todas as fases de importação:
+#### Opção A: Comando Completo (Recomendado)
+
+Execute tudo de uma vez em background com acompanhamento automático:
 
 ```bash
-python import_dump.py
+cd /Users/lbarboza/code/ipredencao/ipredencao-manager-api/scripts && \
+rm -f import_checkpoint.json id_mapping.json && \
+export API_TOKEN="SEU_TOKEN_JWT_AQUI" && \
+echo "Iniciando importação completa..." && \
+/Library/Developer/CommandLineTools/usr/bin/python3 import_dump.py \
+  --api-url http://localhost:8080 \
+  --dump-path ../src/main/resources/IPR_Dump \
+  > import.log 2>&1 & \
+echo "Script iniciado em background. PID: $!" && \
+echo "Acompanhe com: tail -f import.log" && \
+sleep 5 && \
+tail -50 import.log
 ```
 
-### Opções Avançadas
+**O que este comando faz:**
+1. Limpa checkpoints anteriores (importação do zero)
+2. Define o token JWT
+3. Executa o script em background com logs em `import.log`
+4. Mostra o PID do processo
+5. Aguarda 5 segundos e exibe as últimas 50 linhas do log
+
+#### Opção B: Comando Simples (Foreground)
+
+Execute em primeiro plano:
 
 ```bash
-# Usar URL diferente da API
-python import_dump.py --api-url http://localhost:8080
+export API_TOKEN="seu-token-jwt-aqui"
+python3 import_dump.py --api-url http://localhost:8080 --dump-path ../src/main/resources/IPR_Dump
+```
 
-# Especificar caminho do dump
-python import_dump.py --dump-path /path/to/IPR_Dump
+#### Opção C: Continuar de onde parou
 
-# Pular fases específicas
-python import_dump.py --skip-fase1  # Pular importação de pessoas
-python import_dump.py --skip-fase2  # Pular upload de fotos
-python import_dump.py --skip-fase3  # Pular criação de relacionamentos
+Se o script foi interrompido, continue sem limpar checkpoints:
+
+```bash
+export API_TOKEN="seu-token-jwt-aqui"
+/Library/Developer/CommandLineTools/usr/bin/python3 import_dump.py \
+  --api-url http://localhost:8080 \
+  --dump-path ../src/main/resources/IPR_Dump \
+  > import.log 2>&1 &
+  
+# Acompanhar progresso
+tail -f import.log
+```
+
+### Monitoramento
+
+```bash
+# Ver últimas 50 linhas do log
+tail -50 import.log
+
+# Acompanhar em tempo real
+tail -f import.log
+
+# Ver apenas erros
+grep -i error import.log
+
+# Contar pessoas criadas
+grep "Criando pessoa:" import.log | wc -l
+
+# Ver progresso de fotos
+grep "Upload foto" import.log | tail -10
+
+# Ver progresso de relacionamentos
+grep "Criando relacionamento:" import.log | tail -10
+
+# Verificar se o script ainda está rodando
+ps aux | grep import_dump.py
 ```
 
 ## Fases de Importação

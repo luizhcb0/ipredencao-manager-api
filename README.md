@@ -12,6 +12,36 @@
 ./gradlew bootRun
 ```
 
+## 📥 Importação de Dados
+
+Para importar dados de pessoas, fotos e relacionamentos a partir dos arquivos CSV do dump IPR, consulte a documentação completa em:
+
+**[scripts/README.md](scripts/README.md)**
+
+### Resumo Rápido
+
+```bash
+# 1. Obter token JWT (fazer login)
+curl -X POST http://localhost:8080/api/auth/login/email \
+  -H "Content-Type: application/json" \
+  -d '{"email":"seu-email@exemplo.com","password":"sua-senha"}'
+
+# 2. Executar importação completa
+cd scripts && \
+export API_TOKEN="SEU_TOKEN_JWT_AQUI" && \
+/Library/Developer/CommandLineTools/usr/bin/python3 import_dump.py \
+  --api-url http://localhost:8080 \
+  --dump-path ../src/main/resources/IPR_Dump \
+  > import.log 2>&1 &
+
+# 3. Acompanhar progresso
+tail -f import.log
+```
+
+**Fases automáticas:** Pessoas → Fotos → Chefes de Família → Relacionamentos
+
+Veja [scripts/README.md](scripts/README.md) para mais opções, monitoramento e troubleshooting.
+
 ## 📚 Documentação
 
 - **[Configuração de CORS](docs/CORS_CONFIGURATION.md)** - Detalhes sobre a configuração de CORS
