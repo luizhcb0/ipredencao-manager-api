@@ -33,6 +33,7 @@ public class Pessoa {
     private List<String> empresa;
     private Endereco endereco;
     private Regiao regiao;
+    private String informacoesAdicionais;
     private String fotoUrl;
     private Sexo sexo;
     private Long chefeDeFamiliaId;
@@ -93,6 +94,8 @@ public class Pessoa {
     public void setEndereco(Endereco endereco) { this.endereco = endereco; }
     public Regiao getRegiao() { return regiao; }
     public void setRegiao(Regiao regiao) { this.regiao = regiao; }
+    public String getInformacoesAdicionais() { return informacoesAdicionais; }
+    public void setInformacoesAdicionais(String informacoesAdicionais) { this.informacoesAdicionais = informacoesAdicionais; }
     public String getFotoUrl() { return fotoUrl; }
     public void setFotoUrl(String fotoUrl) { this.fotoUrl = fotoUrl; }
     public Sexo getSexo() { return sexo; }

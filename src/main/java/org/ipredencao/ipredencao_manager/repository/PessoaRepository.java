@@ -443,6 +443,7 @@ public class PessoaRepository {
         }
         if (pessoaRecord.getRegiao() != null)
             p.setRegiao(Regiao.valueOf(pessoaRecord.getRegiao().name()));
+        p.setInformacoesAdicionais(pessoaRecord.getInformacoesAdicionais());
         p.setFotoUrl(pessoaRecord.getFotoUrl());
         if (pessoaRecord.getSexo() != null)
             p.setSexo(Sexo.valueOf(pessoaRecord.getSexo().name()));
@@ -495,6 +496,7 @@ public class PessoaRepository {
             pessoaRecord.setEnderecoId(pessoa.getEndereco().getId());
         if (pessoa.getRegiao() != null)
             pessoaRecord.setRegiao(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(pessoa.getRegiao().name()));
+        pessoaRecord.setInformacoesAdicionais(pessoa.getInformacoesAdicionais());
         pessoaRecord.setFotoUrl(pessoa.getFotoUrl());
         if (pessoa.getSexo() != null)
             pessoaRecord.setSexo(org.ipredencao.ipredencao_manager.jooq.enums.Sexo.valueOf(pessoa.getSexo().name()));
@@ -537,15 +539,16 @@ public class PessoaRepository {
         compareAttribute(changes, "dataBatismo", previous.getDataBatismo(), current.getDataBatismo());
         compareAttribute(changes, "dataProfissaoDeFe", previous.getDataProfissaoDeFe(), current.getDataProfissaoDeFe());
         compareAttribute(changes, "igrejaBatismo", previous.getIgrejaBatismo(), current.getIgrejaBatismo());
-        compareAttribute(changes, "profissao", previous.getProfissao(), current.getProfissao());
-        compareAttribute(changes, "empresa", previous.getEmpresa(), current.getEmpresa());
         compareAttribute(changes, "enderecoId", previous.getEnderecoId(), current.getEnderecoId());
         compareAttribute(changes, "regiao", previous.getRegiao(), current.getRegiao());
+        compareAttribute(changes, "informacoesAdicionais", previous.getInformacoesAdicionais(), current.getInformacoesAdicionais());
         compareAttribute(changes, "fotoUrl", previous.getFotoUrl(), current.getFotoUrl());
         compareAttribute(changes, "chefeDeFamilia", previous.getChefeDeFamilia(), current.getChefeDeFamilia());
         compareAttribute(changes, "categoriaId", previous.getCategoriaId(), current.getCategoriaId());
 
         // Comparar arrays
+        compareArrays(changes, "profissao", previous.getProfissao(), current.getProfissao());
+        compareArrays(changes, "empresa", previous.getEmpresa(), current.getEmpresa());
         compareArrays(changes, "emailsSecundarios", previous.getEmailsSecundarios(), current.getEmailsSecundarios());
         compareArrays(changes, "telefonesSecundarios", previous.getTelefonesSecundarios(), current.getTelefonesSecundarios());
 
