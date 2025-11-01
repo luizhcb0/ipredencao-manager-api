@@ -32,7 +32,6 @@ public class Pessoa {
     private List<String> profissao;
     private List<String> empresa;
     private Endereco endereco;
-    private Regiao regiao;
     private String informacoesAdicionais;
     private String fotoUrl;
     private Sexo sexo;
@@ -92,8 +91,6 @@ public class Pessoa {
     public void setEmpresa(List<String> empresa) { this.empresa = empresa; }
     public Endereco getEndereco() { return endereco; }
     public void setEndereco(Endereco endereco) { this.endereco = endereco; }
-    public Regiao getRegiao() { return regiao; }
-    public void setRegiao(Regiao regiao) { this.regiao = regiao; }
     public String getInformacoesAdicionais() { return informacoesAdicionais; }
     public void setInformacoesAdicionais(String informacoesAdicionais) { this.informacoesAdicionais = informacoesAdicionais; }
     public String getFotoUrl() { return fotoUrl; }

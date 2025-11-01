@@ -5,6 +5,7 @@ import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import static org.ipredencao.ipredencao_manager.jooq.tables.Endereco.ENDERECO;
+import static org.ipredencao.ipredencao_manager.jooq.tables.Pessoa.PESSOA;
 import org.ipredencao.ipredencao_manager.jooq.tables.records.EnderecoRecord;
 import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.jooq.Condition;
@@ -68,14 +69,14 @@ public class EnderecoRepository {
                     .offset(offset)
                     .fetch()
                     .stream()
-                    .map(EnderecoRepository::fromRepository)
+                    .map(this::fromRepository)
                     .toList();
         } else {
             return dsl.selectFrom(ENDERECO)
                     .where(finalCondition)
                     .fetch()
                     .stream()
-                    .map(EnderecoRepository::fromRepository)
+                    .map(this::fromRepository)
                     .toList();
         }
     }
@@ -108,7 +109,7 @@ public class EnderecoRepository {
         return conditions;
     }
 
-    private static Endereco fromRepository(EnderecoRecord record) {
+    private Endereco fromRepository(EnderecoRecord record) {
         if (record == null) return null;
         
         Endereco endereco = new Endereco();
@@ -123,6 +124,16 @@ public class EnderecoRepository {
         endereco.setAddedAt(DateTimeHelper.fromDb(record.getAddedAt()));
         endereco.setUpdatedAt(DateTimeHelper.fromDb(record.getUpdatedAt()));
         endereco.setUpdatedByUserId(record.getUpdatedBy());
+        
+        // Buscar IDs das pessoas que usam este endereço
+        if (record.getId() != null) {
+            List<Long> pessoaIds = dsl.select(PESSOA.PESSOA_ID)
+                .from(PESSOA)
+                .where(PESSOA.ENDERECO_ID.eq(record.getId()))
+                .fetch()
+                .map(r -> r.value1());
+            endereco.setPessoaIds(pessoaIds);
+        }
         
         return endereco;
     }

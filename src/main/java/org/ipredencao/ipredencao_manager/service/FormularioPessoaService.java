@@ -247,7 +247,6 @@ public class FormularioPessoaService {
         pessoa.setIgrejaBatismo(formulario.getIgrejaBatismo());
         pessoa.setProfissao(formulario.getProfissao());
         pessoa.setEmpresa(formulario.getEmpresa());
-        pessoa.setRegiao(formulario.getRegiao());
         pessoa.setFotoUrl(formulario.getFotoUrl());
         pessoa.setSexo(formulario.getSexo());
         pessoa.setCategoria(formulario.getCategoria());
@@ -374,7 +373,6 @@ public class FormularioPessoaService {
             .rg(query.getRg())
             .estadoCivil(query.getEstadoCivil())
             .campus(query.getCampus())
-            .regiao(query.getRegiao())
             .dataNascimentoFrom(query.getDataNascimentoFrom())
             .dataNascimentoTo(query.getDataNascimentoTo())
             .tipoBatismo(query.getTipoBatismo())

@@ -299,7 +299,6 @@ public class PessoaService {
             .rg(query.getRg())
             .estadoCivil(query.getEstadoCivil())
             .campus(query.getCampus())
-            .regiao(query.getRegiao())
             .dataNascimentoFrom(query.getDataNascimentoFrom())
             .dataNascimentoTo(query.getDataNascimentoTo())
             .tipoBatismo(query.getTipoBatismo())

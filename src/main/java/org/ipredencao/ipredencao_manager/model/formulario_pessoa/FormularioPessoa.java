@@ -3,7 +3,6 @@ package org.ipredencao.ipredencao_manager.model.formulario_pessoa;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.ipredencao.ipredencao_manager.model.pessoa.EstadoCivil;
 import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
-import org.ipredencao.ipredencao_manager.model.pessoa.Regiao;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoBatismo;
@@ -36,7 +35,6 @@ public class FormularioPessoa {
     private String enderecoLogradouro;
     private String enderecoNumero;
     private String enderecoComplemento;
-    private Regiao regiao;
     private String fotoUrl;
     private Sexo sexo;
     private String chefeDeFamilia;
@@ -100,8 +98,6 @@ public class FormularioPessoa {
     public void setEnderecoNumero(String enderecoNumero) { this.enderecoNumero = enderecoNumero; }
     public String getEnderecoComplemento() { return enderecoComplemento; }
     public void setEnderecoComplemento(String enderecoComplemento) { this.enderecoComplemento = enderecoComplemento; }
-    public Regiao getRegiao() { return regiao; }
-    public void setRegiao(Regiao regiao) { this.regiao = regiao; }
     public String getFotoUrl() { return fotoUrl; }
     public void setFotoUrl(String fotoUrl) { this.fotoUrl = fotoUrl; }
     public Sexo getSexo() { return sexo; }

@@ -1,7 +1,6 @@
 package org.ipredencao.ipredencao_manager.repository;
 
 import org.ipredencao.ipredencao_manager.jooq.tables.records.PessoaHistoryRecord;
-import org.ipredencao.ipredencao_manager.model.pessoa.Regiao;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
 import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
@@ -386,8 +385,6 @@ public class PessoaRepository {
         if (query.getEstadoCivil() != null) 
             conditions.add(PESSOA.ESTADO_CIVIL.eq(org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil.valueOf(query.getEstadoCivil().name())));
         if (query.getCampus() != null && !query.getCampus().trim().isEmpty()) conditions.add(PESSOA.CAMPUS.eq(query.getCampus()));
-        if (query.getRegiao() != null) 
-            conditions.add(PESSOA.REGIAO.eq(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(query.getRegiao().name())));
         if (query.getDataNascimentoFrom() != null)
             conditions.add(PESSOA.DATA_NASCIMENTO.greaterOrEqual(DateTimeHelper.toDb(query.getDataNascimentoFrom())));
         if (query.getDataNascimentoTo() != null) 
@@ -441,8 +438,6 @@ public class PessoaRepository {
             Endereco endereco = enderecoRepository.findById(pessoaRecord.getEnderecoId());
             p.setEndereco(endereco);
         }
-        if (pessoaRecord.getRegiao() != null)
-            p.setRegiao(Regiao.valueOf(pessoaRecord.getRegiao().name()));
         p.setInformacoesAdicionais(pessoaRecord.getInformacoesAdicionais());
         p.setFotoUrl(pessoaRecord.getFotoUrl());
         if (pessoaRecord.getSexo() != null)
@@ -494,8 +489,6 @@ public class PessoaRepository {
         
         if (pessoa.getEndereco() != null)
             pessoaRecord.setEnderecoId(pessoa.getEndereco().getId());
-        if (pessoa.getRegiao() != null)
-            pessoaRecord.setRegiao(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(pessoa.getRegiao().name()));
         pessoaRecord.setInformacoesAdicionais(pessoa.getInformacoesAdicionais());
         pessoaRecord.setFotoUrl(pessoa.getFotoUrl());
         if (pessoa.getSexo() != null)
@@ -540,7 +533,6 @@ public class PessoaRepository {
         compareAttribute(changes, "dataProfissaoDeFe", previous.getDataProfissaoDeFe(), current.getDataProfissaoDeFe());
         compareAttribute(changes, "igrejaBatismo", previous.getIgrejaBatismo(), current.getIgrejaBatismo());
         compareAttribute(changes, "enderecoId", previous.getEnderecoId(), current.getEnderecoId());
-        compareAttribute(changes, "regiao", previous.getRegiao(), current.getRegiao());
         compareAttribute(changes, "informacoesAdicionais", previous.getInformacoesAdicionais(), current.getInformacoesAdicionais());
         compareAttribute(changes, "fotoUrl", previous.getFotoUrl(), current.getFotoUrl());
         compareAttribute(changes, "chefeDeFamilia", previous.getChefeDeFamilia(), current.getChefeDeFamilia());
