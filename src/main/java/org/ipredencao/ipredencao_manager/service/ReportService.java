@@ -70,14 +70,6 @@ public class ReportService {
         // Atualizar com as contagens
         formsByStatus.putAll(formsByStatusCount);
         
-        // Contar pessoas por região
-        Map<String, Long> pessoasPorRegiao = people.stream()
-            .filter(p -> p.getRegiao() != null)
-            .collect(Collectors.groupingBy(
-                p -> p.getRegiao().name(), 
-                Collectors.counting()
-            ));
-        
         // Contar pessoas por campus
         Map<String, Long> pessoasPorCampus = people.stream()
             .filter(p -> p.getCampus() != null && !p.getCampus().trim().isEmpty())
@@ -94,17 +86,14 @@ public class ReportService {
                 Collectors.counting()
             ));
 
-        SummaryResponse summary = new SummaryResponse(
+        return new SummaryResponse(
             (long) people.size(),
             (long) forms.size(),
             totalFamilias,
             pessoasPorCategoria,
             formsByStatus,
-            pessoasPorRegiao,
             pessoasPorCampus,
             pessoasPorSexo
         );
-
-        return summary;
     }
 }

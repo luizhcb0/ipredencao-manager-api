@@ -15,7 +15,6 @@ public class PessoaQuery {
     private String rg;
     private EstadoCivil estadoCivil;
     private String campus;
-    private Regiao regiao;
     private DateTime dataNascimentoFrom;
     private DateTime dataNascimentoTo;
     private TipoBatismo tipoBatismo;
@@ -38,7 +37,6 @@ public class PessoaQuery {
         this.rg = builder.rg;
         this.estadoCivil = builder.estadoCivil;
         this.campus = builder.campus;
-        this.regiao = builder.regiao;
         this.dataNascimentoFrom = builder.dataNascimentoFrom;
         this.dataNascimentoTo = builder.dataNascimentoTo;
         this.tipoBatismo = builder.tipoBatismo;
@@ -59,7 +57,6 @@ public class PessoaQuery {
         private String rg;
         private EstadoCivil estadoCivil;
         private String campus;
-        private Regiao regiao;
         private DateTime dataNascimentoFrom;
         private DateTime dataNascimentoTo;
         private TipoBatismo tipoBatismo;
@@ -117,11 +114,6 @@ public class PessoaQuery {
             return this;
         }
 
-        public Builder regiao(Regiao regiao) {
-            this.regiao = regiao;
-            return this;
-        }
-
         public Builder dataNascimentoFrom(DateTime dataNascimentoFrom) {
             this.dataNascimentoFrom = dataNascimentoFrom;
             return this;
@@ -172,7 +164,6 @@ public class PessoaQuery {
     public String getRg() { return rg; }
     public EstadoCivil getEstadoCivil() { return estadoCivil; }
     public String getCampus() { return campus; }
-    public Regiao getRegiao() { return regiao; }
     public DateTime getDataNascimentoFrom() { return dataNascimentoFrom; }
     public DateTime getDataNascimentoTo() { return dataNascimentoTo; }
     public TipoBatismo getTipoBatismo() { return tipoBatismo; }
@@ -191,7 +182,6 @@ public class PessoaQuery {
     public void setRg(String rg) { this.rg = rg; }
     public void setEstadoCivil(EstadoCivil estadoCivil) { this.estadoCivil = estadoCivil; }
     public void setCampus(String campus) { this.campus = campus; }
-    public void setRegiao(Regiao regiao) { this.regiao = regiao; }
     public void setDataNascimentoFrom(DateTime dataNascimentoFrom) { this.dataNascimentoFrom = dataNascimentoFrom; }
     public void setDataNascimentoTo(DateTime dataNascimentoTo) { this.dataNascimentoTo = dataNascimentoTo; }
     public void setTipoBatismo(TipoBatismo tipoBatismo) { this.tipoBatismo = tipoBatismo; }

@@ -18,15 +18,6 @@ CREATE TYPE estado_civil AS ENUM (
 CREATE TYPE igreja_campus AS ENUM ('SEDE', 'CONGREGACAO');
 CREATE TYPE tipo_batismo AS ENUM ('INFANTIL', 'ADULTO', 'NAO_BATIZADO');
 CREATE TYPE tipo_relacionamento AS ENUM ('CONJUGE', 'NOIVO', 'NAMORADO', 'FILHO', 'PAI', 'MAE', 'IRMÃO', 'RESPONSAVEL', 'VIUVO');
-CREATE TYPE regiao AS ENUM (
-    'ÁGUAS_CLARAS', 'ARNIQUEIRA', 'BRAZLÂNDIA', 'CANDANGOLÂNDIA', 'CEILÂNDIA',
-    'CRUZEIRO', 'ESTRUTURAL_SCIA', 'FERCAL', 'GAMA', 'GUARÁ', 'ITAPOÃ',
-    'JARDIM_BOTÂNICO', 'LAGO_NORTE', 'LAGO_SUL', 'NÚCLEO_BANDEIRANTE', 'PARANOÁ',
-    'PARK_WAY', 'PLANALTINA', 'PLANO_PILOTO', 'RECANTO_DAS_EMAS', 'RIACHO_FUNDO_I',
-    'RIACHO_FUNDO_II', 'SIA', 'SAMAMBAIA', 'SANTA_MARIA', 'SOBRADINHO',
-    'SOBRADINHO_II', 'SOL_NASCENTE_PÔR_DO_SOL', 'SUDOESTE_OCTOGONAL', 'SÃO_SEBASTIÃO',
-    'TAGUATINGA', 'VARJÃO', 'VICENTE_PIRES'
-);
 CREATE TYPE form_pessoa_status AS ENUM ('CADASTRADO', 'VALIDADO');
 
 -- Tabela de agregadores de categorias
@@ -156,7 +147,6 @@ CREATE TABLE IF NOT EXISTS pessoa (
     igreja_batismo VARCHAR(255),
     profissao VARCHAR(100)[],
     empresa VARCHAR(100)[],
-    regiao regiao,
     informacoes_adicionais TEXT,
     foto_url VARCHAR(500),
     chefe_de_familia BIGINT REFERENCES pessoa(pessoa_id),
@@ -191,7 +181,6 @@ CREATE TABLE IF NOT EXISTS pessoa_history (
     igreja_batismo VARCHAR(255),
     profissao VARCHAR(100)[],
     empresa VARCHAR(100)[],
-    regiao regiao,
     informacoes_adicionais TEXT,
     foto_url VARCHAR(500),
     chefe_de_familia BIGINT REFERENCES pessoa(pessoa_id),
@@ -250,7 +239,6 @@ CREATE TABLE IF NOT EXISTS formulario_pessoa (
     igreja_batismo VARCHAR(255),
     profissao VARCHAR(100)[],
     empresa VARCHAR(100)[],
-    regiao regiao,
     foto_url VARCHAR(500),
     chefe_de_familia VARCHAR(255),
     propagar_endereco_chefe_familia BOOLEAN,
@@ -313,7 +301,6 @@ BEGIN
         igreja_batismo,
         profissao,
         empresa,
-        regiao,
         informacoes_adicionais,
         foto_url,
         chefe_de_familia,
@@ -343,7 +330,6 @@ BEGIN
         NEW.igreja_batismo,
         NEW.profissao,
         NEW.empresa,
-        NEW.regiao,
         NEW.informacoes_adicionais,
         NEW.foto_url,
         NEW.chefe_de_familia,

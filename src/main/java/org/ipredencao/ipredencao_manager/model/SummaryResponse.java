@@ -10,7 +10,6 @@ public class SummaryResponse {
 
     private Map<String, Long> personsByCategory;
     private Map<String, Long> formsByStatus;
-    private Map<String, Long> personsByRegion;
     private Map<String, Long> personsByCampus;
     private Map<String, Long> personsBySex;
     
@@ -22,7 +21,6 @@ public class SummaryResponse {
         Long families,
         Map<String, Long> personsByCategory,
         Map<String, Long> formsByStatus,
-        Map<String, Long> personsByRegion,
         Map<String, Long> personsByCampus,
         Map<String, Long> personsBySex
     ) {
@@ -31,7 +29,6 @@ public class SummaryResponse {
         this.families = totalForms;
         this.personsByCategory = personsByCategory;
         this.formsByStatus = formsByStatus;
-        this.personsByRegion = personsByRegion;
         this.personsByCampus = personsByCampus;
         this.personsBySex = personsBySex;
     }
@@ -74,14 +71,6 @@ public class SummaryResponse {
 
     public void setFormsByStatus(Map<String, Long> formsByStatus) {
         this.formsByStatus = formsByStatus;
-    }
-
-    public Map<String, Long> getPersonsByRegion() {
-        return personsByRegion;
-    }
-
-    public void setPersonsByRegion(Map<String, Long> personsByRegion) {
-        this.personsByRegion = personsByRegion;
     }
 
     public Map<String, Long> getPersonsByCampus() {

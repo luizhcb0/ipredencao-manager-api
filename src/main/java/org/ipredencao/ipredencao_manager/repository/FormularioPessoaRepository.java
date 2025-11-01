@@ -4,7 +4,6 @@ import org.ipredencao.ipredencao_manager.jooq.enums.FormPessoaStatus;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoa;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoaQuery;
 import org.ipredencao.ipredencao_manager.model.pessoa.EstadoCivil;
-import org.ipredencao.ipredencao_manager.model.pessoa.Regiao;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoBatismo;
@@ -112,8 +111,6 @@ public class FormularioPessoaRepository {
         if (query.getEstadoCivil() != null)
             conditions.add(FORMULARIO_PESSOA.ESTADO_CIVIL.eq(org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil.valueOf(query.getEstadoCivil().name())));
         if (query.getCampus() != null && !query.getCampus().trim().isEmpty()) conditions.add(FORMULARIO_PESSOA.CAMPUS.eq(query.getCampus()));
-        if (query.getRegiao() != null)
-            conditions.add(FORMULARIO_PESSOA.REGIAO.eq(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(query.getRegiao().name())));
         if (query.getDataNascimentoFrom() != null)
             conditions.add(FORMULARIO_PESSOA.DATA_NASCIMENTO.greaterOrEqual(DateTimeHelper.toDb(query.getDataNascimentoFrom())));
         if (query.getDataNascimentoTo() != null)
@@ -161,8 +158,6 @@ public class FormularioPessoaRepository {
         f.setEnderecoLogradouro(record.getEnderecoLogradouro());
         f.setEnderecoNumero(record.getEnderecoNumero());
         f.setEnderecoComplemento(record.getEnderecoComplemento());
-        if (record.getRegiao() != null)
-            f.setRegiao(Regiao.valueOf(record.getRegiao().name()));
         f.setFotoUrl(record.getFotoUrl());
         if (record.getSexo() != null)
             f.setSexo(Sexo.valueOf(record.getSexo().name()));
@@ -221,8 +216,6 @@ public class FormularioPessoaRepository {
         record.setEnderecoLogradouro(f.getEnderecoLogradouro());
         record.setEnderecoNumero(f.getEnderecoNumero());
         record.setEnderecoComplemento(f.getEnderecoComplemento());
-        if (f.getRegiao() != null)
-            record.setRegiao(org.ipredencao.ipredencao_manager.jooq.enums.Regiao.valueOf(f.getRegiao().name()));
         record.setFotoUrl(f.getFotoUrl());
         if (f.getSexo() != null)
             record.setSexo(org.ipredencao.ipredencao_manager.jooq.enums.Sexo.valueOf(f.getSexo().name()));

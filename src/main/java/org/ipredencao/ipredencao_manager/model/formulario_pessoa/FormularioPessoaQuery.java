@@ -3,7 +3,6 @@ package org.ipredencao.ipredencao_manager.model.formulario_pessoa;
 import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
 import org.ipredencao.ipredencao_manager.model.pessoa.EstadoCivil;
 import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
-import org.ipredencao.ipredencao_manager.model.pessoa.Regiao;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoBatismo;
 import org.joda.time.DateTime;
@@ -20,7 +19,6 @@ public class FormularioPessoaQuery {
     private String rg;
     private EstadoCivil estadoCivil;
     private String campus;
-    private Regiao regiao;
     private DateTime dataNascimentoFrom;
     private DateTime dataNascimentoTo;
     private TipoBatismo tipoBatismo;
@@ -43,7 +41,6 @@ public class FormularioPessoaQuery {
         this.rg = builder.rg;
         this.estadoCivil = builder.estadoCivil;
         this.campus = builder.campus;
-        this.regiao = builder.regiao;
         this.dataNascimentoFrom = builder.dataNascimentoFrom;
         this.dataNascimentoTo = builder.dataNascimentoTo;
         this.tipoBatismo = builder.tipoBatismo;
@@ -64,7 +61,6 @@ public class FormularioPessoaQuery {
         private String rg;
         private EstadoCivil estadoCivil;
         private String campus;
-        private Regiao regiao;
         private DateTime dataNascimentoFrom;
         private DateTime dataNascimentoTo;
         private TipoBatismo tipoBatismo;
@@ -122,11 +118,6 @@ public class FormularioPessoaQuery {
             return this;
         }
 
-        public Builder regiao(Regiao regiao) {
-            this.regiao = regiao;
-            return this;
-        }
-
         public Builder dataNascimentoFrom(DateTime dataNascimentoFrom) {
             this.dataNascimentoFrom = dataNascimentoFrom;
             return this;
@@ -177,7 +168,6 @@ public class FormularioPessoaQuery {
     public String getRg() { return rg; }
     public EstadoCivil getEstadoCivil() { return estadoCivil; }
     public String getCampus() { return campus; }
-    public Regiao getRegiao() { return regiao; }
     public DateTime getDataNascimentoFrom() { return dataNascimentoFrom; }
     public DateTime getDataNascimentoTo() { return dataNascimentoTo; }
     public TipoBatismo getTipoBatismo() { return tipoBatismo; }
@@ -196,7 +186,6 @@ public class FormularioPessoaQuery {
     public void setRg(String rg) { this.rg = rg; }
     public void setEstadoCivil(EstadoCivil estadoCivil) { this.estadoCivil = estadoCivil; }
     public void setCampus(String campus) { this.campus = campus; }
-    public void setRegiao(Regiao regiao) { this.regiao = regiao; }
     public void setDataNascimentoFrom(DateTime dataNascimentoFrom) { this.dataNascimentoFrom = dataNascimentoFrom; }
     public void setDataNascimentoTo(DateTime dataNascimentoTo) { this.dataNascimentoTo = dataNascimentoTo; }
     public void setTipoBatismo(TipoBatismo tipoBatismo) { this.tipoBatismo = tipoBatismo; }
