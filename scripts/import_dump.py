@@ -702,9 +702,9 @@ def fase1_importar_pessoas(config: ImportConfig, api_client: APIClient,
     logger.info(f"Carregando {config.contato_csv}")
     contato_df = pd.read_csv(config.contato_csv, sep=',', on_bad_lines='skip', encoding='utf-8')
     
-    # Pessoa.csv usa ponto-e-vírgula como delimitador
+    # Pessoa.csv também usa vírgula como delimitador
     logger.info(f"Carregando {config.pessoa_csv}")
-    pessoa_df = pd.read_csv(config.pessoa_csv, sep=';', on_bad_lines='skip', encoding='utf-8')
+    pessoa_df = pd.read_csv(config.pessoa_csv, sep=',', on_bad_lines='skip', encoding='utf-8')
     
     # Carregar IPVideira.csv para identificar pessoas da congregação
     ipv_csv = config.dump_path / 'IPVideira.csv'
@@ -873,9 +873,9 @@ def fase2_5_definir_chefe_familia(config: ImportConfig, api_client: APIClient,
     logger.info("FASE 2.5: Definindo Chefe de Família")
     logger.info("=" * 80)
     
-    # Carregar CSV de pessoas (usando ponto-e-vírgula como delimitador)
+    # Carregar CSV de pessoas (usando vírgula como delimitador)
     logger.info(f"Carregando {config.pessoa_csv}")
-    pessoa_df = pd.read_csv(config.pessoa_csv, sep=';', on_bad_lines='skip', encoding='utf-8')
+    pessoa_df = pd.read_csv(config.pessoa_csv, sep=',', on_bad_lines='skip', encoding='utf-8')
     
     success_count = 0
     error_count = 0
@@ -949,6 +949,129 @@ def fase2_5_definir_chefe_familia(config: ImportConfig, api_client: APIClient,
 # FASE 3: CRIAR RELACIONAMENTOS
 # =============================================================================
 
+def fase2_7_copiar_endereco_chefe(config: ImportConfig, api_client: APIClient,
+                                   checkpoint: CheckpointManager, id_mapper: IDMapper):
+    """Fase 2.7: Copiar endereço do chefe de família para pessoas sem endereço"""
+    if checkpoint.is_fase_complete(2.7):
+        logger.info("Fase 2.7 já completada. Pulando...")
+        return
+    
+    logger.info("=" * 80)
+    logger.info("FASE 2.7: Copiando Endereço do Chefe de Família")
+    logger.info("=" * 80)
+    
+    # Buscar todas as pessoas usando o endpoint de busca com paginação
+    logger.info("Buscando todas as pessoas...")
+    headers = {
+        'Authorization': f'Bearer {config.token}',
+        'Content-Type': 'application/json'
+    }
+    url = f"{config.api_url}/api/pessoas/search"
+    
+    # Buscar em múltiplas páginas (limite máximo do backend é 250 por página)
+    pessoas = []
+    offset = 0
+    page_size = 250
+    
+    while True:
+        query_payload = {
+            "pagination": {
+                "limit": page_size,
+                "offset": offset
+            }
+        }
+        logger.info(f"Buscando página com offset={offset}")
+        response = api_client._retry_request('POST', url, headers=headers, json=query_payload)
+        page_data = response.json()['data']
+        
+        if not page_data:
+            break
+        
+        pessoas.extend(page_data)
+        logger.info(f"Carregadas {len(page_data)} pessoas (total acumulado: {len(pessoas)})")
+        
+        # Se retornou menos que o page_size, chegamos ao fim
+        if len(page_data) < page_size:
+            break
+        
+        offset += page_size
+    
+    logger.info(f"Total de pessoas carregadas: {len(pessoas)}")
+    
+    success_count = 0
+    error_count = 0
+    skip_count = 0
+    
+    for pessoa in pessoas:
+        pessoa_id = pessoa['id']
+        
+        # Verificar se pessoa não tem endereço
+        if pessoa.get('endereco') is not None:
+            skip_count += 1
+            continue
+        
+        # Verificar se tem chefe de família
+        chefe_id = pessoa.get('chefeDeFamiliaId')
+        if not chefe_id:
+            skip_count += 1
+            continue
+        
+        try:
+            # Buscar dados do chefe de família
+            headers = {
+                'Authorization': f'Bearer {config.token}',
+                'Content-Type': 'application/json'
+            }
+            url_chefe = f"{config.api_url}/api/pessoas/{chefe_id}"
+            chefe_response = api_client._retry_request('GET', url_chefe, headers=headers)
+            chefe = chefe_response.json()
+            
+            # Verificar se chefe tem endereço
+            endereco_chefe = chefe.get('endereco')
+            if not endereco_chefe:
+                logger.debug(f"Chefe de família {chefe_id} também não tem endereço")
+                skip_count += 1
+                continue
+            
+            # Atualizar pessoa com endereço do chefe
+            logger.info(f"Copiando endereço do chefe {chefe_id} para pessoa {pessoa_id} ({pessoa['nome']})")
+            
+            # Fazer GET completo da pessoa para manter todos os campos
+            url_pessoa = f"{config.api_url}/api/pessoas/{pessoa_id}"
+            pessoa_response = api_client._retry_request('GET', url_pessoa, headers=headers)
+            pessoa_completa = pessoa_response.json()
+            
+            # Converter categoria para ID se necessário
+            if isinstance(pessoa_completa.get('categoria'), dict):
+                pessoa_completa['categoria'] = pessoa_completa['categoria']['id']
+            
+            # Remover relacionamentos do payload
+            pessoa_completa.pop('relacionamentos', None)
+            
+            # Adicionar o endereço do chefe
+            pessoa_completa['endereco'] = endereco_chefe
+            
+            # Enviar PUT
+            url_put = f"{config.api_url}/api/pessoas/{pessoa_id}"
+            api_client._retry_request('PUT', url_put, headers=headers, json=pessoa_completa)
+            
+            success_count += 1
+            
+            # Salvar progresso a cada 10
+            if success_count % 10 == 0:
+                checkpoint.update_fase(2.7, success_count)
+                logger.info(f"Progresso salvo: {success_count} endereços copiados")
+        
+        except Exception as e:
+            logger.error(f"Erro ao copiar endereço para pessoa {pessoa_id}: {e}")
+            error_count += 1
+    
+    checkpoint.mark_fase_complete(2.7)
+    logger.info("=" * 80)
+    logger.info(f"FASE 2.7 COMPLETA: {success_count} endereços copiados, {skip_count} pulados, {error_count} erros")
+    logger.info("=" * 80)
+
+
 def fase3_criar_relacionamentos(config: ImportConfig, api_client: APIClient,
                                 checkpoint: CheckpointManager, id_mapper: IDMapper):
     """Fase 3: Criar relacionamentos entre pessoas"""
@@ -960,9 +1083,9 @@ def fase3_criar_relacionamentos(config: ImportConfig, api_client: APIClient,
     logger.info("FASE 3: Criando Relacionamentos")
     logger.info("=" * 80)
     
-    # Carregar CSV de pessoas novamente (usando ponto-e-vírgula como delimitador)
+    # Carregar CSV de pessoas novamente (usando vírgula como delimitador)
     logger.info(f"Carregando {config.pessoa_csv}")
-    pessoa_df = pd.read_csv(config.pessoa_csv, sep=';', on_bad_lines='skip', encoding='utf-8')
+    pessoa_df = pd.read_csv(config.pessoa_csv, sep=',', on_bad_lines='skip', encoding='utf-8')
     
     success_count = 0
     error_count = 0
@@ -1111,6 +1234,9 @@ def main():
         if not args.skip_fase1:
             fase2_5_definir_chefe_familia(config, api_client, checkpoint, id_mapper)
         
+        # Fase 2.7: Copiar endereço do chefe para pessoas sem endereço
+        fase2_7_copiar_endereco_chefe(config, api_client, checkpoint, id_mapper)
+        
         if not args.skip_fase3:
             fase3_criar_relacionamentos(config, api_client, checkpoint, id_mapper)
         
@@ -1119,6 +1245,7 @@ def main():
         logger.info(f"Pessoas criadas: {checkpoint.checkpoint.get('pessoas_created', 0)}")
         logger.info(f"Fotos enviadas: {checkpoint.checkpoint.get('fotos_uploaded', 0)}")
         logger.info(f"Chefes de família definidos: {checkpoint.checkpoint.get('chefes_familia_definidos', 0)}")
+        logger.info(f"Endereços copiados do chefe: {checkpoint.checkpoint.get('fase_2.7', 0)}")
         logger.info(f"Relacionamentos criados: {checkpoint.checkpoint.get('relacionamentos_created', 0)}")
         logger.info("=" * 80)
         
