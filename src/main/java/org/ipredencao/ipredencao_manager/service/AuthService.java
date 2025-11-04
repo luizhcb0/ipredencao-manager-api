@@ -23,7 +23,7 @@ public class AuthService {
     
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
-    private static final List<PerfilAcesso> allowedProfiles  = List.of(PerfilAcesso.PRESBITERO, PerfilAcesso.BOLETIM);
+    private static final List<PerfilAcesso> allowedProfiles  = List.of(PerfilAcesso.PRESBITERO, PerfilAcesso.BOLETIM, PerfilAcesso.DIACONO);
     
     @Autowired
     private UsuarioRepository usuarioRepository;
