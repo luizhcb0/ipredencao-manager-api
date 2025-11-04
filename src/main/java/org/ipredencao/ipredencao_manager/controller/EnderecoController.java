@@ -23,7 +23,7 @@ public class EnderecoController {
      * Cria um novo endereço (com pessoaIds opcional)
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> create(@RequestBody Endereco endereco) {
         try {
             Endereco created = enderecoService.create(endereco);
@@ -39,7 +39,7 @@ public class EnderecoController {
      * Atualiza um endereço e sincroniza pessoas vinculadas
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Endereco endereco) {
         try {
             endereco.setId(id);
@@ -76,7 +76,7 @@ public class EnderecoController {
      * Busca endereço por ID (incluindo pessoaIds)
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> findById(@PathVariable Long id) {
         try {
             Endereco endereco = enderecoService.findById(id);
@@ -93,7 +93,7 @@ public class EnderecoController {
      * Busca endereços com filtros e paginação
      */
     @PostMapping("/search")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> search(@RequestBody EnderecoQuery query) {
         try {
             PagedResponse<Endereco> response = enderecoService.findPaginated(query);

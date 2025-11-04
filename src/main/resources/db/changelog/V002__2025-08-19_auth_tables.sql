@@ -1,7 +1,7 @@
 -- Arquivo seguindo padrão existente V001__2025-07-08_tables.sql
 
 -- ENUMs para autenticação (seguindo padrão existente)
-CREATE TYPE perfil_acesso AS ENUM ('BOLETIM', 'PRESBITERO', 'ADMIN');
+CREATE TYPE perfil_acesso AS ENUM ('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN');
 CREATE TYPE provider_autenticacao AS ENUM ('GOOGLE', 'FACEBOOK', 'APPLE', 'EMAIL');
 
 -- Tabelas de autenticação

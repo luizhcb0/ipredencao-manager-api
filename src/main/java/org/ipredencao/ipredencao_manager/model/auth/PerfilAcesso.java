@@ -4,6 +4,7 @@ import java.util.Set;
 
 public enum PerfilAcesso {
     BOLETIM("Usuário Boletim", Set.of("READ")),
+    DIACONO("Diácono", Set.of("READ", "WRITE", "UPDATE")),
     PRESBITERO("Presbítero", Set.of("READ", "WRITE", "UPDATE")),
     ADMIN("Administrador", Set.of("READ", "WRITE", "UPDATE", "DELETE", "MANAGE"));
     

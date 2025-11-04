@@ -30,7 +30,7 @@ public class ReportController {
      * Acesso: BOLETIM, PRESBITERO, ADMIN
      */
     @GetMapping("/summary")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> getSummary() {
         try {
             log.info("Requisição para obter resumo de relatórios");
@@ -45,7 +45,7 @@ public class ReportController {
 
 
     @PostMapping("/generate-report")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> generateReport(@RequestBody PessoaQuery query) {
         try {
             // Validação básica

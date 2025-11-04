@@ -35,7 +35,7 @@ public class PessoaController {
     private static final Logger log = LoggerFactory.getLogger(PessoaController.class);
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> createPerson(@RequestBody Pessoa pessoa) {
         try {
             return ResponseEntity.ok(pessoaService.create(pessoa));
@@ -49,7 +49,7 @@ public class PessoaController {
     }
 
     @PostMapping("/{id}/foto")
-    @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> uploadPhoto(
         @PathVariable Long id,
         @RequestParam("foto") MultipartFile foto
@@ -68,7 +68,7 @@ public class PessoaController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> findById(@PathVariable Long id) {
         try {
             Pessoa pessoa = pessoaService.findById(id);
@@ -81,7 +81,7 @@ public class PessoaController {
     }
 
     @PostMapping("/search")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> searchPeople(@RequestBody PessoaQuery query) {
         try {
             PagedResponse<Pessoa> response = pessoaService.findPaginated(query);
@@ -92,7 +92,7 @@ public class PessoaController {
     }
     
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> updatePerson(@PathVariable Long id, @RequestBody Pessoa pessoa) {
         try {
             pessoa.setId(id);
@@ -110,7 +110,7 @@ public class PessoaController {
      * Busca o histórico de alterações de uma pessoa por ID
      */
     @GetMapping("/{id}/history")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> findHistoryById(@PathVariable Long id) {
         try {
             List<PessoaHistory> history = pessoaService.findHistoryById(id);
@@ -127,7 +127,7 @@ public class PessoaController {
      * Cria um relacionamento entre duas pessoas
      */
     @PostMapping("/{id}/relacionamento")
-    @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> createRelationship(
             @PathVariable Long id,
             @RequestBody Relacionamento relacionamento) {

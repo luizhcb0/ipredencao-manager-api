@@ -44,21 +44,21 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 
                 // Formulários (autenticados)
-                .requestMatchers(HttpMethod.GET, "/api/formulario-pessoa/**").hasAnyRole("BOLETIM", "PRESBITERO", "ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/formulario-pessoa/**").hasAnyRole("PRESBITERO", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/formulario-pessoa/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/formulario-pessoa/**").hasAnyRole("DIACONO", "PRESBITERO", "ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/formulario-pessoa/**").hasRole("ADMIN")
                 
                 // Pessoas (apenas autenticados)
-                .requestMatchers(HttpMethod.GET, "/api/pessoas/**").hasAnyRole("BOLETIM", "PRESBITERO", "ADMIN")
-                .requestMatchers("/api/pessoas/**").hasAnyRole("PRESBITERO", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/pessoas/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
+                .requestMatchers("/api/pessoas/**").hasAnyRole("DIACONO", "PRESBITERO", "ADMIN")
                 
                 // Relatórios (apenas autenticados)
-                .requestMatchers("/api/reports/**").hasAnyRole("BOLETIM", "PRESBITERO", "ADMIN")
+                .requestMatchers("/api/reports/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
                 
                 // Dados do sistema (apenas autenticados com roles específicos)
-                .requestMatchers("/api/categorias/**").hasAnyRole("BOLETIM", "PRESBITERO", "ADMIN")
+                .requestMatchers("/api/categorias/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
 
-                .requestMatchers("/api/enderecos/**").hasAnyRole("BOLETIM", "PRESBITERO", "ADMIN")
+                .requestMatchers("/api/enderecos/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
                 
                 .anyRequest().authenticated()
             )

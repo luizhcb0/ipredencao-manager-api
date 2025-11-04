@@ -75,7 +75,7 @@ public class FormularioPessoaController {
     }
 
     @PostMapping("/search")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> searchForms(@RequestBody FormularioPessoaQuery query) {
         try {
             PagedResponse<FormularioPessoa> response = service.findPaginated(query);
@@ -86,7 +86,7 @@ public class FormularioPessoaController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> findById(@PathVariable Long id) {
         try {
             FormularioPessoa encontrado = service.findById(id);
@@ -99,7 +99,7 @@ public class FormularioPessoaController {
     }
 
     @PostMapping("/processar")
-    @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<ProcessarFormularioResponse> processForm(
             @RequestBody ProcessarFormularioRequest request) {
         try {

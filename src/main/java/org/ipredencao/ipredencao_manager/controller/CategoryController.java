@@ -19,7 +19,7 @@ public class CategoryController {
      * @return Lista de agregadores de categorias com id e nome
      */
     @GetMapping("/agregadores")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> listCategoryAggregators() {
         try {
             List<AgregadorCategoriaEnum> aggregators = Arrays.asList(AgregadorCategoriaEnum.values());
@@ -37,7 +37,7 @@ public class CategoryController {
      * @return Lista de categorias do agregador informado
      */
     @GetMapping("/agregadores/{idAgregador}")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> listCategoriesByAggregator(@PathVariable Long idAgregador) {
         try {
             // Buscar o agregador pelo ID
@@ -66,7 +66,7 @@ public class CategoryController {
      * @return Lista de todas as categorias
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('BOLETIM', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<?> listAllCategories() {
         try {
             List<CategoriaEnum> categories = Arrays.asList(CategoriaEnum.values());
