@@ -119,20 +119,27 @@ ps aux | grep import_dump.py
 
 - Lê `Pessoa_Contato.csv` e consolida telefones, emails e endereços por pessoa
 - Lê `Pessoa.csv` e cria payload completo com todos os dados
+- Lê `IPVideira.csv` para identificar pessoas da congregação (campus)
+- Lê `Igreja.csv` para mapear IDs de igreja para nomes
+- Lê `AtoOficial.csv` para incluir histórico de atos de admissão e demissão
 - Cria pessoas via `POST /api/pessoas`
 - Salva mapeamento de IDs antigos → novos em `id_mapping.json`
 
 **Dados importados:**
 - Nome, apelido, sexo, CPF, RG
-- Data de nascimento
-- Estado civil, categoria
+- Data de nascimento, data de falecimento
+- Estado civil, categoria, campus (SEDE ou CONGREGACAO)
 - Telefones (primário e secundários)
 - Emails (primário e secundários)
-- Endereço (CEP, logradouro)
-- Região
+- Profissões e empresas (arrays)
+- Endereço completo (CEP, logradouro, cidade, estado, coordenadas)
 - Datas de batismo e profissão de fé
 - Igreja anterior/de batismo
 - Tipo de batismo (inferido)
+- **Informações adicionais:** Histórico de atos oficiais (admissão e demissão) formatado como:
+  - `04/12/2016 | Admissão de membro comungante | Admissão por transferência | Ata: 1`
+  - `05/10/2021 | Demissão de membro comungante | Demissão por transferência | Ata: 180`
+  - Ordenados por data ascendente, um ato por linha
 
 ### Fase 2: Upload de Fotos
 
@@ -242,8 +249,10 @@ A API não está rodando. Inicie a API primeiro.
 ## Estatísticas Esperadas
 
 Com o dump completo:
-- ~2737 pessoas
-- ~1000 fotos
-- ~5000 relacionamentos
+- ~3.708 pessoas
+- ~1.000 fotos
+- ~5.000 relacionamentos
+- ~2.931 atos oficiais (admissão/demissão) para ~1.454 pessoas
+- Endereços copiados do chefe de família conforme necessário
 
 

@@ -622,7 +622,75 @@ def should_import_pessoa(row: pd.Series) -> Tuple[bool, Optional[int]]:
     return (True, categoria_id)
 
 
-def create_pessoa_payload(row: pd.Series, contacts: Dict, categoria_id: int, campus: str, igreja_map: Dict[int, str]) -> Dict:
+def format_atos_oficiais(atos_df: pd.DataFrame, id_pessoa: int) -> str:
+    """
+    Formata os atos oficiais de admissão e demissão de uma pessoa.
+    Retorna uma string com todos os atos formatados, um por linha.
+    """
+    # Tipos de atos que devem ser incluídos (admissão e demissão)
+    tipos_relevantes = [
+        'Admissão de membro comungante',
+        'Admissão de menor não comungante',
+        'Demissão de membro comungante',
+        'Demissão de menor não comungante',
+        'Pedido de demissão',
+        'Registro de pedido de admissão',
+        'Aprovação em entrevista admissional',
+        'Reprovação em entrevista admissional',
+        'Dispensa de entrevista admissional',
+        'Sobrestamento de admissão (impedimento ou discord. CFW)',
+        'Sobrestamento de admissão (pedido pessoal; infrequência)',
+        'Sobrestamento em entrevista admissional',
+        'Resolução de pendência em processo admissional',
+        'Desistência de admissão (decisão pessoal)',
+        'Opção por admissão por jurisdição a pedido de pessoa excluída por ausência em igreja IPB',
+        'Opção por admissão por jurisdição ex-officio por decurso de prazo de resposta'
+    ]
+    
+    # Filtrar atos dessa pessoa
+    atos_pessoa = atos_df[atos_df['idPessoa'] == id_pessoa].copy()
+    
+    if atos_pessoa.empty:
+        return None
+    
+    # Filtrar apenas tipos relevantes
+    atos_pessoa = atos_pessoa[atos_pessoa['TipoAto'].isin(tipos_relevantes)]
+    
+    if atos_pessoa.empty:
+        return None
+    
+    # Converter DataAto para datetime e ordenar
+    atos_pessoa['DataAto'] = pd.to_datetime(atos_pessoa['DataAto'], errors='coerce')
+    atos_pessoa = atos_pessoa.sort_values('DataAto')
+    
+    # Formatar cada ato
+    linhas = []
+    for _, ato in atos_pessoa.iterrows():
+        data_ato = ato['DataAto'].strftime('%d/%m/%Y') if not pd.isna(ato['DataAto']) else 'Data desconhecida'
+        tipo_ato = str(ato['TipoAto']).strip() if not pd.isna(ato['TipoAto']) else ''
+        dados_ato = str(ato['DadosAto']).strip() if not pd.isna(ato['DadosAto']) else ''
+        
+        # Converter ata para inteiro se possível
+        ata_registro = ''
+        if not pd.isna(ato['AtaRegistroAto']):
+            try:
+                ata_registro = str(int(float(ato['AtaRegistroAto'])))
+            except (ValueError, TypeError):
+                ata_registro = str(ato['AtaRegistroAto']).strip()
+        
+        # Montar linha: DataAto | TipoAto | DadosAto | AtaRegistroAto
+        linha = f"{data_ato} | {tipo_ato}"
+        if dados_ato and dados_ato.lower() != 'nan':
+            linha += f" | {dados_ato}"
+        if ata_registro:
+            linha += f" | Ata: {ata_registro}"
+        
+        linhas.append(linha)
+    
+    return '\n'.join(linhas) if linhas else None
+
+
+def create_pessoa_payload(row: pd.Series, contacts: Dict, categoria_id: int, campus: str, igreja_map: Dict[int, str], atos_info: str = None) -> Dict:
     """Cria o payload JSON para criação de pessoa"""
     
     # Resolver nome da igreja anterior
@@ -657,6 +725,7 @@ def create_pessoa_payload(row: pd.Series, contacts: Dict, categoria_id: int, cam
         'dataProfissaoDeFe': parse_date(row.get('ProfissãoDeFéData')),
         'igrejaBatismo': str(row['BatismoLocal']).strip() if not pd.isna(row.get('BatismoLocal')) else None,
         'tipoBatismo': infer_tipo_batismo(row.get('BatismoData'), row.get('ProfissãoDeFéData')),
+        'informacoesAdicionais': atos_info,
     }
     
     # Adicionar contatos consolidados
@@ -720,6 +789,16 @@ def fase1_importar_pessoas(config: ImportConfig, api_client: APIClient,
     igreja_map = dict(zip(igreja_df['idIgreja'], igreja_df['NomeIgreja']))
     logger.info(f"Carregadas {len(igreja_map)} igrejas para mapeamento")
     
+    # Carregar AtoOficial.csv para incluir atos de admissão e demissão
+    ato_csv = config.dump_path / 'AtoOficial.csv'
+    atos_df = None
+    if ato_csv.exists():
+        logger.info(f"Carregando {ato_csv}")
+        atos_df = pd.read_csv(ato_csv, sep=',', on_bad_lines='skip', encoding='utf-8')
+        logger.info(f"Carregados {len(atos_df)} atos oficiais")
+    else:
+        logger.warning(f"Arquivo {ato_csv} não encontrado. Atos oficiais não serão importados.")
+    
     # Consolidar contatos
     contacts_by_person = consolidate_contacts(contato_df)
     
@@ -751,8 +830,13 @@ def fase1_importar_pessoas(config: ImportConfig, api_client: APIClient,
             # Determinar campus
             campus = 'CONGREGACAO' if old_id in pessoas_congregacao else 'SEDE'
             
+            # Obter atos oficiais formatados
+            atos_info = None
+            if atos_df is not None:
+                atos_info = format_atos_oficiais(atos_df, old_id)
+            
             # Criar payload
-            payload = create_pessoa_payload(row, contacts, categoria_id, campus, igreja_map)
+            payload = create_pessoa_payload(row, contacts, categoria_id, campus, igreja_map, atos_info)
             
             # Criar pessoa na API
             logger.info(f"[{idx + 1}/{total}] Criando pessoa: {payload.get('nome', 'N/A')} (ID antigo: {old_id})")
