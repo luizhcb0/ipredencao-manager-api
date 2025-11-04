@@ -20,26 +20,26 @@ repositories {
 }
 
 dependencies {
-	// Existentes
+	// Spring Boot Starters
 	implementation 'org.springframework.boot:spring-boot-starter-jooq'
-	implementation 'org.liquibase:liquibase-core'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+	
+	// Database (versões gerenciadas pelo Spring Boot)
 	runtimeOnly 'org.postgresql:postgresql'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	implementation 'org.liquibase:liquibase-core'
 	implementation 'org.jooq:jooq:3.19.7'
-	implementation 'org.liquibase:liquibase-core:4.27.0'
-	implementation 'org.postgresql:postgresql:42.7.3'
+	
+	// Database - Build tools (versões específicas necessárias)
 	jooqGenerator 'org.postgresql:postgresql:42.7.3'
-	implementation 'joda-time:joda-time:2.14.0'
 	liquibaseRuntime 'org.liquibase:liquibase-core:4.27.0'
 	liquibaseRuntime 'org.postgresql:postgresql:42.7.3'
 	liquibaseRuntime 'info.picocli:picocli:4.7.5'
-	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.681'
-	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-joda:2.15.2'
 	
-	// Novas dependências para autenticação
+	// AWS & External Services
+	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.681'
 	implementation 'com.google.firebase:firebase-admin:9.2.0'
 	
 	// JWT
@@ -47,17 +47,17 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
 	
-	// Security & Validation
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	// Utilities
+	implementation 'joda-time:joda-time:2.14.0'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-joda:2.15.2'
 	
-	// Monitoring & Documentation
-	implementation 'org.springframework.boot:spring-boot-starter-actuator'
-	implementation 'io.micrometer:micrometer-registry-prometheus'
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+	// Documentation (compile only - não incluído no JAR de produção)
+	compileOnly 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
 	
-	// Testing adicional
+	// Testing
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
