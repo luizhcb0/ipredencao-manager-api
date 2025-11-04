@@ -13,6 +13,7 @@ public class PessoaQuery {
     private String telefone;
     private String cpf;
     private String rg;
+    private Sexo sexo;
     private EstadoCivil estadoCivil;
     private String campus;
     private DateTime dataNascimentoFrom;
@@ -35,6 +36,7 @@ public class PessoaQuery {
         this.telefone = builder.telefone;
         this.cpf = builder.cpf;
         this.rg = builder.rg;
+        this.sexo = builder.sexo;
         this.estadoCivil = builder.estadoCivil;
         this.campus = builder.campus;
         this.dataNascimentoFrom = builder.dataNascimentoFrom;
@@ -55,6 +57,7 @@ public class PessoaQuery {
         private String telefone;
         private String cpf;
         private String rg;
+        private Sexo sexo;
         private EstadoCivil estadoCivil;
         private String campus;
         private DateTime dataNascimentoFrom;
@@ -101,6 +104,11 @@ public class PessoaQuery {
 
         public Builder rg(String rg) {
             this.rg = rg;
+            return this;
+        }
+
+        public Builder sexo(Sexo sexo) {
+            this.sexo = sexo;
             return this;
         }
 
@@ -162,6 +170,7 @@ public class PessoaQuery {
     public String getTelefone() { return telefone; }
     public String getCpf() { return cpf; }
     public String getRg() { return rg; }
+    public Sexo getSexo() { return sexo; }
     public EstadoCivil getEstadoCivil() { return estadoCivil; }
     public String getCampus() { return campus; }
     public DateTime getDataNascimentoFrom() { return dataNascimentoFrom; }
@@ -180,6 +189,7 @@ public class PessoaQuery {
     public void setTelefone(String telefone) { this.telefone = telefone; }
     public void setCpf(String cpf) { this.cpf = cpf; }
     public void setRg(String rg) { this.rg = rg; }
+    public void setSexo(Sexo sexo) { this.sexo = sexo; }
     public void setEstadoCivil(EstadoCivil estadoCivil) { this.estadoCivil = estadoCivil; }
     public void setCampus(String campus) { this.campus = campus; }
     public void setDataNascimentoFrom(DateTime dataNascimentoFrom) { this.dataNascimentoFrom = dataNascimentoFrom; }
