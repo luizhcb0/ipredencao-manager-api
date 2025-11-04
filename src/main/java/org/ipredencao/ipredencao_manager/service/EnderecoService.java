@@ -73,16 +73,43 @@ public class EnderecoService {
         Long currentUserId = securityUtils.getCurrentUserId();
         endereco.setUpdatedByUserId(currentUserId);
         
+        // Obter IDs atuais do endereço existente
+        List<Long> currentPersonIds = existing.getPessoaIds() != null ? existing.getPessoaIds() : List.of();
+        
+        // Se payload tem pessoaIds, validar e sincronizar
+        if (endereco.getPessoaIds() != null) {
+            // Encontrar pessoas removidas
+            List<Long> toRomeve = currentPersonIds.stream()
+                .filter(id -> !endereco.getPessoaIds().contains(id))
+                .toList();
+            
+            // Lançar exceção se houver remoções
+            if (!toRomeve.isEmpty()) {
+                throw new IllegalArgumentException(
+                    "Não é possível remover pessoas do endereço. As seguintes pessoas ficariam sem endereço: " 
+                    + toRomeve + ". Atribua um novo endereço a elas antes de removê-las deste."
+                );
+            }
+            
+            // Encontrar pessoas novas para vincular
+            List<Long> toAdd = endereco.getPessoaIds().stream()
+                .filter(id -> !currentPersonIds.contains(id))
+                .toList();
+            
+            // Vincular novas pessoas
+            if (!toAdd.isEmpty()) {
+                vincularPessoas(endereco, toAdd, currentUserId);
+            }
+        }
+        
         // Atualizar dados do endereço
         Endereco updated = enderecoRepository.update(endereco);
         
-        // Sincronizar pessoas vinculadas
+        // Definir pessoaIds no retorno
         if (endereco.getPessoaIds() != null) {
-            vincularPessoas(updated, endereco.getPessoaIds(), currentUserId);
             updated.setPessoaIds(endereco.getPessoaIds());
         } else {
             // Se não forneceu pessoaIds, manter os atuais
-            List<Long> currentPersonIds = pessoaRepository.find(PessoaQuery.builder().enderecoId(endereco.getId()).build()).stream().map(Pessoa::getId).toList();
             updated.setPessoaIds(currentPersonIds);
         }
         
