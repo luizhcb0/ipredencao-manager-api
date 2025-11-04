@@ -99,6 +99,7 @@ public class PessoaRepository {
             
             people = dsl.selectFrom(PESSOA)
                     .where(finalCondition)
+                    .orderBy(PESSOA.NOME.asc())
                     .limit(limit)
                     .offset(offset)
                     .fetch()
@@ -108,6 +109,7 @@ public class PessoaRepository {
         } else {
             people = dsl.selectFrom(PESSOA)
                     .where(finalCondition)
+                    .orderBy(PESSOA.NOME.asc())
                     .fetch()
                     .stream()
                     .map(this::fromRepository)
