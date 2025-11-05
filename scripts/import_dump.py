@@ -789,12 +789,12 @@ def fase1_importar_pessoas(config: ImportConfig, api_client: APIClient,
     logger.info(f"Carregando {config.pessoa_csv}")
     pessoa_df = pd.read_csv(config.pessoa_csv, sep=',', on_bad_lines='skip', encoding='utf-8')
     
-    # Carregar IPVideira.csv para identificar pessoas da congregação
+    # Carregar IPVideira.csv para identificar pessoas da congregação videira
     ipv_csv = config.dump_path / 'IPVideira.csv'
     logger.info(f"Carregando {ipv_csv}")
     ipv_df = pd.read_csv(ipv_csv, sep=',', on_bad_lines='skip', encoding='utf-8')
-    pessoas_congregacao = set(ipv_df['idPessoa'].tolist())
-    logger.info(f"Identificadas {len(pessoas_congregacao)} pessoas da congregação (IPVideira)")
+    pessoas_videira = set(ipv_df['idPessoa'].tolist())
+    logger.info(f"Identificadas {len(pessoas_videira)} pessoas da congregação (IPVideira)")
     
     # Carregar Igreja.csv para mapear IDs de igreja para nomes
     igreja_csv = config.dump_path / 'Igreja.csv'
@@ -842,7 +842,7 @@ def fase1_importar_pessoas(config: ImportConfig, api_client: APIClient,
             contacts = contacts_by_person.get(old_id, {})
             
             # Determinar campus
-            campus = 'CONGREGACAO' if old_id in pessoas_congregacao else 'SEDE'
+            campus = 'VIDEIRA' if old_id in pessoas_videira else 'SEDE'
             
             # Obter atos oficiais formatados
             atos_info = None

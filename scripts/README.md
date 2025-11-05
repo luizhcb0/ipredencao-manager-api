@@ -128,7 +128,7 @@ ps aux | grep import_dump.py
 **Dados importados:**
 - Nome, apelido, sexo, CPF, RG
 - Data de nascimento, data de falecimento
-- Estado civil, categoria, campus (SEDE ou CONGREGACAO)
+- Estado civil, categoria, campus (SEDE ou VIDEIRA)
 - Telefones (primário e secundários)
 - Emails (primário e secundários)
 - Profissões e empresas (arrays)
