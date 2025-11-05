@@ -227,7 +227,7 @@ def map_categoria(categoria_str: str) -> Optional[int]:
     Retorna None se a categoria indica que a pessoa não deve ser importada.
     """
     if pd.isna(categoria_str) or not str(categoria_str).strip():
-        return 36  # AGREGADO_FAMILIAR
+        return 32  # PESSOA_REFERENCIADA
     
     categoria = str(categoria_str).strip()
     
@@ -268,28 +268,30 @@ def map_categoria(categoria_str: str) -> Optional[int]:
         # Possível admissão
         '06.01.Possível admissão: em catequização': 24,  # EM_CATEQUIZACAO
         '06.94.Possível admissão: filhos de pais em catequização': 24,  # EM_CATEQUIZACAO
-        '06.95.Possível admissão: gestação': 34,  # GESTACAO
+        '06.95.Possível admissão: gestação': 29,  # GESTACAO
         '06.96.Possível admissão: admissão sobrestada (pedido, impedim. ou discord. CFW)': 25,  # ADMISSAO_SOBRESTADA
         '06.97.Possível admissão: batismo de menor sobrestado (credobatismo)': 26,  # BATISMO_MENOR_SOBRESTADO
         '06.98.Possível admissão: em avaliação': 22,  # AGUARDANDO_RESOLUCAO_PENDENCIA
         '06.99.Possível admissão: aguardando ficha cadastral': 22,  # AGUARDANDO_RESOLUCAO_PENDENCIA
         
-        # Agregados
-        '08.Agregado não membro (p.ex. familiar frequente)': 36,  # AGREGADO_FAMILIAR
-        '80.Oficiais da IPB': 36,  # AGREGADO_FAMILIAR
+        # Agregados -  AGREGADO_FAMILIAR
+        '08.Agregado não membro (p.ex. familiar frequente)': 31,  # AGREGADO_FAMILIAR
+        
+        # Oficiais da IPB - PESSOA_REFERENCIADA
+        '80.Oficiais da IPB': 32,  # PESSOA_REFERENCIADA
         
         # Missionários
-        '51.Missionários apoiados': 32,  # MISSIONARIO_APOIADO
+        '51.Missionários apoiados': 27,  # MISSIONARIO_APOIADO
         
         # Ex-membros
-        '91. Ex-membro da Igreja': 37,  # EX_MEMBRO
+        '91. Ex-membro da Igreja': 33,  # EX_MEMBRO
         
-        # Pessoa referenciada
-        '99.Pessoa referenciada (sistema)': 36,  # AGREGADO_FAMILIAR
+        # Pessoa referenciada (sistema)
+        '99.Pessoa referenciada (sistema)': 32,  # PESSOA_REFERENCIADA
     }
     
     # Categorias que NÃO devem ser importadas (retorna None)
-    # Ex-membros e visitantes serão tratados especialmente (importar apenas com relacionamentos)
+    # Visitantes serão tratados especialmente (importar apenas com relacionamentos)
     categorias_nao_importar = [
         '09.Pessoa fictícia (sistema)',
         '48.Aparece na contabilidade',
@@ -307,9 +309,9 @@ def map_categoria(categoria_str: str) -> Optional[int]:
     if categoria in categoria_map:
         return categoria_map[categoria]
     
-    # Se não encontrou, log warning e retorna AGREGADO_FAMILIAR como fallback
-    logger.warning(f"Categoria desconhecida: '{categoria}'. Usando AGREGADO_FAMILIAR como fallback.")
-    return 36  # AGREGADO_FAMILIAR
+    # Se não encontrou, log warning e retorna PESSOA_REFERENCIADA como fallback
+    logger.warning(f"Categoria desconhecida: '{categoria}'. Usando PESSOA_REFERENCIADA como fallback.")
+    return 32  # PESSOA_REFERENCIADA
 
 
 def infer_tipo_batismo(batismo_data: str, profissao_fe_data: str) -> str:
@@ -592,11 +594,11 @@ def should_import_pessoa(row: pd.Series) -> Tuple[bool, Optional[int]]:
     
     Para visitantes:
     - Importa apenas se houver relacionamentos
-    - Se importar, usa categoria AGREGADO_FAMILIAR (36)
+    - Se importar, usa categoria PESSOA_REFERENCIADA (32)
     
     Para ex-membros:
-    - Importa apenas se houver relacionamentos
-    - Mantém a categoria EX_MEMBRO (37)
+    - Sempre importa (para preservar histórico)
+    - Mantém a categoria EX_MEMBRO (33)
     """
     categoria_id = map_categoria(row.get('Categoria'))
     
@@ -604,20 +606,16 @@ def should_import_pessoa(row: pd.Series) -> Tuple[bool, Optional[int]]:
     if categoria_id is None:
         # Verificar se tem relacionamentos
         if has_relationships(row):
-            logger.info(f"Pessoa {row.get('Nome')} (ID {row.get('idPessoa')}) tem categoria não importável mas possui relacionamentos. Importando como AGREGADO_FAMILIAR.")
-            return (True, 36)  # Importar como AGREGADO_FAMILIAR
+            logger.info(f"Pessoa {row.get('Nome')} (ID {row.get('idPessoa')}) tem categoria não importável mas possui relacionamentos. Importando como PESSOA_REFERENCIADA.")
+            return (True, 32)  # Importar como PESSOA_REFERENCIADA
         else:
             logger.info(f"Pessoa {row.get('Nome')} (ID {row.get('idPessoa')}) tem categoria não importável e sem relacionamentos. Pulando.")
             return (False, None)
     
-    # Ex-membros (37) só devem ser importados se tiverem relacionamentos
-    if categoria_id == 37:  # EX_MEMBRO
-        if has_relationships(row):
-            logger.info(f"Ex-membro {row.get('Nome')} (ID {row.get('idPessoa')}) possui relacionamentos. Importando.")
-            return (True, categoria_id)
-        else:
-            logger.info(f"Ex-membro {row.get('Nome')} (ID {row.get('idPessoa')}) sem relacionamentos. Pulando.")
-            return (False, None)
+    # Ex-membros (33) devem ser sempre importados para preservar histórico
+    if categoria_id == 33:  # EX_MEMBRO
+        logger.info(f"Ex-membro {row.get('Nome')} (ID {row.get('idPessoa')}) será importado (preservar histórico).")
+        return (True, categoria_id)
     
     return (True, categoria_id)
 
@@ -629,11 +627,9 @@ def format_atos_oficiais(atos_df: pd.DataFrame, id_pessoa: int) -> str:
     """
     # Tipos de atos que devem ser incluídos (admissão e demissão)
     tipos_relevantes = [
+        # Atos de admissão
         'Admissão de membro comungante',
         'Admissão de menor não comungante',
-        'Demissão de membro comungante',
-        'Demissão de menor não comungante',
-        'Pedido de demissão',
         'Registro de pedido de admissão',
         'Aprovação em entrevista admissional',
         'Reprovação em entrevista admissional',
@@ -644,7 +640,25 @@ def format_atos_oficiais(atos_df: pd.DataFrame, id_pessoa: int) -> str:
         'Resolução de pendência em processo admissional',
         'Desistência de admissão (decisão pessoal)',
         'Opção por admissão por jurisdição a pedido de pessoa excluída por ausência em igreja IPB',
-        'Opção por admissão por jurisdição ex-officio por decurso de prazo de resposta'
+        'Opção por admissão por jurisdição ex-officio por decurso de prazo de resposta',
+        
+        # Atos de demissão/exclusão
+        'Demissão de membro comungante',
+        'Demissão de menor não comungante',
+        'Pedido de demissão',
+        'Registro de solicitação de desligamento',
+        'Registro de falecimento',
+        'Pena: Exclusão',
+        'Exclusão da catequização (voluntária ou de ofício)',
+        
+        # Atos de transferência
+        'Emissão de carta de transferência',
+        'Recebimento de carta de transferência',
+        'Recebimento de pedido de transferência',
+        'Comunicação de efetivação de transferência',
+        'Devolução de carta de transferência',
+        'Registro de solicitação de transferência para outra Igreja',
+        'Solicitação de carta de transferência'
     ]
     
     # Filtrar atos dessa pessoa

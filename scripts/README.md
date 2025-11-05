@@ -199,7 +199,8 @@ O script gera logs em:
 
 ### Categoria
 - "01.Membro" → MEMBRO_COMUNGANTE (id: 3)
-- Outros → AGREGADO_FAMILIAR (id: 36)
+- "08.Agregado não membro (p.ex. familiar frequente)" → AGREGADO_FAMILIAR (id: 31)
+- Outros → PESSOA_REFERENCIADA (id: 32)
 
 ### Tipo de Batismo (Inferido)
 

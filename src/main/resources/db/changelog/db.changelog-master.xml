@@ -7,6 +7,5 @@
 
     <include file="V001__2025-07-08_tables.sql" relativeToChangelogFile="true"/>
     <include file="V002__2025-08-19_auth_tables.sql" relativeToChangelogFile="true"/>
-    <include file="V003__2025-11-04_performance_indexes.sql" relativeToChangelogFile="true"/>
 
 </databaseChangeLog> 

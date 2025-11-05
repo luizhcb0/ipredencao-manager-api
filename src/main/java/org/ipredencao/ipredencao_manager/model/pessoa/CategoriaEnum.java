@@ -41,28 +41,22 @@ public enum CategoriaEnum {
     ADMISSAO_SOBRESTADA(25L, "Admissão sobrestada (pedido, impedim. ou discord. CFW)", 5L),
     BATISMO_MENOR_SOBRESTADO(26L, "Admissão: batismo de menor sobrestado (credobatismo)", 5L),
     
-    // Categorias do agregador Transferido (id=6)
-    TRANSFERIDO_OUTRA_IGREJA(27L, "Transferido para outra igreja", 6L),
+    // Categorias do agregador Missionário (id=6)
+    MISSIONARIO_APOIADO(27L, "Missionário apoiado", 6L),
+    MISSIONARIO_EVENTUALMENTE_AUXILIADO(28L, "Missionário eventualmente auxiliado", 6L),
     
-    // Categorias do agregador Excluido (id=7)
-    EXCLUIDO_A_PEDIDO(28L, "Excluído a pedido", 7L),
-    EXCLUIDO_POR_ABANDONO(29L, "Excluído por abandono", 7L),
-    EXCLUIDO_POR_DISCIPLINA(30L, "Excluído por disciplina", 7L),
-    EXCLUIDO_POR_FALECIMENTO(31L, "Excluído por falecimento", 7L),
+    // Categorias do agregador Possível admissão: gestação (id=7)
+    GESTACAO(29L, "Gestação", 7L),
+    GESTACAO_SIGILO_TEMPORARIO(30L, "Gestação mantida em sigilo temporariamente", 7L),
+
+    // Categorias do agregador Agregado não membro (id=8)
+    AGREGADO_FAMILIAR(31L, "Agregado ou familiar", 8L),
+
+    // Categorias do agregador Pessoa referenciada (id=9),
+    PESSOA_REFERENCIADA(32L, "Pessoa referenciada", 9L),
     
-    // Categorias do agregador Missionário (id=8)
-    MISSIONARIO_APOIADO(32L, "Missionário apoiado", 8L),
-    MISSIONARIO_EVENTUALMENTE_AUXILIADO(33L, "Missionário eventualmente auxiliado", 8L),
-    
-    // Categorias do agregador Possível admissão: gestação (id=9)
-    GESTACAO(34L, "Gestação", 9L),
-    GESTACAO_SIGILO_TEMPORARIO(35L, "Gestação mantida em sigilo temporariamente", 9L),
-    
-    // Categorias do agregador Pessoa referenciada (id=10)
-    AGREGADO_FAMILIAR(36L, "Agregado ou familiar", 10L),
-    
-    // Categorias do agregador Ex-membro da igreja (id=11)
-    EX_MEMBRO(37L, "Ex-membro", 11L);
+    // Categorias do agregador Ex-membro da igreja (id=10)
+    EX_MEMBRO(33L, "Ex-membro", 10L);
 
     private final Long id;
     private final String nome;

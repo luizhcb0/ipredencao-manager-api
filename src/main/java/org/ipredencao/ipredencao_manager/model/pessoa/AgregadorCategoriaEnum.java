@@ -9,12 +9,11 @@ public enum AgregadorCategoriaEnum {
     MEMBRO_NAO_COMUNGANTE(3L, "Membro não comungante"),
     ROL_A_PARTE(4L, "Rol à parte"),
     ADMITENDO(5L, "Admitendo"),
-    TRANSFERIDO(6L, "Transferido"),
-    EXCLUIDO(7L, "Excluido"),
-    MISSIONARIO(8L, "Missionário"),
-    POSSIVEL_ADMISSAO_GESTACAO(9L, "Possível admissão: gestação"),
-    PESSOA_REFERENCIADA(10L, "Pessoa referenciada"),
-    EX_MEMBRO_DA_IGREJA(11L, "Ex-membro da igreja");
+    MISSIONARIO(6L, "Missionário"),
+    POSSIVEL_ADMISSAO_GESTACAO(7L, "Possível admissão: gestação"),
+    AGREGADO_NAO_MEMBRO(8L, "Agregado não membro"),
+    PESSOA_REFERENCIADA(9L, "Pessoa referenciada"),
+    EX_MEMBRO_DA_IGREJA(10L, "Ex-membro da igreja");
     
     private final Long id;
     private final String nome;
