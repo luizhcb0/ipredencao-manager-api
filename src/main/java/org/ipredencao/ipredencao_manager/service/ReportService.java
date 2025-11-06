@@ -35,13 +35,16 @@ public class ReportService {
         // Buscar todos os formulários
         List<FormularioPessoa> forms = formularioRepository.find(FormularioPessoaQuery.builder().build());
         
-        // Contar chefes de família (pessoas que têm outras pessoas dependentes delas)
-        Set<Long> chefesDeFamiliaIds = people.stream()
+        // Contar chefes de família únicos removendo agregadores de categoria específicos
+        Long families = people.stream()
+            .filter(p -> {
+                Long agregadorId = p.getCategoria().getAgregadorCategoriaId();
+                return !agregadorId.equals(5L) && !agregadorId.equals(6L) && !agregadorId.equals(7L) && !agregadorId.equals(8L) && !agregadorId.equals(9L) && !agregadorId.equals(10L);
+            })
             .map(Pessoa::getChefeDeFamiliaId)
             .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
-        
-        Long totalFamilias = (long) chefesDeFamiliaIds.size();
+            .distinct()
+            .count();
         
         // Contar por subcategoria (categoria)
         Map<String, Long> pessoasPorCategoria = people.stream()
@@ -89,7 +92,7 @@ public class ReportService {
         return new SummaryResponse(
             (long) people.size(),
             (long) forms.size(),
-            totalFamilias,
+            families,
             pessoasPorCategoria,
             formsByStatus,
             pessoasPorCampus,
