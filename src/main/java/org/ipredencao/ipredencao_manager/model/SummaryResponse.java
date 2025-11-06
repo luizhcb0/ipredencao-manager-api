@@ -26,7 +26,7 @@ public class SummaryResponse {
     ) {
         this.totalPersons = totalPersons;
         this.totalForms = totalForms;
-        this.families = totalForms;
+        this.families = families;
         this.personsByCategory = personsByCategory;
         this.formsByStatus = formsByStatus;
         this.personsByCampus = personsByCampus;
