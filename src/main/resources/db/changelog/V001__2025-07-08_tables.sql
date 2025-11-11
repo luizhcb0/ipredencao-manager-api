@@ -107,6 +107,7 @@ CREATE TABLE IF NOT EXISTS endereco (
     logradouro VARCHAR(255),
     numero VARCHAR(20),
     complemento VARCHAR(255),
+    bairro VARCHAR(255),
     cidade VARCHAR(100),
     estado VARCHAR(32),
     coordenadas VARCHAR(64),
