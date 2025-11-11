@@ -9,6 +9,7 @@ public class Endereco {
     private String logradouro;
     private String numero;
     private String complemento;
+    private String bairro;
     private String cidade;
     private String estado;
     private String coordenadas;
@@ -56,6 +57,14 @@ public class Endereco {
 
     public void setComplemento(String complemento) {
         this.complemento = complemento;
+    }
+
+    public String getBairro() {
+        return bairro;
+    }
+
+    public void setBairro(String bairro) {
+        this.bairro = bairro;
     }
 
     public String getCidade() {
@@ -124,6 +133,7 @@ public class Endereco {
         if (cep != null ? !cep.equals(endereco.cep) : endereco.cep != null) return false;
         if (logradouro != null ? !logradouro.equals(endereco.logradouro) : endereco.logradouro != null) return false;
         if (numero != null ? !numero.equals(endereco.numero) : endereco.numero != null) return false;
+        if (bairro != null ? !bairro.equals(endereco.bairro) : endereco.bairro != null) return false;
         return complemento != null ? complemento.equals(endereco.complemento) : endereco.complemento == null;
     }
 
@@ -133,6 +143,7 @@ public class Endereco {
         result = 31 * result + (logradouro != null ? logradouro.hashCode() : 0);
         result = 31 * result + (numero != null ? numero.hashCode() : 0);
         result = 31 * result + (complemento != null ? complemento.hashCode() : 0);
+        result = 31 * result + (bairro != null ? bairro.hashCode() : 0);
         return result;
     }
 }
