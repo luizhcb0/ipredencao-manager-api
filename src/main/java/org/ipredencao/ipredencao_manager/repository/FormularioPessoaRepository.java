@@ -158,6 +158,7 @@ public class FormularioPessoaRepository {
         f.setEnderecoLogradouro(record.getEnderecoLogradouro());
         f.setEnderecoNumero(record.getEnderecoNumero());
         f.setEnderecoComplemento(record.getEnderecoComplemento());
+        f.setBairro(record.getBairro());
         f.setFotoUrl(record.getFotoUrl());
         if (record.getSexo() != null)
             f.setSexo(Sexo.valueOf(record.getSexo().name()));
@@ -216,6 +217,7 @@ public class FormularioPessoaRepository {
         record.setEnderecoLogradouro(f.getEnderecoLogradouro());
         record.setEnderecoNumero(f.getEnderecoNumero());
         record.setEnderecoComplemento(f.getEnderecoComplemento());
+        record.setBairro(f.getBairro());
         record.setFotoUrl(f.getFotoUrl());
         if (f.getSexo() != null)
             record.setSexo(org.ipredencao.ipredencao_manager.jooq.enums.Sexo.valueOf(f.getSexo().name()));

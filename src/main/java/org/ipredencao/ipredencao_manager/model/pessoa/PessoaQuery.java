@@ -21,6 +21,7 @@ public class PessoaQuery {
     private TipoBatismo tipoBatismo;
     private List<CategoriaEnum> categorias;
     private Long enderecoId;
+    private Boolean bookmark;
     private PaginationParameters pagination;
 
     // Construtor padrão para Jackson
@@ -44,6 +45,7 @@ public class PessoaQuery {
         this.tipoBatismo = builder.tipoBatismo;
         this.categorias = builder.categorias;
         this.enderecoId = builder.enderecoId;
+        this.bookmark = builder.bookmark;
         this.pagination = builder.pagination;
     }
 
@@ -65,6 +67,7 @@ public class PessoaQuery {
         private TipoBatismo tipoBatismo;
         private List<CategoriaEnum> categorias;
         private Long enderecoId;
+        private Boolean bookmark;
         private PaginationParameters pagination;
 
         public Builder id(Long id) {
@@ -147,6 +150,11 @@ public class PessoaQuery {
             return this;
         }
 
+        public Builder bookmark(Boolean bookmark) {
+            this.bookmark = bookmark;
+            return this;
+        }
+
         public Builder pagination(PaginationParameters pagination) {
             this.pagination = pagination;
             return this;
@@ -178,6 +186,7 @@ public class PessoaQuery {
     public TipoBatismo getTipoBatismo() { return tipoBatismo; }
     public List<CategoriaEnum> getCategorias() { return categorias; }
     public Long getEnderecoId() { return enderecoId; }
+    public Boolean getBookmark() { return bookmark; }
     public PaginationParameters getPagination() { return pagination; }
 
     // Setters para Jackson
@@ -197,5 +206,6 @@ public class PessoaQuery {
     public void setTipoBatismo(TipoBatismo tipoBatismo) { this.tipoBatismo = tipoBatismo; }
     public void setCategorias(List<CategoriaEnum> categorias) { this.categorias = categorias; }
     public void setEnderecoId(Long enderecoId) { this.enderecoId = enderecoId; }
+    public void setBookmark(Boolean bookmark) { this.bookmark = bookmark; }
     public void setPagination(PaginationParameters pagination) { this.pagination = pagination; }
 }
