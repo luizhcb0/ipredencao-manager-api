@@ -404,6 +404,9 @@ public class PessoaRepository {
         if (query.getEnderecoId() != null) {
             conditions.add(PESSOA.ENDERECO_ID.eq(query.getEnderecoId()));
         }
+        if (query.getBookmark() != null) {
+            conditions.add(PESSOA.BOOKMARK.eq(query.getBookmark()));
+        }
         return conditions;
     }
 
@@ -458,6 +461,7 @@ public class PessoaRepository {
             p.setTelefonesSecundarios(java.util.Arrays.asList(pessoaRecord.getTelefonesSecundarios()));
         }
         p.setUpdatedByUserId(pessoaRecord.getUpdatedBy());
+        p.setBookmark(pessoaRecord.getBookmark());
 
         return p;
     }
@@ -510,6 +514,9 @@ public class PessoaRepository {
             pessoaRecord.setTelefonesSecundarios(pessoa.getTelefonesSecundarios().toArray(new String[0]));
         }
         pessoaRecord.setUpdatedBy(pessoa.getUpdatedByUserId());
+        if (pessoa.getBookmark() != null) {
+            pessoaRecord.setBookmark(pessoa.getBookmark());
+        }
         
         return pessoaRecord;
     }

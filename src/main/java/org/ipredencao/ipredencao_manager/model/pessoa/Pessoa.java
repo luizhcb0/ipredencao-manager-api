@@ -37,6 +37,7 @@ public class Pessoa {
     private Sexo sexo;
     private Long chefeDeFamiliaId;
     private CategoriaEnum categoria;
+    private Boolean bookmark;
     private Long updatedByUserId;
 
     // Relacionamento qualificados com outras pessoas
@@ -101,6 +102,8 @@ public class Pessoa {
     public void setChefeDeFamiliaId(Long chefeDeFamiliaId) { this.chefeDeFamiliaId = chefeDeFamiliaId; }
     public CategoriaEnum getCategoria() { return categoria; }
     public void setCategoria(CategoriaEnum categoria) { this.categoria = categoria; }
+    public Boolean getBookmark() { return bookmark; }
+    public void setBookmark(Boolean bookmark) { this.bookmark = bookmark; }
     public List<Relacionamento> getRelacionamentos() { return relacionamentos; }
     public void setRelacionamentos(List<Relacionamento> relacionamentos) { this.relacionamentos = relacionamentos; }
     public Long getUpdatedByUserId() { return updatedByUserId; }
