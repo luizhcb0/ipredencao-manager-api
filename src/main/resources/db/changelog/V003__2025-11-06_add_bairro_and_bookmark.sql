@@ -8,3 +8,4 @@ ALTER TABLE pessoa_history
 ADD COLUMN IF NOT EXISTS bookmark BOOLEAN NOT NULL DEFAULT FALSE;
 
 CREATE INDEX IF NOT EXISTS idx_pessoa_bookmark ON pessoa(bookmark);
+
