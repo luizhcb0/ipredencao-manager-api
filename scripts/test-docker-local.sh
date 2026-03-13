@@ -61,6 +61,7 @@ docker run --rm -p 8080:8080 \
   -e DB_USERNAME="${DB_USER}" \
   -e DB_PASSWORD="${DB_PASSWORD}" \
   -e FIREBASE_SERVICE_ACCOUNT_KEY_CONTENT="${FIREBASE_JSON}" \
+  -e FIREBASE_LAMBDA_NAME="" \
   -e JWT_SECRET="test-secret-key-for-local-development-must-be-256-bits" \
   -e S3_BUCKET_NAME="ipredencao-prod-storage" \
   -e AWS_REGION="us-east-1" \
