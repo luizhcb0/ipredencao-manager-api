@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Firebase Proxy Lambda - Invocacao direta via AWS SDK
+
+Parameters:
+  FirebaseServiceAccountKey:
+    Type: String
+    NoEcho: true
+
+Resources:
+  FirebaseProxyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ipredencao-firebase-proxy
+      CodeUri: target/firebase-proxy-lambda-1.0.0.jar
+      Handler: org.ipredencao.lambda.FirebaseProxyHandler::handleRequest
+      Runtime: java17
+      MemorySize: 512
+      Timeout: 30
+      Environment:
+        Variables:
+          FIREBASE_SERVICE_ACCOUNT_KEY_CONTENT: !Ref FirebaseServiceAccountKey
+      # Sem Events de API Gateway - invocacao direta
+
+Outputs:
+  FunctionArn:
+    Value: !GetAtt FirebaseProxyFunction.Arn
+  FunctionName:
+    Value: !Ref FirebaseProxyFunction

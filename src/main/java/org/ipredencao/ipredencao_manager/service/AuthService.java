@@ -1,7 +1,6 @@
 package org.ipredencao.ipredencao_manager.service;
 
 import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.FirebaseToken;
 import org.ipredencao.ipredencao_manager.model.auth.*;
 import org.ipredencao.ipredencao_manager.model.auth.dto.LoginResponse;
 import org.ipredencao.ipredencao_manager.model.auth.dto.RegisterRequest;
@@ -10,6 +9,8 @@ import org.ipredencao.ipredencao_manager.model.user.Usuario;
 import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
 import org.ipredencao.ipredencao_manager.repository.SessaoUsuarioRepository;
 import org.ipredencao.ipredencao_manager.repository.UsuarioRepository;
+import org.ipredencao.ipredencao_manager.service.firebase.FirebaseUser;
+import org.ipredencao.ipredencao_manager.service.firebase.VerifiedToken;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,13 +41,13 @@ public class AuthService {
     public LoginResponse loginWithGoogle(String idToken, HttpServletRequest request) {
         try {
             // Verificar token com Firebase
-            FirebaseToken decodedToken = firebaseAuthService.verifyIdToken(idToken);
+            VerifiedToken decodedToken = firebaseAuthService.verifyIdToken(idToken);
             
             // Criar/atualizar usuário
             Usuario usuario = criarOuAtualizarUsuario(
-                decodedToken.getUid(),
-                decodedToken.getEmail(),
-                decodedToken.getName(),
+                decodedToken.uid(),
+                decodedToken.email(),
+                decodedToken.name(),
                 ProviderAutenticacao.GOOGLE
             );
             
@@ -73,11 +74,11 @@ public class AuthService {
     public LoginResponse loginWithApple(String idToken, String authorizationCode, String userData, HttpServletRequest request) {
         try {
             // Verificar token com Firebase (Apple Sign-In)
-            FirebaseToken decodedToken = firebaseAuthService.verifyIdToken(idToken);
+            VerifiedToken decodedToken = firebaseAuthService.verifyIdToken(idToken);
             
             // Extrair dados do usuário (Apple pode não fornecer nome em logins subsequentes)
-            String email = decodedToken.getEmail();
-            String name = decodedToken.getName();
+            String email = decodedToken.email();
+            String name = decodedToken.name();
             
             // Se não tem nome no token e foi fornecido userData, extrair do JSON
             if ((name == null || name.isEmpty()) && userData != null && !userData.isEmpty()) {
@@ -99,7 +100,7 @@ public class AuthService {
             
             // Criar/atualizar usuário
             Usuario usuario = criarOuAtualizarUsuario(
-                decodedToken.getUid(),
+                decodedToken.uid(),
                 email,
                 name,
                 ProviderAutenticacao.APPLE
@@ -123,13 +124,13 @@ public class AuthService {
     public LoginResponse loginWithEmail(String idToken, HttpServletRequest request) {
         try {
             // Verificar o ID Token com Firebase Admin SDK
-            FirebaseToken decodedToken = firebaseAuthService.verifyIdToken(idToken);
+            VerifiedToken decodedToken = firebaseAuthService.verifyIdToken(idToken);
             
             // Buscar ou criar usuário no banco
             Usuario usuario = criarOuAtualizarUsuario(
-                decodedToken.getUid(),
-                decodedToken.getEmail(),
-                decodedToken.getName(),
+                decodedToken.uid(),
+                decodedToken.email(),
+                decodedToken.name(),
                 ProviderAutenticacao.EMAIL
             );
             
@@ -157,7 +158,7 @@ public class AuthService {
             }
             
             // Criar usuário no Firebase
-            var userRecord = firebaseAuthService.createUser(
+            FirebaseUser userRecord = firebaseAuthService.createUser(
                 registerRequest.getEmail(),
                 registerRequest.getPassword(),
                 registerRequest.getName()
@@ -165,7 +166,7 @@ public class AuthService {
             
             // Criar usuário no banco
             Usuario usuario = new Usuario();
-            usuario.setFirebaseUid(userRecord.getUid());
+            usuario.setFirebaseUid(userRecord.uid());
             usuario.setEmail(registerRequest.getEmail());
             usuario.setName(registerRequest.getName());
             usuario.setProvider(ProviderAutenticacao.EMAIL);

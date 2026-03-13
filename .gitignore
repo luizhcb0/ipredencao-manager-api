@@ -33,6 +33,7 @@ application-local.properties
 # JOOQ
 /generated/
 /target/generated-sources/
+/lambda/firebase-proxy/target/
 
 # Outros
 *.class
