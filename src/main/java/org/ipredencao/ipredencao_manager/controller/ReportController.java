@@ -53,8 +53,7 @@ public class ReportController {
                 query = PessoaQuery.builder().build(); // Query vazia retorna todas as pessoas
             }
             List<Pessoa> people = pessoaService.find(query);
-            
-            log.info("Retornando {} pessoas para geração de PDF", people.size());
+            log.info("Retornando {} pessoas para geração de relatório", people.size());
             return ResponseEntity.ok(people);
             
         } catch (Exception e) {
