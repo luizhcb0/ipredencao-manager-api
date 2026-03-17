@@ -1,6 +1,8 @@
 package org.ipredencao.ipredencao_manager.model.pessoa;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
 import org.joda.time.DateTime;
@@ -35,7 +37,10 @@ public class Pessoa {
     private String informacoesAdicionais;
     private String fotoUrl;
     private Sexo sexo;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Long chefeDeFamiliaId;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private ChefeDeFamiliaRef chefeDeFamilia;
     private CategoriaEnum categoria;
     private Boolean bookmark;
     private Long updatedByUserId;
@@ -100,6 +105,8 @@ public class Pessoa {
     public void setSexo(Sexo sexo) { this.sexo = sexo; }
     public Long getChefeDeFamiliaId() { return chefeDeFamiliaId; }
     public void setChefeDeFamiliaId(Long chefeDeFamiliaId) { this.chefeDeFamiliaId = chefeDeFamiliaId; }
+    public ChefeDeFamiliaRef getChefeDeFamilia() { return chefeDeFamilia; }
+    public void setChefeDeFamilia(ChefeDeFamiliaRef chefeDeFamilia) { this.chefeDeFamilia = chefeDeFamilia; }
     public CategoriaEnum getCategoria() { return categoria; }
     public void setCategoria(CategoriaEnum categoria) { this.categoria = categoria; }
     public Boolean getBookmark() { return bookmark; }

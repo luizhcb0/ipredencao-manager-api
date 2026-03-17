@@ -2,7 +2,9 @@ package org.ipredencao.ipredencao_manager.model.pessoa;
 
 import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
 import org.joda.time.DateTime;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 public class PessoaQuery {
     private Long id;
@@ -23,6 +25,7 @@ public class PessoaQuery {
     private Long enderecoId;
     private Boolean bookmark;
     private PaginationParameters pagination;
+    private Set<PessoaInclude> includes = EnumSet.allOf(PessoaInclude.class);
 
     // Construtor padrão para Jackson
     public PessoaQuery() {}
@@ -47,6 +50,7 @@ public class PessoaQuery {
         this.enderecoId = builder.enderecoId;
         this.bookmark = builder.bookmark;
         this.pagination = builder.pagination;
+        this.includes = builder.includes;
     }
 
     // Builder pattern
@@ -69,6 +73,7 @@ public class PessoaQuery {
         private Long enderecoId;
         private Boolean bookmark;
         private PaginationParameters pagination;
+        private Set<PessoaInclude> includes = EnumSet.allOf(PessoaInclude.class);
 
         public Builder id(Long id) {
             this.id = id;
@@ -160,6 +165,18 @@ public class PessoaQuery {
             return this;
         }
 
+        public Builder includes(Set<PessoaInclude> includes) {
+            this.includes = includes;
+            return this;
+        }
+
+        public Builder includes(PessoaInclude... includes) {
+            this.includes = includes.length == 0
+                ? EnumSet.noneOf(PessoaInclude.class)
+                : EnumSet.of(includes[0], includes);
+            return this;
+        }
+
         public PessoaQuery build() {
             return new PessoaQuery(this);
         }
@@ -188,6 +205,7 @@ public class PessoaQuery {
     public Long getEnderecoId() { return enderecoId; }
     public Boolean getBookmark() { return bookmark; }
     public PaginationParameters getPagination() { return pagination; }
+    public Set<PessoaInclude> getIncludes() { return includes; }
 
     // Setters para Jackson
     public void setId(Long id) { this.id = id; }
@@ -208,4 +226,5 @@ public class PessoaQuery {
     public void setEnderecoId(Long enderecoId) { this.enderecoId = enderecoId; }
     public void setBookmark(Boolean bookmark) { this.bookmark = bookmark; }
     public void setPagination(PaginationParameters pagination) { this.pagination = pagination; }
+    public void setIncludes(Set<PessoaInclude> includes) { this.includes = includes; }
 }
