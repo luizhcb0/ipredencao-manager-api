@@ -6,40 +6,41 @@ import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistory;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistoryChange;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
 import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.SelectField;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.ipredencao.ipredencao_manager.model.pessoa.ChefeDeFamiliaRef;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
+import org.ipredencao.ipredencao_manager.model.pessoa.PessoaInclude;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoRelacionamento;
 import org.ipredencao.ipredencao_manager.model.user.Usuario;
 import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
 
 import static org.ipredencao.ipredencao_manager.jooq.Tables.PESSOA_HISTORY;
+import static org.ipredencao.ipredencao_manager.jooq.tables.Endereco.ENDERECO;
 import static org.ipredencao.ipredencao_manager.jooq.tables.Pessoa.PESSOA;
 import static org.ipredencao.ipredencao_manager.jooq.tables.PessoaRelacionamento.PESSOA_RELACIONAMENTO;
 import org.ipredencao.ipredencao_manager.jooq.tables.records.PessoaRecord;
 import org.ipredencao.ipredencao_manager.jooq.tables.records.PessoaRelacionamentoRecord;
-import java.util.List;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
 import org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil;
 import org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.jooq.Condition;
 import org.jooq.impl.DSL;
-
 @Repository
 public class PessoaRepository {
+
     @Autowired
     private DSLContext dsl;
     
     @Autowired
     private UsuarioRepository usuarioRepository;
     
-    @Autowired
-    private EnderecoRepository enderecoRepository;
     
     public Pessoa insert(Pessoa pessoa) {
         PessoaRecord pessoaRecord = toRepository(pessoa);
@@ -87,41 +88,50 @@ public class PessoaRepository {
 
     public List<Pessoa> find(PessoaQuery query) {
         List<Condition> conditions = buildConditions(query);
-        
         Condition finalCondition = conditions.stream()
             .reduce(DSL.noCondition(), Condition::and);
-        
-        // Montar query com ou sem paginação
-        List<Pessoa> people;
+
+        Set<PessoaInclude> includes = query.getIncludes();
+
+        var chefe = PESSOA.as("chefe");
+        var endereco = ENDERECO.as("end");
+        boolean includeChefe = includes.contains(PessoaInclude.CHEFE_DE_FAMILIA);
+        boolean includeEndereco = includes.contains(PessoaInclude.ENDERECO);
+
+        List<SelectField<?>> extraFields = new ArrayList<>();
+        if (includeChefe) extraFields.add(chefe.NOME.as("chefe_nome"));
+        if (includeEndereco) {
+            extraFields.addAll(List.of(
+                endereco.ID.as("end_id"), endereco.CEP.as("end_cep"),
+                endereco.LOGRADOURO.as("end_logradouro"), endereco.NUMERO.as("end_numero"),
+                endereco.COMPLEMENTO.as("end_complemento"), endereco.BAIRRO.as("end_bairro"),
+                endereco.CIDADE.as("end_cidade"), endereco.ESTADO.as("end_estado"),
+                endereco.COORDENADAS.as("end_coordenadas")));
+        }
+
+        var step = dsl.select(extraFields).select(PESSOA.asterisk()).from(PESSOA);
+        if (includeChefe)
+            step = step.leftJoin(chefe).on(PESSOA.CHEFE_DE_FAMILIA.eq(chefe.PESSOA_ID));
+        if (includeEndereco)
+            step = step.leftJoin(endereco).on(PESSOA.ENDERECO_ID.eq(endereco.ID));
+
+        List<Record> records;
         if (query.getPagination() != null) {
             int limit = query.getPagination().getLimit() != null ? query.getPagination().getLimit() : Integer.MAX_VALUE;
             int offset = query.getPagination().getOffset() != null ? query.getPagination().getOffset() : 0;
-            
-            people = dsl.selectFrom(PESSOA)
-                    .where(finalCondition)
-                    .orderBy(PESSOA.NOME.asc())
-                    .limit(limit)
-                    .offset(offset)
-                    .fetch()
-                    .stream()
-                    .map(this::fromRepository)
-                    .toList();
+            records = step.where(finalCondition).orderBy(PESSOA.NOME.asc()).limit(limit).offset(offset).fetch();
         } else {
-            people = dsl.selectFrom(PESSOA)
-                    .where(finalCondition)
-                    .orderBy(PESSOA.NOME.asc())
-                    .fetch()
-                    .stream()
-                    .map(this::fromRepository)
-                    .toList();
+            records = step.where(finalCondition).orderBy(PESSOA.NOME.asc()).fetch();
         }
-        
-        // Carregar relacionamentos para cada pessoa
-        for (Pessoa pessoa : people) {
-            List<Relacionamento> relationships = findRelationshipsByPersonId(pessoa.getId());
-            pessoa.setRelacionamentos(relationships);
+
+        List<Pessoa> people = records.stream()
+                .map(r -> fromRepository(r, includes))
+                .toList();
+
+        if (includes.contains(PessoaInclude.RELACIONAMENTOS)) {
+            loadRelationshipsForPeople(people);
         }
-        
+
         return people;
     }
     
@@ -277,20 +287,6 @@ public class PessoaRepository {
     }
     
     /**
-     * Busca todos os relacionamentos de uma pessoa, considerando que ela pode estar
-     * tanto na coluna pessoa_id quanto na pessoa_relacionada_id
-     */
-    private List<Relacionamento> findRelationshipsByPersonId(Long pessoaId) {
-        return dsl.selectFrom(PESSOA_RELACIONAMENTO)
-                .where(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pessoaId)
-                    .or(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(pessoaId)))
-                .fetch()
-                .stream()
-                .map(record -> mapRelationship(record, pessoaId))
-                .toList();
-    }
-    
-    /**
      * Mapeia um record de relacionamento para Relacionamento,
      * ajustando a perspectiva para a pessoa especificada
      */
@@ -359,6 +355,72 @@ public class PessoaRepository {
         };
     }
 
+    private void loadRelationshipsForPeople(List<Pessoa> people) {
+        if (people.isEmpty()) return;
+
+        List<Long> pessoaIds = people.stream().map(Pessoa::getId).toList();
+        var pp = PESSOA.as("pp");
+        var pr = PESSOA.as("pr");
+
+        var records = dsl.select(
+                PESSOA_RELACIONAMENTO.asterisk(),
+                pp.NOME.as("nome_principal"), pp.SEXO.as("sexo_principal"),
+                pr.NOME.as("nome_relacionada"), pr.SEXO.as("sexo_relacionada"))
+            .from(PESSOA_RELACIONAMENTO)
+            .leftJoin(pp).on(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pp.PESSOA_ID))
+            .leftJoin(pr).on(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(pr.PESSOA_ID))
+            .where(PESSOA_RELACIONAMENTO.PESSOA_ID.in(pessoaIds)
+                .or(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.in(pessoaIds)))
+            .fetch();
+
+        Map<Long, List<Relacionamento>> relMap = new HashMap<>();
+        for (var record : records) {
+            Long principalId = record.get(PESSOA_RELACIONAMENTO.PESSOA_ID);
+            Long relacionadaId = record.get(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID);
+            String nomePrincipal = record.get("nome_principal", String.class);
+            String nomeRelacionada = record.get("nome_relacionada", String.class);
+            var sexoPrincipal = record.get("sexo_principal", org.ipredencao.ipredencao_manager.jooq.enums.Sexo.class);
+            var tipoDb = record.get(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO);
+
+            if (pessoaIds.contains(principalId)) {
+                Relacionamento rel = new Relacionamento();
+                rel.setPessoaId(principalId);
+                rel.setPessoaRelacionadaId(relacionadaId);
+                rel.setNomePessoaRelacionada(nomeRelacionada);
+                rel.setInicioRelacionamento(DateTimeHelper.fromDb(record.get(PESSOA_RELACIONAMENTO.INICIO_RELACIONAMENTO)));
+                if (tipoDb != null) rel.setTipoRelacionamento(TipoRelacionamento.valueOf(tipoDb.name()));
+                relMap.computeIfAbsent(principalId, k -> new ArrayList<>()).add(rel);
+            }
+
+            if (pessoaIds.contains(relacionadaId)) {
+                Relacionamento rel = new Relacionamento();
+                rel.setPessoaId(relacionadaId);
+                rel.setPessoaRelacionadaId(principalId);
+                rel.setNomePessoaRelacionada(nomePrincipal);
+                rel.setInicioRelacionamento(DateTimeHelper.fromDb(record.get(PESSOA_RELACIONAMENTO.INICIO_RELACIONAMENTO)));
+                if (tipoDb != null) {
+                    TipoRelacionamento tipoOriginal = TipoRelacionamento.valueOf(tipoDb.name());
+                    rel.setTipoRelacionamento(inverterTipoRelacionamentoComSexo(tipoOriginal, sexoPrincipal));
+                }
+                relMap.computeIfAbsent(relacionadaId, k -> new ArrayList<>()).add(rel);
+            }
+        }
+
+        for (Pessoa p : people) {
+            p.setRelacionamentos(relMap.getOrDefault(p.getId(), List.of()));
+        }
+    }
+
+    private TipoRelacionamento inverterTipoRelacionamentoComSexo(
+            TipoRelacionamento tipo, org.ipredencao.ipredencao_manager.jooq.enums.Sexo sexo) {
+        return switch (tipo) {
+            case SEM_RELACIONAMENTO, CONJUGE, NOIVO, NAMORADO, IRMAO, VIUVO -> tipo;
+            case FILHO -> (sexo != null && sexo.name().equals("FEMININO"))
+                ? TipoRelacionamento.MAE : TipoRelacionamento.PAI;
+            case PAI, MAE, RESPONSAVEL -> TipoRelacionamento.FILHO;
+        };
+    }
+
     private List<Condition> buildConditions(PessoaQuery query) {
         List<Condition> conditions = new ArrayList<>();
         
@@ -410,8 +472,25 @@ public class PessoaRepository {
         return conditions;
     }
 
+    private Pessoa fromRepository(Record record, Set<PessoaInclude> includes) {
+        if (record == null) return null;
+        PessoaRecord pessoaRecord = record.into(PESSOA);
+        Pessoa p = mapPessoaFields(pessoaRecord);
+
+        if (includes.contains(PessoaInclude.ENDERECO))
+            p.setEndereco(extractEnderecoFromRecord(record));
+        if (includes.contains(PessoaInclude.CHEFE_DE_FAMILIA))
+            p.setChefeDeFamilia(extractChefeFromRecord(record, p.getChefeDeFamiliaId()));
+
+        return p;
+    }
+
     private Pessoa fromRepository(PessoaRecord pessoaRecord) {
         if (pessoaRecord == null) return null;
+        return mapPessoaFields(pessoaRecord);
+    }
+
+    private Pessoa mapPessoaFields(PessoaRecord pessoaRecord) {
         Pessoa p = new Pessoa();
         p.setId(pessoaRecord.getPessoaId());
         p.setNome(pessoaRecord.getNome());
@@ -432,19 +511,10 @@ public class PessoaRepository {
         p.setDataBatismo(DateTimeHelper.fromDb(pessoaRecord.getDataBatismo()));
         p.setDataProfissaoDeFe(DateTimeHelper.fromDb(pessoaRecord.getDataProfissaoDeFe()));
         p.setIgrejaBatismo(pessoaRecord.getIgrejaBatismo());
-        
-        // Converter arrays do PostgreSQL para List
-        if (pessoaRecord.getProfissao() != null && pessoaRecord.getProfissao().length > 0) {
+        if (pessoaRecord.getProfissao() != null && pessoaRecord.getProfissao().length > 0)
             p.setProfissao(Arrays.asList(pessoaRecord.getProfissao()));
-        }
-        if (pessoaRecord.getEmpresa() != null && pessoaRecord.getEmpresa().length > 0) {
+        if (pessoaRecord.getEmpresa() != null && pessoaRecord.getEmpresa().length > 0)
             p.setEmpresa(Arrays.asList(pessoaRecord.getEmpresa()));
-        }
-        
-        if (pessoaRecord.getEnderecoId() != null) {
-            Endereco endereco = enderecoRepository.findById(pessoaRecord.getEnderecoId());
-            p.setEndereco(endereco);
-        }
         p.setInformacoesAdicionais(pessoaRecord.getInformacoesAdicionais());
         p.setFotoUrl(pessoaRecord.getFotoUrl());
         if (pessoaRecord.getSexo() != null)
@@ -452,18 +522,36 @@ public class PessoaRepository {
         p.setChefeDeFamiliaId(pessoaRecord.getChefeDeFamilia());
         if (pessoaRecord.getCategoriaId() != null)
             p.setCategoria(CategoriaEnum.fromId(pessoaRecord.getCategoriaId()));
-
-        // Converter arrays do PostgreSQL para List<String>
-        if (pessoaRecord.getEmailsSecundarios() != null) {
-            p.setEmailsSecundarios(java.util.Arrays.asList(pessoaRecord.getEmailsSecundarios()));
-        }
-        if (pessoaRecord.getTelefonesSecundarios() != null) {
-            p.setTelefonesSecundarios(java.util.Arrays.asList(pessoaRecord.getTelefonesSecundarios()));
-        }
+        if (pessoaRecord.getEmailsSecundarios() != null)
+            p.setEmailsSecundarios(Arrays.asList(pessoaRecord.getEmailsSecundarios()));
+        if (pessoaRecord.getTelefonesSecundarios() != null)
+            p.setTelefonesSecundarios(Arrays.asList(pessoaRecord.getTelefonesSecundarios()));
         p.setUpdatedByUserId(pessoaRecord.getUpdatedBy());
         p.setBookmark(pessoaRecord.getBookmark());
-
         return p;
+    }
+
+    private Endereco extractEnderecoFromRecord(Record record) {
+        Long endId = record.get("end_id", Long.class);
+        if (endId == null) return null;
+        Endereco e = new Endereco();
+        e.setId(endId);
+        e.setCep(record.get("end_cep", String.class));
+        e.setLogradouro(record.get("end_logradouro", String.class));
+        e.setNumero(record.get("end_numero", String.class));
+        e.setComplemento(record.get("end_complemento", String.class));
+        e.setBairro(record.get("end_bairro", String.class));
+        e.setCidade(record.get("end_cidade", String.class));
+        e.setEstado(record.get("end_estado", String.class));
+        e.setCoordenadas(record.get("end_coordenadas", String.class));
+        return e;
+    }
+
+    private ChefeDeFamiliaRef extractChefeFromRecord(Record record, Long chefeId) {
+        if (chefeId == null) return null;
+        String chefeNome = record.get("chefe_nome", String.class);
+        if (chefeNome == null) return null;
+        return new ChefeDeFamiliaRef(chefeId, chefeNome);
     }
 
     private static PessoaRecord toRepository(Pessoa pessoa) {
