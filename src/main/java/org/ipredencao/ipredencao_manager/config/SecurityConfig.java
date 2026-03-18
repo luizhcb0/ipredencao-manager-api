@@ -1,14 +1,20 @@
 package org.ipredencao.ipredencao_manager.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
 import org.ipredencao.ipredencao_manager.filter.JwtAuthenticationFilter;
+import org.ipredencao.ipredencao_manager.model.ErrorResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import jakarta.servlet.DispatcherType;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -23,18 +29,23 @@ public class SecurityConfig {
     
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Autowired
+    private ObjectMapper objectMapper;
     
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource)) // Bean existente!
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                
                 // Endpoints públicos
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/formulario-pessoa").permitAll() // Anônimo pode CRIAR
-                .requestMatchers(HttpMethod.POST, "/api/formulario-pessoa/*/foto").permitAll() // Anônimo pode fazer upload de foto
+                .requestMatchers(HttpMethod.POST, "/api/formulario-pessoa").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/formulario-pessoa/*/foto").permitAll()
                 
                 // Actuator endpoints
                 .requestMatchers("/actuator/health").permitAll()
@@ -61,6 +72,20 @@ public class SecurityConfig {
                 .requestMatchers("/api/enderecos/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
                 
                 .anyRequest().authenticated()
+            )
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    objectMapper.writeValue(response.getOutputStream(),
+                            ErrorResponse.of(HttpStatus.UNAUTHORIZED, "Authentication token is missing or invalid"));
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    objectMapper.writeValue(response.getOutputStream(),
+                            ErrorResponse.of(HttpStatus.FORBIDDEN, "You do not have permission to access this resource"));
+                })
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         

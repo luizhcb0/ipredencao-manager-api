@@ -18,6 +18,7 @@ import org.ipredencao.ipredencao_manager.service.firebase.FirebaseUser;
 import org.ipredencao.ipredencao_manager.service.firebase.VerifiedToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -32,7 +33,9 @@ public class FirebaseAuthService {
     private String lambdaName;
     
     private AWSLambda lambdaClient;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Autowired
+    private ObjectMapper objectMapper;
     
     @PostConstruct
     public void init() {
