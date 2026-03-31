@@ -1,256 +1,152 @@
-# Tratamento de Erros - API
+# Error Handling - API
 
-## Visão Geral
+## Overview
 
-A API agora retorna erros de forma consistente e estruturada para o frontend, sem precisar de handlers globais ou classes complexas.
+The API returns errors in a consistent, structured JSON format through centralized exception handling. Controllers do not contain try-catch blocks — all exceptions are handled by `GlobalExceptionHandler` and `SecurityConfig`.
 
-## Formato da Resposta de Erro
-
-### Estrutura Padrão
+## Error Response Format
 
 ```json
 {
-  "error": "Erro",
-  "message": "Mensagem específica do erro"
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Invalid value for field 'dataNascimento' (expected type: DateTime)",
+  "timestamp": "2026-03-18T22:30:00.000Z"
 }
 ```
 
-### Estrutura com Contexto
+| Field | Description |
+|---|---|
+| `status` | HTTP status code |
+| `error` | HTTP status reason phrase |
+| `message` | Human-readable description of the error |
+| `timestamp` | ISO 8601 timestamp of when the error occurred |
+
+## Error Types by Status Code
+
+### 401 - Unauthorized
+**When:** Missing or invalid authentication token. Handled by `SecurityConfig` (`AuthenticationEntryPoint`).
 
 ```json
 {
-  "error": "Erro interno", 
-  "message": "Detalhes técnicos do erro"
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Authentication token is missing or invalid",
+  "timestamp": "2026-03-18T22:30:00.000Z"
 }
 ```
 
-## Tipos de Erro por Status Code
+### 403 - Forbidden
+**When:** Authenticated user lacks permission. Handled by `SecurityConfig` (`AccessDeniedHandler`).
+
+```json
+{
+  "status": 403,
+  "error": "Forbidden",
+  "message": "You do not have permission to access this resource",
+  "timestamp": "2026-03-18T22:30:00.000Z"
+}
+```
 
 ### 400 - Bad Request
-**Quando:** Dados inválidos, regras de negócio violadas
+**When:** Malformed JSON, type mismatch, or business rule violation. Handled by `GlobalExceptionHandler`.
 
-**Exemplo - Email duplicado:**
+Malformed JSON body:
 ```json
 {
-  "error": "Erro",
-  "message": "Já existe um formulário cadastrado com este email: joao@email.com"
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Invalid value for field 'dataNascimento' (expected type: DateTime)",
+  "timestamp": "2026-03-18T22:30:00.000Z"
 }
 ```
 
-**Exemplo - Validação:**
+Business rule violation (thrown as `IllegalArgumentException`):
 ```json
 {
-  "error": "Erro", 
-  "message": "Nome é obrigatório"
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Já existe um formulário cadastrado com este email: joao@email.com",
+  "timestamp": "2026-03-18T22:30:00.000Z"
 }
 ```
 
 ### 404 - Not Found
-**Quando:** Recurso não encontrado
+**When:** Resource not found. Thrown as `NoSuchElementException`.
 
-**Exemplo - Formulário:**
 ```json
 {
-  "error": "Erro",
-  "message": "Formulário não encontrado"
+  "status": 404,
+  "error": "Not Found",
+  "message": "Pessoa não encontrada",
+  "timestamp": "2026-03-18T22:30:00.000Z"
 }
 ```
 
-**Exemplo - Pessoa:**
-```json
-{
-  "error": "Erro",
-  "message": "Pessoa não encontrada"
-}
-```
+### 409 - Conflict
+**When:** State conflict. Thrown as `IllegalStateException`.
+
+### 501 - Not Implemented
+**When:** Feature not yet available. Thrown as `UnsupportedOperationException`.
 
 ### 500 - Internal Server Error
-**Quando:** Erros inesperados, problemas de infraestrutura
+**When:** Unexpected errors. Catch-all in `GlobalExceptionHandler`.
 
-**Exemplo - Erro geral:**
 ```json
 {
-  "error": "Erro interno",
-  "message": "Detalhes técnicos do erro"
+  "status": 500,
+  "error": "Internal Server Error",
+  "message": "An unexpected error occurred",
+  "timestamp": "2026-03-18T22:30:00.000Z"
 }
 ```
 
-**Exemplo - Upload:**
-```json
-{
-  "error": "Erro ao fazer upload",
-  "message": "IOException: Arquivo corrompido"
-}
-```
+## Architecture
 
-## Endpoints Atualizados
+### Exception → Handler Mapping
 
-### FormularioPessoaController
+| Exception | Handler | Status | Log Level |
+|---|---|---|---|
+| Missing/invalid token | `SecurityConfig` (AuthenticationEntryPoint) | 401 | — |
+| Access denied | `SecurityConfig` (AccessDeniedHandler) | 403 | — |
+| `HttpMessageNotReadableException` | `GlobalExceptionHandler` | 400 | WARN |
+| `IllegalArgumentException` | `GlobalExceptionHandler` | 400 | WARN |
+| `NoSuchElementException` | `GlobalExceptionHandler` | 404 | WARN |
+| `IllegalStateException` | `GlobalExceptionHandler` | 409 | WARN |
+| `UnsupportedOperationException` | `GlobalExceptionHandler` | 501 | WARN |
+| `Exception` (catch-all) | `GlobalExceptionHandler` | 500 | ERROR + stack trace |
 
-| Endpoint | Erros Tratados |
-|----------|---------------|
-| `POST /formulario-pessoa` | Email duplicado (400), Erro interno (500) |
-| `PUT /formulario-pessoa/{id}` | Email duplicado (400), Erro interno (500) |
-| `POST /formulario-pessoa/{id}/foto` | Formulário não encontrado (404), Erro upload (500) |
-| `GET /formulario-pessoa/{id}` | Formulário não encontrado (404), Erro interno (500) |
-| `POST /formulario-pessoa/search` | Erro na busca (500) |
+### How to Add Error Handling in Controllers
 
-### PessoaController
-
-| Endpoint | Erros Tratados |
-|----------|---------------|
-| `POST /pessoas` | Validação (400), Erro interno (500) |
-| `PUT /pessoas/{id}` | Pessoa não encontrada (404), Validação (400), Erro interno (500) |
-| `POST /pessoas/{id}/foto` | Pessoa não encontrada (404), Erro upload (500) |
-| `GET /pessoas/{id}` | Pessoa não encontrada (404), Erro interno (500) |
-| `POST /pessoas/search` | Erro na busca (500) |
-| `POST /pessoas/{id}/relacionamentos` | Pessoa não encontrada (404), Validação (400) |
-| `GET /pessoas/{id}/relacionamentos` | Pessoa não encontrada (404), Erro interno (500) |
-
-## Como Tratar no Frontend
-
-### JavaScript/Fetch
-
-```javascript
-fetch('/formulario-pessoa', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(formulario)
-})
-.then(response => {
-  if (!response.ok) {
-    return response.json().then(error => {
-      throw new Error(error.message || 'Erro desconhecido');
-    });
-  }
-  return response.json();
-})
-.then(data => {
-  console.log('Sucesso:', data);
-})
-.catch(error => {
-  console.error('Erro:', error.message);
-  // Mostrar erro para o usuário
-  alert(error.message);
-});
-```
-
-### Axios
-
-```javascript
-axios.post('/formulario-pessoa', formulario)
-  .then(response => {
-    console.log('Sucesso:', response.data);
-  })
-  .catch(error => {
-    const message = error.response?.data?.message || 'Erro desconhecido';
-    console.error('Erro:', message);
-    alert(message);
-  });
-```
-
-### React Hook
-
-```javascript
-const [error, setError] = useState('');
-
-const criarFormulario = async (dados) => {
-  try {
-    setError('');
-    const response = await fetch('/formulario-pessoa', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(dados)
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message);
-    }
-    
-    const resultado = await response.json();
-    // Sucesso...
-  } catch (err) {
-    setError(err.message);
-  }
-};
-```
-
-## Implementação no Backend
-
-### Padrão Usado
-
-Cada endpoint usa try-catch simples:
+Controllers should **not** use try-catch. Throw the appropriate exception and let the handler do the rest:
 
 ```java
+@GetMapping("/{id}")
+public ResponseEntity<Pessoa> getById(@PathVariable Long id) {
+    Pessoa pessoa = pessoaService.findById(id);  // throws NoSuchElementException if not found
+    return ResponseEntity.ok(pessoa);
+}
+
 @PostMapping
-public ResponseEntity<?> criar(@RequestBody FormularioPessoa formulario) {
-    try {
-        FormularioPessoa criado = service.criar(formulario);
-        return ResponseEntity.ok(criado);
-    } catch (IllegalArgumentException e) {
-        return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
-    } catch (Exception e) {
-        return ResponseEntity.internalServerError().body(new ErrorResponse("Erro interno", e.getMessage()));
-    }
+public ResponseEntity<Pessoa> create(@RequestBody Pessoa pessoa) {
+    // IllegalArgumentException for validation errors → 400
+    // NoSuchElementException for missing references → 404
+    Pessoa created = pessoaService.create(pessoa);
+    return ResponseEntity.ok(created);
 }
 ```
 
-### Classe ErrorResponse
+## Frontend Integration
 
-```java
-public class ErrorResponse {
-    private String error;
-    private String message;
-    
-    public ErrorResponse(String message) {
-        this.error = "Erro";
-        this.message = message;
-    }
-    
-    public ErrorResponse(String error, String message) {
-        this.error = error;
-        this.message = message;
-    }
-    
-    // getters e setters...
+```javascript
+try {
+  const response = await fetch('/api/pessoas', { method: 'POST', ... });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message);
+  }
+  return await response.json();
+} catch (error) {
+  console.error(error.message);
 }
-```
-
-## Vantagens da Abordagem
-
-✅ **Simples**: Sem handlers globais ou configurações complexas
-✅ **Consistente**: Mesmo formato em todos os endpoints  
-✅ **Flexível**: Cada endpoint pode customizar suas mensagens
-✅ **Informativo**: Mensagens claras em português
-✅ **Compatível**: Funciona com qualquer frontend
-
-## Testando
-
-### Teste de Email Duplicado
-
-```bash
-# Criar primeiro formulário
-curl -X POST http://localhost:8080/formulario-pessoa \
-  -H "Content-Type: application/json" \
-  -d '{"email": "teste@email.com", "nome": "João"}'
-
-# Tentar criar segundo com mesmo email
-curl -X POST http://localhost:8080/formulario-pessoa \
-  -H "Content-Type: application/json" \
-  -d '{"email": "teste@email.com", "nome": "Maria"}'
-
-# Resposta esperada:
-# Status: 400
-# Body: {"error": "Erro", "message": "Já existe um formulário cadastrado com este email: teste@email.com"}
-```
-
-### Teste de Recurso Não Encontrado
-
-```bash
-curl -X GET http://localhost:8080/formulario-pessoa/99999
-
-# Resposta esperada:
-# Status: 404  
-# Body: {"error": "Erro", "message": "Formulário não encontrado"}
 ```
