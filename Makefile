@@ -5,7 +5,8 @@ help: ## Mostrar ajuda
 	@echo "Desenvolvimento:"
 	@echo "  make run          - Subir DB, gerar JOOQ e rodar app"
 	@echo "  make db-up        - Subir DB e rodar migrations"
-	@echo "  make jooq         - Gerar código JOOQ"
+	@echo "  make jooq         - Gerar código JOOQ (sobe containers)"
+	@echo "  make jooq-only    - Gerar código JOOQ (DB já rodando)"
 	@echo "  make migrate      - Rodar migrations"
 	@echo "  make restart      - Reiniciar DB"
 	@echo "  make clean        - Limpar DB e volumes"
@@ -35,6 +36,9 @@ migrate:
 
 jooq:
 	$(GRADLEW) generateJooq
+
+jooq-only:
+	$(GRADLEW) generateJooq -x composeUp
 
 run: db-up jooq
 	$(GRADLEW) bootRun
