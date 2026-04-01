@@ -1,11 +1,13 @@
 package org.ipredencao.ipredencao_manager.controller;
 
 import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
+import org.ipredencao.ipredencao_manager.model.pessoa.PersonNote;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistory;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistoryResponse;
 import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
+import org.ipredencao.ipredencao_manager.repository.PersonNoteRepository;
 import org.ipredencao.ipredencao_manager.service.PessoaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,15 +16,18 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/pessoas")
 public class PessoaController {
 
     private final PessoaService pessoaService;
+    private final PersonNoteRepository personNoteRepository;
 
-    public PessoaController(PessoaService pessoaService) {
+    public PessoaController(PessoaService pessoaService, PersonNoteRepository personNoteRepository) {
         this.pessoaService = pessoaService;
+        this.personNoteRepository = personNoteRepository;
     }
 
     @PostMapping
@@ -68,5 +73,38 @@ public class PessoaController {
     @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
     public ResponseEntity<Relacionamento> createRelationship(@PathVariable Long id, @RequestBody Relacionamento relacionamento) {
         return ResponseEntity.ok(pessoaService.createRelationship(id, relacionamento));
+    }
+
+    @GetMapping("/{id}/notes")
+    @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
+    public ResponseEntity<List<PersonNote>> getNotes(@PathVariable Long id) {
+        return ResponseEntity.ok(personNoteRepository.findByPessoaId(id));
+    }
+
+    @PostMapping("/{id}/notes")
+    @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
+    public ResponseEntity<PersonNote> createNote(@PathVariable Long id, @RequestBody PersonNote note) {
+        return ResponseEntity.ok(personNoteRepository.insert(id, note.getContent(), note.getUpdatedBy()));
+    }
+
+    @PutMapping("/{id}/notes/{noteId}")
+    @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
+    public ResponseEntity<PersonNote> updateNote(@PathVariable Long id, @PathVariable Long noteId, @RequestBody PersonNote note) {
+        PersonNote existing = personNoteRepository.findById(noteId);
+        if (existing == null || !existing.getPessoaId().equals(id)) {
+            throw new NoSuchElementException("Note not found");
+        }
+        return ResponseEntity.ok(personNoteRepository.update(noteId, note.getContent(), note.getUpdatedBy()));
+    }
+
+    @DeleteMapping("/{id}/notes/{noteId}")
+    @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
+    public ResponseEntity<Void> deleteNote(@PathVariable Long id, @PathVariable Long noteId) {
+        PersonNote existing = personNoteRepository.findById(noteId);
+        if (existing == null || !existing.getPessoaId().equals(id)) {
+            throw new NoSuchElementException("Note not found");
+        }
+        personNoteRepository.delete(noteId);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -118,6 +118,16 @@ class APIClient:
         response = self._retry_request('POST', url, headers=headers, json=relacionamento)
         return response.json()
 
+    def create_note(self, pessoa_id: int, content: str) -> Dict:
+        """Cria uma nota para uma pessoa"""
+        url = f"{self.config.api_url}/api/pessoas/{pessoa_id}/notes"
+        headers = {
+            'Authorization': f'Bearer {self.config.token}',
+            'Content-Type': 'application/json'
+        }
+        response = self._retry_request('POST', url, headers=headers, json={'content': content})
+        return response.json()
+
 
 class CheckpointManager:
     """Gerenciamento de checkpoint para retomar importação"""
@@ -739,7 +749,6 @@ def create_pessoa_payload(row: pd.Series, contacts: Dict, categoria_id: int, cam
         'dataProfissaoDeFe': parse_date(row.get('ProfissãoDeFéData')),
         'igrejaBatismo': str(row['BatismoLocal']).strip() if not pd.isna(row.get('BatismoLocal')) else None,
         'tipoBatismo': infer_tipo_batismo(row.get('BatismoData'), row.get('ProfissãoDeFéData')),
-        'informacoesAdicionais': atos_info,
     }
     
     # Adicionar contatos consolidados
@@ -859,6 +868,12 @@ def fase1_importar_pessoas(config: ImportConfig, api_client: APIClient,
             
             new_id = result['id']
             id_mapper.add(old_id, new_id)
+
+            if atos_info:
+                try:
+                    api_client.create_note(new_id, atos_info)
+                except Exception as note_err:
+                    logger.warning(f"Erro ao criar nota para pessoa {new_id}: {note_err}")
             
             # Guardar nome da foto para fase 2
             foto_nome = str(row['ArquivoFoto']).strip() if not pd.isna(row.get('ArquivoFoto')) else None
