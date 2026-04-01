@@ -45,7 +45,6 @@ public class Pessoa {
     private Boolean bookmark;
     private Long updatedByUserId;
 
-    // Relacionamento qualificados com outras pessoas
     private List<Relacionamento> relacionamentos;
 
     // getters e setters

@@ -10,6 +10,7 @@ services:
       - EXTRA_CORS_ALLOWED_ORIGINS=*
       - EXTRA_CORS_ALLOWED_HEADERS=*
       - PERSISTENCE=1
+      - LOCALSTACK_ACKNOWLEDGE_ACCOUNT_REQUIREMENT=1
     volumes:
       - "./localstack:/var/lib/localstack"
       - "./localstack/create-buckets.sh:/etc/localstack/init/ready.d/create-buckets.sh"
