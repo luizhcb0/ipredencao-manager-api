@@ -1,5 +1,8 @@
 package org.ipredencao.ipredencao_manager.model;
 
+import org.ipredencao.ipredencao_manager.controller.views.BirthdayEntryView;
+
+import java.util.List;
 import java.util.Map;
 
 public class SummaryResponse {
@@ -12,6 +15,7 @@ public class SummaryResponse {
     private Map<String, Long> formsByStatus;
     private Map<String, Long> personsByCampus;
     private Map<String, Long> personsBySex;
+    private List<BirthdayEntryView> birthdays;
     
     public SummaryResponse() {}
     
@@ -87,5 +91,13 @@ public class SummaryResponse {
 
     public void setPersonsBySex(Map<String, Long> personsBySex) {
         this.personsBySex = personsBySex;
+    }
+
+    public List<BirthdayEntryView> getBirthdays() {
+        return birthdays;
+    }
+
+    public void setBirthdays(List<BirthdayEntryView> birthdays) {
+        this.birthdays = birthdays;
     }
 }
