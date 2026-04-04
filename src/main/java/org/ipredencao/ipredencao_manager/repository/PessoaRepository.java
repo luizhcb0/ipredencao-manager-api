@@ -515,7 +515,6 @@ public class PessoaRepository {
             p.setProfissao(Arrays.asList(pessoaRecord.getProfissao()));
         if (pessoaRecord.getEmpresa() != null && pessoaRecord.getEmpresa().length > 0)
             p.setEmpresa(Arrays.asList(pessoaRecord.getEmpresa()));
-        p.setInformacoesAdicionais(pessoaRecord.getInformacoesAdicionais());
         p.setFotoUrl(pessoaRecord.getFotoUrl());
         if (pessoaRecord.getSexo() != null)
             p.setSexo(Sexo.valueOf(pessoaRecord.getSexo().name()));
@@ -585,7 +584,6 @@ public class PessoaRepository {
         
         if (pessoa.getEndereco() != null)
             pessoaRecord.setEnderecoId(pessoa.getEndereco().getId());
-        pessoaRecord.setInformacoesAdicionais(pessoa.getInformacoesAdicionais());
         pessoaRecord.setFotoUrl(pessoa.getFotoUrl());
         if (pessoa.getSexo() != null)
             pessoaRecord.setSexo(org.ipredencao.ipredencao_manager.jooq.enums.Sexo.valueOf(pessoa.getSexo().name()));
@@ -632,7 +630,6 @@ public class PessoaRepository {
         compareAttribute(changes, "dataProfissaoDeFe", previous.getDataProfissaoDeFe(), current.getDataProfissaoDeFe());
         compareAttribute(changes, "igrejaBatismo", previous.getIgrejaBatismo(), current.getIgrejaBatismo());
         compareAttribute(changes, "enderecoId", previous.getEnderecoId(), current.getEnderecoId());
-        compareAttribute(changes, "informacoesAdicionais", previous.getInformacoesAdicionais(), current.getInformacoesAdicionais());
         compareAttribute(changes, "fotoUrl", previous.getFotoUrl(), current.getFotoUrl());
         compareAttribute(changes, "chefeDeFamilia", previous.getChefeDeFamilia(), current.getChefeDeFamilia());
         compareAttribute(changes, "categoriaId", previous.getCategoriaId(), current.getCategoriaId());

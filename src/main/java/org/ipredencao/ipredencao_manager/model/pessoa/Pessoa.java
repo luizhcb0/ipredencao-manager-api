@@ -34,7 +34,6 @@ public class Pessoa {
     private List<String> profissao;
     private List<String> empresa;
     private Endereco endereco;
-    private String informacoesAdicionais;
     private String fotoUrl;
     private Sexo sexo;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
@@ -96,8 +95,6 @@ public class Pessoa {
     public void setEmpresa(List<String> empresa) { this.empresa = empresa; }
     public Endereco getEndereco() { return endereco; }
     public void setEndereco(Endereco endereco) { this.endereco = endereco; }
-    public String getInformacoesAdicionais() { return informacoesAdicionais; }
-    public void setInformacoesAdicionais(String informacoesAdicionais) { this.informacoesAdicionais = informacoesAdicionais; }
     public String getFotoUrl() { return fotoUrl; }
     public void setFotoUrl(String fotoUrl) { this.fotoUrl = fotoUrl; }
     public Sexo getSexo() { return sexo; }
