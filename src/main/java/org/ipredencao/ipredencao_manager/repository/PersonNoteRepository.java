@@ -24,7 +24,7 @@ public class PersonNoteRepository {
         return dsl.select()
                 .from(PERSON_NOTE)
                 .where(PERSON_NOTE.PERSON_ID.eq(pessoaId))
-                .orderBy(PERSON_NOTE.ADDED_AT.desc())
+                .orderBy(PERSON_NOTE.ADDED_AT.asc())
                 .fetch(this::fromRepository);
     }
 
