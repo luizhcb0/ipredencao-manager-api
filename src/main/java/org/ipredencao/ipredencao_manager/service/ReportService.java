@@ -1,8 +1,10 @@
 package org.ipredencao.ipredencao_manager.service;
 
+import org.ipredencao.ipredencao_manager.controller.views.BirthdayEntryView;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoa;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoaQuery;
 import org.ipredencao.ipredencao_manager.model.*;
+import org.ipredencao.ipredencao_manager.model.pessoa.AgregadorCategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
@@ -12,6 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.MonthDay;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -19,7 +24,15 @@ import java.util.stream.Collectors;
 public class ReportService {
     
     private static final Logger log = LoggerFactory.getLogger(ReportService.class);
-    
+
+    private static final Set<AgregadorCategoriaEnum> BIRTHDAY_EXCLUDED_AGREGADORES = Set.of(
+        AgregadorCategoriaEnum.ROL_A_PARTE,
+        AgregadorCategoriaEnum.MISSIONARIO,
+        AgregadorCategoriaEnum.POSSIVEL_ADMISSAO_GESTACAO,
+        AgregadorCategoriaEnum.PESSOA_REFERENCIADA,
+        AgregadorCategoriaEnum.EX_MEMBRO_DA_IGREJA
+    );
+
     @Autowired
     private PessoaRepository pessoaRepository;
     
@@ -89,7 +102,7 @@ public class ReportService {
                 Collectors.counting()
             ));
 
-        return new SummaryResponse(
+        SummaryResponse response = new SummaryResponse(
             (long) people.size(),
             (long) forms.size(),
             families,
@@ -98,5 +111,43 @@ public class ReportService {
             pessoasPorCampus,
             pessoasPorSexo
         );
+
+        response.setBirthdays(filterBirthdays(people, LocalDate.now()));
+
+        return response;
+    }
+
+    private boolean isEligibleForBirthday(Pessoa p) {
+        if (p.getDataNascimento() == null || p.getDataFalecimento() != null) return false;
+        return !BIRTHDAY_EXCLUDED_AGREGADORES.contains(p.getCategoria().getAgregadorCategoria());
+    }
+
+    private List<BirthdayEntryView> filterBirthdays(List<Pessoa> people, LocalDate today) {
+        LocalDate from = today.minusDays(2);
+        LocalDate to = today.plusDays(7);
+
+        Map<MonthDay, LocalDate> targetDays = new LinkedHashMap<>();
+        for (LocalDate d = from; !d.isAfter(to); d = d.plusDays(1)) {
+            targetDays.put(MonthDay.from(d), d);
+        }
+
+        return people.stream()
+            .filter(this::isEligibleForBirthday)
+            .map(p -> {
+                MonthDay md = MonthDay.of(
+                    p.getDataNascimento().getMonthOfYear(),
+                    p.getDataNascimento().getDayOfMonth()
+                );
+                LocalDate birthdayDate = targetDays.get(md);
+                if (birthdayDate == null) return null;
+                int age = birthdayDate.getYear() - p.getDataNascimento().getYear();
+                return new BirthdayEntryView(
+                    p.getId(), p.getNome(), p.getFotoUrl(),
+                    p.getDataNascimento(), birthdayDate.toString(), age
+                );
+            })
+            .filter(Objects::nonNull)
+            .sorted(Comparator.comparing(BirthdayEntryView::getBirthdayDate))
+            .collect(Collectors.toList());
     }
 }
