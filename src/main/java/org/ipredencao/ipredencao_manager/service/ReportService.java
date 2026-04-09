@@ -25,12 +25,19 @@ public class ReportService {
     
     private static final Logger log = LoggerFactory.getLogger(ReportService.class);
 
-    private static final Set<AgregadorCategoriaEnum> BIRTHDAY_EXCLUDED_AGREGADORES = Set.of(
+    private static final Set<AgregadorCategoriaEnum> MEMBER_AGGREGGATORS = Set.of(
+        AgregadorCategoriaEnum.PASTOR,
+        AgregadorCategoriaEnum.MEMBRO_COMUNGANTE,
+        AgregadorCategoriaEnum.MEMBRO_NAO_COMUNGANTE,
+        AgregadorCategoriaEnum.ROL_A_PARTE
+    );
+
+    private static final Set<AgregadorCategoriaEnum> BIRTHDAY_AGGREGGATORS = EnumSet.of(
+        AgregadorCategoriaEnum.PASTOR,
+        AgregadorCategoriaEnum.MEMBRO_COMUNGANTE,
+        AgregadorCategoriaEnum.MEMBRO_NAO_COMUNGANTE,
         AgregadorCategoriaEnum.ROL_A_PARTE,
-        AgregadorCategoriaEnum.MISSIONARIO,
-        AgregadorCategoriaEnum.POSSIVEL_ADMISSAO_GESTACAO,
-        AgregadorCategoriaEnum.PESSOA_REFERENCIADA,
-        AgregadorCategoriaEnum.EX_MEMBRO_DA_IGREJA
+        AgregadorCategoriaEnum.AGREGADO_NAO_MEMBRO
     );
 
     @Autowired
@@ -41,61 +48,46 @@ public class ReportService {
     
     public SummaryResponse generateSummary() {
         log.info("Gerando resumo de dados...");
-        
-        // Buscar todas as pessoas
+
         List<Pessoa> people = pessoaRepository.find(PessoaQuery.builder().build());
-        
-        // Buscar todos os formulários
         List<FormularioPessoa> forms = formularioRepository.find(FormularioPessoaQuery.builder().build());
         
-        // Contar chefes de família únicos removendo agregadores de categoria específicos
-        Long families = people.stream()
-            .filter(p -> {
-                Long agregadorId = p.getCategoria().getAgregadorCategoriaId();
-                return !agregadorId.equals(5L) && !agregadorId.equals(6L) && !agregadorId.equals(7L) && !agregadorId.equals(8L) && !agregadorId.equals(9L) && !agregadorId.equals(10L);
-            })
+        List<Pessoa> members = people.stream()
+            .filter(p -> MEMBER_AGGREGGATORS.contains(p.getCategoria().getAgregadorCategoria()))
+            .toList();
+
+        Long families = members.stream()
             .map(Pessoa::getChefeDeFamiliaId)
             .filter(Objects::nonNull)
             .distinct()
             .count();
         
-        // Contar por subcategoria (categoria)
-        Map<String, Long> pessoasPorCategoria = people.stream()
+        Map<String, Long> peopleByCategory = people.stream()
             .filter(p -> p.getCategoria() != null)
             .collect(Collectors.groupingBy(
                 p -> p.getCategoria().name(), 
                 Collectors.counting()
             ));
         
-        // Contar formulários por status
         Map<String, Long> formsByStatus = new HashMap<>();
-        
-        // Inicializar todos os status com 0
         for (FormPessoaStatus status : FormPessoaStatus.values()) {
             formsByStatus.put(status.name(), 0L);
         }
+        formsByStatus.putAll(
+            forms.stream().filter(f -> f.getStatus() != null)
+                .collect(Collectors.groupingBy(
+                    f -> f.getStatus().name(), Collectors.counting()
+                ))
+        );
         
-        // Contar formulários existentes
-        Map<String, Long> formsByStatusCount = forms.stream()
-            .filter(f -> f.getStatus() != null)
-            .collect(Collectors.groupingBy(
-                f -> f.getStatus().name(), 
-                Collectors.counting()
-            ));
-        
-        // Atualizar com as contagens
-        formsByStatus.putAll(formsByStatusCount);
-        
-        // Contar pessoas por campus
-        Map<String, Long> pessoasPorCampus = people.stream()
+        Map<String, Long> byCampus = members.stream()
             .filter(p -> p.getCampus() != null && !p.getCampus().trim().isEmpty())
             .collect(Collectors.groupingBy(
                 Pessoa::getCampus, 
                 Collectors.counting()
             ));
         
-        // Contar pessoas por sexo
-        Map<String, Long> pessoasPorSexo = people.stream()
+        Map<String, Long> bySex = members.stream()
             .filter(p -> p.getSexo() != null)
             .collect(Collectors.groupingBy(
                 p -> p.getSexo().name(), 
@@ -103,13 +95,13 @@ public class ReportService {
             ));
 
         SummaryResponse response = new SummaryResponse(
-            (long) people.size(),
+            (long) members.size(),
             (long) forms.size(),
             families,
-            pessoasPorCategoria,
+            peopleByCategory,
             formsByStatus,
-            pessoasPorCampus,
-            pessoasPorSexo
+            byCampus,
+            bySex
         );
 
         response.setBirthdays(filterBirthdays(people, LocalDate.now()));
@@ -119,7 +111,7 @@ public class ReportService {
 
     private boolean isEligibleForBirthday(Pessoa p) {
         if (p.getDataNascimento() == null || p.getDataFalecimento() != null) return false;
-        return !BIRTHDAY_EXCLUDED_AGREGADORES.contains(p.getCategoria().getAgregadorCategoria());
+        return BIRTHDAY_AGGREGGATORS.contains(p.getCategoria().getAgregadorCategoria());
     }
 
     private List<BirthdayEntryView> filterBirthdays(List<Pessoa> people, LocalDate today) {
