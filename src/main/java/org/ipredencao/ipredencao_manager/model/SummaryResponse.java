@@ -7,42 +7,42 @@ import java.util.Map;
 
 public class SummaryResponse {
     
-    private Long totalPersons;
+    private Long totalMembers;
     private Long totalForms;
     private Long families;
 
     private Map<String, Long> personsByCategory;
     private Map<String, Long> formsByStatus;
-    private Map<String, Long> personsByCampus;
-    private Map<String, Long> personsBySex;
+    private Map<String, Long> membersByCampus;
+    private Map<String, Long> membersBySex;
     private List<BirthdayEntryView> birthdays;
     
     public SummaryResponse() {}
     
     public SummaryResponse(
-        Long totalPersons,
+        Long totalMembers,
         Long totalForms,
         Long families,
         Map<String, Long> personsByCategory,
         Map<String, Long> formsByStatus,
-        Map<String, Long> personsByCampus,
-        Map<String, Long> personsBySex
+        Map<String, Long> membersByCampus,
+        Map<String, Long> membersBySex
     ) {
-        this.totalPersons = totalPersons;
+        this.totalMembers = totalMembers;
         this.totalForms = totalForms;
         this.families = families;
         this.personsByCategory = personsByCategory;
         this.formsByStatus = formsByStatus;
-        this.personsByCampus = personsByCampus;
-        this.personsBySex = personsBySex;
+        this.membersByCampus = membersByCampus;
+        this.membersBySex = membersBySex;
     }
 
-    public Long getTotalPersons() {
-        return totalPersons;
+    public Long getTotalMembers() {
+        return totalMembers;
     }
 
-    public void setTotalPersons(Long totalPersons) {
-        this.totalPersons = totalPersons;
+    public void setTotalMembers(Long totalMembers) {
+        this.totalMembers = totalMembers;
     }
 
     public Long getTotalForms() {
@@ -77,20 +77,20 @@ public class SummaryResponse {
         this.formsByStatus = formsByStatus;
     }
 
-    public Map<String, Long> getPersonsByCampus() {
-        return personsByCampus;
+    public Map<String, Long> getMembersByCampus() {
+        return membersByCampus;
     }
 
-    public void setPersonsByCampus(Map<String, Long> personsByCampus) {
-        this.personsByCampus = personsByCampus;
+    public void setMembersByCampus(Map<String, Long> membersByCampus) {
+        this.membersByCampus = membersByCampus;
     }
 
-    public Map<String, Long> getPersonsBySex() {
-        return personsBySex;
+    public Map<String, Long> getMembersBySex() {
+        return membersBySex;
     }
 
-    public void setPersonsBySex(Map<String, Long> personsBySex) {
-        this.personsBySex = personsBySex;
+    public void setMembersBySex(Map<String, Long> membersBySex) {
+        this.membersBySex = membersBySex;
     }
 
     public List<BirthdayEntryView> getBirthdays() {
