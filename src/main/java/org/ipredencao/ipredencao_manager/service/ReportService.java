@@ -5,6 +5,7 @@ import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPesso
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoaQuery;
 import org.ipredencao.ipredencao_manager.model.*;
 import org.ipredencao.ipredencao_manager.model.pessoa.AgregadorCategoriaEnum;
+import org.ipredencao.ipredencao_manager.model.pessoa.IgrejaCampus;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
@@ -111,6 +112,7 @@ public class ReportService {
 
     private boolean isEligibleForBirthday(Pessoa p) {
         if (p.getDataNascimento() == null || p.getDataFalecimento() != null) return false;
+        if (!IgrejaCampus.SEDE.name().equals(p.getCampus())) return false;
         return BIRTHDAY_AGGREGGATORS.contains(p.getCategoria().getAgregadorCategoria());
     }
 
