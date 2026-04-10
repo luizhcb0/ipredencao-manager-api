@@ -176,7 +176,9 @@ public class FormularioPessoaService {
             endereco.setLogradouro(formulario.getEnderecoLogradouro());
             endereco.setNumero(formulario.getEnderecoNumero());
             endereco.setComplemento(formulario.getEnderecoComplemento());
-            
+            endereco.setBairro(formulario.getEnderecoBairro());
+            endereco.setCidade(formulario.getEnderecoCidade());
+
             // Tentar reutilizar endereço existente
             List<Endereco> enderecos = enderecoRepository.find(EnderecoQuery.builder()
                 .cep(endereco.getCep())

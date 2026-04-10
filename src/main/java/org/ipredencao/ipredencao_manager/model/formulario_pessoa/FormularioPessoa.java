@@ -35,7 +35,8 @@ public class FormularioPessoa {
     private String enderecoLogradouro;
     private String enderecoNumero;
     private String enderecoComplemento;
-    private String bairro;
+    private String enderecoBairro;
+    private String enderecoCidade;
     private String fotoUrl;
     private Sexo sexo;
     private String chefeDeFamilia;
@@ -99,8 +100,10 @@ public class FormularioPessoa {
     public void setEnderecoNumero(String enderecoNumero) { this.enderecoNumero = enderecoNumero; }
     public String getEnderecoComplemento() { return enderecoComplemento; }
     public void setEnderecoComplemento(String enderecoComplemento) { this.enderecoComplemento = enderecoComplemento; }
-    public String getBairro() { return bairro; }
-    public void setBairro(String bairro) { this.bairro = bairro; }
+    public String getEnderecoBairro() { return enderecoBairro; }
+    public void setEnderecoBairro(String enderecoBairro) { this.enderecoBairro = enderecoBairro; }
+    public String getEnderecoCidade() { return enderecoCidade; }
+    public void setEnderecoCidade(String enderecoCidade) { this.enderecoCidade = enderecoCidade; }
     public String getFotoUrl() { return fotoUrl; }
     public void setFotoUrl(String fotoUrl) { this.fotoUrl = fotoUrl; }
     public Sexo getSexo() { return sexo; }
