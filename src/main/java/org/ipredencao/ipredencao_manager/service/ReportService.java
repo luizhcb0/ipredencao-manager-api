@@ -50,7 +50,7 @@ public class ReportService {
     public SummaryResponse generateSummary() {
         log.info("Gerando resumo de dados...");
 
-        List<Pessoa> people = pessoaRepository.find(PessoaQuery.builder().build());
+        List<Pessoa> people = pessoaRepository.find(PessoaQuery.builder().includes().build());
         List<FormularioPessoa> forms = formularioRepository.find(FormularioPessoaQuery.builder().build());
         
         List<Pessoa> members = people.stream()

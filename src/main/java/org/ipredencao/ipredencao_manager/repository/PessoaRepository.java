@@ -6,6 +6,7 @@ import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistory;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistoryChange;
+import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistoryDiff;
 import java.util.*;
 import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
 import org.jooq.DSLContext;
@@ -17,13 +18,12 @@ import org.ipredencao.ipredencao_manager.model.pessoa.ChefeDeFamiliaRef;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaInclude;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoRelacionamento;
-import org.ipredencao.ipredencao_manager.model.user.Usuario;
-import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
 
 import static org.ipredencao.ipredencao_manager.jooq.Tables.PESSOA_HISTORY;
 import static org.ipredencao.ipredencao_manager.jooq.tables.Endereco.ENDERECO;
 import static org.ipredencao.ipredencao_manager.jooq.tables.Pessoa.PESSOA;
 import static org.ipredencao.ipredencao_manager.jooq.tables.PessoaRelacionamento.PESSOA_RELACIONAMENTO;
+import static org.ipredencao.ipredencao_manager.jooq.tables.Usuario.USUARIO;
 import org.ipredencao.ipredencao_manager.jooq.tables.records.PessoaRecord;
 import org.ipredencao.ipredencao_manager.jooq.tables.records.PessoaRelacionamentoRecord;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
@@ -37,9 +37,6 @@ public class PessoaRepository {
 
     @Autowired
     private DSLContext dsl;
-    
-    @Autowired
-    private UsuarioRepository usuarioRepository;
     
     
     public Pessoa insert(Pessoa pessoa) {
@@ -87,9 +84,7 @@ public class PessoaRepository {
     }
 
     public List<Pessoa> find(PessoaQuery query) {
-        List<Condition> conditions = buildConditions(query);
-        Condition finalCondition = conditions.stream()
-            .reduce(DSL.noCondition(), Condition::and);
+        Condition finalCondition = buildFinalCondition(query);
 
         Set<PessoaInclude> includes = query.getIncludes();
 
@@ -140,11 +135,7 @@ public class PessoaRepository {
      * (usado para paginação)
      */
     public long count(PessoaQuery query) {
-        List<Condition> conditions = buildConditions(query);
-        
-        Condition finalCondition = conditions.stream()
-            .reduce(DSL.noCondition(), Condition::and);
-        
+        Condition finalCondition = buildFinalCondition(query);
         return dsl.selectCount()
             .from(PESSOA)
             .where(finalCondition)
@@ -152,44 +143,32 @@ public class PessoaRepository {
     }
 
     public List<PessoaHistory> findHistoryByPersonId(Long pessoaId) {
-        // Buscar registros de histórico ordenados por data
-        List<PessoaHistoryRecord> historyRecords = dsl.selectFrom(PESSOA_HISTORY)
+        var usuario = USUARIO.as("u");
+
+        List<Record> records = dsl
+            .select(PESSOA_HISTORY.asterisk(), usuario.NAME.as("user_name"))
+            .from(PESSOA_HISTORY)
+            .leftJoin(usuario).on(PESSOA_HISTORY.UPDATED_BY.eq(usuario.ID))
             .where(PESSOA_HISTORY.PESSOA_ID.eq(pessoaId))
             .orderBy(PESSOA_HISTORY.ADDED_AT.desc())
             .fetch();
 
         List<PessoaHistory> history = new ArrayList<>();
-        
-        // Comparar registros adjacentes para identificar mudanças
-        for (int i = 0; i < historyRecords.size(); i++) {
-            PessoaHistoryRecord currentRecord = historyRecords.get(i);
-            PessoaHistoryRecord previousRecord = (i + 1 < historyRecords.size()) ? historyRecords.get(i + 1) : null;
-            
-            List<PessoaHistoryChange> changes = compareHistoryEntries(currentRecord, previousRecord);
-            
+        for (int i = 0; i < records.size(); i++) {
+            PessoaHistoryRecord currentRecord = records.get(i).into(PESSOA_HISTORY);
+            PessoaHistoryRecord previousRecord = (i + 1 < records.size())
+                ? records.get(i + 1).into(PESSOA_HISTORY) : null;
+
+            List<PessoaHistoryChange> changes = PessoaHistoryDiff.compare(currentRecord, previousRecord);
             if (!changes.isEmpty()) {
-                // Buscar o nome do usuário que fez a modificação
-                String updatedByUserName = null;
-                if (currentRecord.getUpdatedBy() != null) {
-                    UsuarioQuery query = UsuarioQuery.builder()
-                        .id(currentRecord.getUpdatedBy())
-                        .build();
-                    List<Usuario> usuarios = usuarioRepository.find(query);
-                    if (!usuarios.isEmpty()) {
-                        updatedByUserName = usuarios.getFirst().getName();
-                    }
-                }
-                
-                PessoaHistory entry = new PessoaHistory(
+                history.add(new PessoaHistory(
                     DateTimeHelper.fromDb(currentRecord.getAddedAt()),
                     currentRecord.getUpdatedBy(),
-                    updatedByUserName,
+                    records.get(i).get("user_name", String.class),
                     changes
-                );
-                history.add(entry);
+                ));
             }
         }
-        
         return history;
     }
 
@@ -240,8 +219,7 @@ public class PessoaRepository {
             return directRecord;
         }
         
-        // Verificar se relacionamento existe na forma inversa
-        List<TipoRelacionamento> tiposInversos = getTiposRelacionamentoInversos(tipo, pessoaRelacionadaId);
+        List<TipoRelacionamento> tiposInversos = TipoRelacionamento.getInversos(tipo);
         
         for (TipoRelacionamento tipoInverso : tiposInversos) {
             PessoaRelacionamentoRecord inverseRecord = dsl.selectFrom(PESSOA_RELACIONAMENTO)
@@ -257,33 +235,6 @@ public class PessoaRepository {
         }
         
         return null;
-    }
-    
-    /**
-     * Retorna os tipos de relacionamento que representam o inverso do tipo fornecido.
-     * Para tipos simétricos, retorna o mesmo tipo.
-     * Para tipos assimétricos, retorna o(s) tipo(s) complementar(es).
-     */
-    private List<TipoRelacionamento> getTiposRelacionamentoInversos(TipoRelacionamento tipo, Long pessoaRelacionadaId) {
-        List<TipoRelacionamento> tipos = new ArrayList<>();
-        
-        switch (tipo) {
-            // Tipos simétricos - retorna o mesmo tipo
-            case SEM_RELACIONAMENTO, CONJUGE, NOIVO, NAMORADO, IRMAO, VIUVO -> tipos.add(tipo);
-            
-            // Tipos assimétricos
-            case FILHO -> {
-                // Se estamos criando A→FILHO→B, verificar se existe B→PAI→A ou B→MAE→A
-                tipos.add(TipoRelacionamento.PAI);
-                tipos.add(TipoRelacionamento.MAE);
-            }
-            case PAI, MAE, RESPONSAVEL -> {
-                // Se estamos criando A→PAI/MAE/RESPONSAVEL→B, verificar se existe B→FILHO→A
-                tipos.add(TipoRelacionamento.FILHO);
-            }
-        }
-        
-        return tipos;
     }
     
     /**
@@ -310,7 +261,8 @@ public class PessoaRepository {
             rel.setPessoaRelacionadaId(record.getPessoaId()); // Outra pessoa
             if (record.getTipoRelacionamento() != null) {
                 TipoRelacionamento tipoOriginal = TipoRelacionamento.valueOf(record.getTipoRelacionamento().name());
-                rel.setTipoRelacionamento(inverterTipoRelacionamento(tipoOriginal, record.getPessoaId()));
+                Sexo sexo = find(PessoaQuery.builder().id(record.getPessoaId()).includes().build()).getFirst().getSexo();
+                rel.setTipoRelacionamento(TipoRelacionamento.inverter(tipoOriginal, sexo));
             }
         }
         
@@ -328,33 +280,6 @@ public class PessoaRepository {
         return rel;
     }
     
-    /**
-     * Inverte o tipo de relacionamento para manter a perspectiva da pessoa atual
-     * Ex: se A é FILHO de B, então B é PAI de A (se B for masculino) ou MAE (se B for feminino)
-     * 
-     * @param tipo Tipo de relacionamento original
-     * @param pessoaRelacionadaId ID da pessoa relacionada (necessário para verificar sexo em alguns casos)
-     * @return Tipo de relacionamento invertido
-     */
-    private TipoRelacionamento inverterTipoRelacionamento(TipoRelacionamento tipo, Long pessoaRelacionadaId) {
-        return switch (tipo) {
-            case SEM_RELACIONAMENTO -> TipoRelacionamento.SEM_RELACIONAMENTO; // Sem relacionamento é recíproco
-            case CONJUGE -> TipoRelacionamento.CONJUGE; // Cônjuge é recíproco
-            case NOIVO -> TipoRelacionamento.NOIVO; // Noivo é recíproco
-            case NAMORADO -> TipoRelacionamento.NAMORADO; // Namorado é recíproco
-            case FILHO -> {
-                // Se A é FILHO de B, verificar o sexo de B para saber se é PAI ou MAE
-                Sexo sexo = find(PessoaQuery.builder().id(pessoaRelacionadaId).build()).getFirst().getSexo();
-                yield (sexo == Sexo.FEMININO) ? TipoRelacionamento.MAE : TipoRelacionamento.PAI;
-            }
-            case PAI -> TipoRelacionamento.FILHO; // Se A é PAI de B, então B é FILHO de A
-            case MAE -> TipoRelacionamento.FILHO; // Se A é MÃE de B, então B é FILHO de A
-            case IRMAO -> TipoRelacionamento.IRMAO; // Irmão é recíproco
-            case RESPONSAVEL -> TipoRelacionamento.FILHO; // Se A é RESPONSÁVEL de B, então B é FILHO de A
-            case VIUVO ->  TipoRelacionamento.VIUVO; // Viúvo é recíproco
-        };
-    }
-
     private void loadRelationshipsForPeople(List<Pessoa> people) {
         if (people.isEmpty()) return;
 
@@ -400,7 +325,8 @@ public class PessoaRepository {
                 rel.setInicioRelacionamento(DateTimeHelper.fromDb(record.get(PESSOA_RELACIONAMENTO.INICIO_RELACIONAMENTO)));
                 if (tipoDb != null) {
                     TipoRelacionamento tipoOriginal = TipoRelacionamento.valueOf(tipoDb.name());
-                    rel.setTipoRelacionamento(inverterTipoRelacionamentoComSexo(tipoOriginal, sexoPrincipal));
+                    Sexo sexoModel = (sexoPrincipal != null) ? Sexo.valueOf(sexoPrincipal.name()) : null;
+                    rel.setTipoRelacionamento(TipoRelacionamento.inverter(tipoOriginal, sexoModel));
                 }
                 relMap.computeIfAbsent(relacionadaId, k -> new ArrayList<>()).add(rel);
             }
@@ -411,14 +337,9 @@ public class PessoaRepository {
         }
     }
 
-    private TipoRelacionamento inverterTipoRelacionamentoComSexo(
-            TipoRelacionamento tipo, org.ipredencao.ipredencao_manager.jooq.enums.Sexo sexo) {
-        return switch (tipo) {
-            case SEM_RELACIONAMENTO, CONJUGE, NOIVO, NAMORADO, IRMAO, VIUVO -> tipo;
-            case FILHO -> (sexo != null && sexo.name().equals("FEMININO"))
-                ? TipoRelacionamento.MAE : TipoRelacionamento.PAI;
-            case PAI, MAE, RESPONSAVEL -> TipoRelacionamento.FILHO;
-        };
+    private Condition buildFinalCondition(PessoaQuery query) {
+        return buildConditions(query).stream()
+            .reduce(DSL.noCondition(), Condition::and);
     }
 
     private List<Condition> buildConditions(PessoaQuery query) {
@@ -606,76 +527,6 @@ public class PessoaRepository {
         
         return pessoaRecord;
     }
-
-    /**
-     * Compara dois registros de histórico e identifica as mudanças
-     */
-    private List<PessoaHistoryChange> compareHistoryEntries(PessoaHistoryRecord current, PessoaHistoryRecord previous) {
-        List<PessoaHistoryChange> changes = new ArrayList<>();
-
-        if (previous == null) {
-            // Primeiro registro - não mostrar como mudança
-            return changes;
-        }
-
-        // Comparar cada campo
-        compareAttribute(changes, "nome", previous.getNome(), current.getNome());
-        compareAttribute(changes, "apelido", previous.getApelido(), current.getApelido());
-        compareAttribute(changes, "email", previous.getEmail(), current.getEmail());
-        compareAttribute(changes, "telefone", previous.getTelefone(), current.getTelefone());
-        compareAttribute(changes, "campus", previous.getCampus(), current.getCampus());
-        compareAttribute(changes, "estadoCivil", previous.getEstadoCivil(), current.getEstadoCivil());
-        compareAttribute(changes, "tipoBatismo", previous.getTipoBatismo(), current.getTipoBatismo());
-        compareAttribute(changes, "dataBatismo", previous.getDataBatismo(), current.getDataBatismo());
-        compareAttribute(changes, "dataProfissaoDeFe", previous.getDataProfissaoDeFe(), current.getDataProfissaoDeFe());
-        compareAttribute(changes, "igrejaBatismo", previous.getIgrejaBatismo(), current.getIgrejaBatismo());
-        compareAttribute(changes, "enderecoId", previous.getEnderecoId(), current.getEnderecoId());
-        compareAttribute(changes, "fotoUrl", previous.getFotoUrl(), current.getFotoUrl());
-        compareAttribute(changes, "chefeDeFamilia", previous.getChefeDeFamilia(), current.getChefeDeFamilia());
-        compareAttribute(changes, "categoriaId", previous.getCategoriaId(), current.getCategoriaId());
-
-        // Comparar arrays
-        compareArrays(changes, "profissao", previous.getProfissao(), current.getProfissao());
-        compareArrays(changes, "empresa", previous.getEmpresa(), current.getEmpresa());
-        compareArrays(changes, "emailsSecundarios", previous.getEmailsSecundarios(), current.getEmailsSecundarios());
-        compareArrays(changes, "telefonesSecundarios", previous.getTelefonesSecundarios(), current.getTelefonesSecundarios());
-
-        return changes;
-    }
-
-    /**
-     * Compara um campo individual e adiciona à lista de mudanças se houver diferença
-     */
-    private void compareAttribute(List<PessoaHistoryChange> changes, String attribute, Object oldValue, Object newValue) {
-        // Normalizar valores nulos
-        String old = (oldValue != null) ? oldValue.toString() : null;
-        String current = (newValue != null) ? newValue.toString() : null;
-        
-        // Verificar se houve mudança
-        if (!java.util.Objects.equals(old, current)) {
-            PessoaHistoryChange change = new PessoaHistoryChange(attribute, old, current);
-            changes.add(change);
-        }
-    }
-
-    /**
-     * Compara arrays e adiciona à lista de mudanças se houver diferença
-     */
-    private void compareArrays(List<PessoaHistoryChange> changes, String attribute, String[] oldArray, String[] newArray) {
-        // Converter arrays para listas para facilitar comparação
-        List<String> oldList = (oldArray != null) ? Arrays.asList(oldArray) : new ArrayList<>();
-        List<String> newList = (newArray != null) ? Arrays.asList(newArray) : new ArrayList<>();
-        
-        // Verificar se houve mudança
-        if (!oldList.equals(newList)) {
-            String old = oldList.isEmpty() ? null : String.join(", ", oldList);
-            String current = newList.isEmpty() ? null : String.join(", ", newList);
-            
-            PessoaHistoryChange change = new PessoaHistoryChange(attribute, old, current);
-            changes.add(change);
-        }
-    }
-
 
     private static PessoaRelacionamentoRecord toRepository(Relacionamento relacionamento, Long pessoaId) {
         PessoaRelacionamentoRecord record = new PessoaRelacionamentoRecord();
