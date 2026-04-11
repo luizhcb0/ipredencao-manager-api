@@ -33,5 +33,12 @@ public class PaginationParameters {
     public void setOffset(Integer offset) {
         this.offset = offset;
     }
+
+    public void applyDefaults() {
+        if (limit == null) limit = DEFAULT_LIMIT;
+        if (limit > MAX_LIMIT) limit = MAX_LIMIT;
+        if (limit < MIN_LIMIT) limit = MIN_LIMIT;
+        if (offset == null || offset < 0) offset = DEFAULT_OFFSET;
+    }
 }
 
