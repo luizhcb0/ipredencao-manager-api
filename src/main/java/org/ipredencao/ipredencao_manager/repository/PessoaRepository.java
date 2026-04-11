@@ -35,6 +35,12 @@ import org.jooq.impl.DSL;
 @Repository
 public class PessoaRepository {
 
+    private static final org.ipredencao.ipredencao_manager.jooq.tables.Pessoa CHEFE = PESSOA.as("chefe");
+    private static final org.ipredencao.ipredencao_manager.jooq.tables.Endereco END = ENDERECO.as("end");
+    private static final org.ipredencao.ipredencao_manager.jooq.tables.Usuario USR = USUARIO.as("u");
+    private static final org.ipredencao.ipredencao_manager.jooq.tables.Pessoa PP = PESSOA.as("pp");
+    private static final org.ipredencao.ipredencao_manager.jooq.tables.Pessoa PR = PESSOA.as("pr");
+
     @Autowired
     private DSLContext dsl;
     
@@ -87,28 +93,23 @@ public class PessoaRepository {
         Condition finalCondition = buildFinalCondition(query);
 
         Set<PessoaInclude> includes = query.getIncludes();
-
-        var chefe = PESSOA.as("chefe");
-        var endereco = ENDERECO.as("end");
         boolean includeChefe = includes.contains(PessoaInclude.CHEFE_DE_FAMILIA);
         boolean includeEndereco = includes.contains(PessoaInclude.ENDERECO);
 
         List<SelectField<?>> extraFields = new ArrayList<>();
-        if (includeChefe) extraFields.add(chefe.NOME.as("chefe_nome"));
+        if (includeChefe) extraFields.add(CHEFE.NOME);
         if (includeEndereco) {
             extraFields.addAll(List.of(
-                endereco.ID.as("end_id"), endereco.CEP.as("end_cep"),
-                endereco.LOGRADOURO.as("end_logradouro"), endereco.NUMERO.as("end_numero"),
-                endereco.COMPLEMENTO.as("end_complemento"), endereco.BAIRRO.as("end_bairro"),
-                endereco.CIDADE.as("end_cidade"), endereco.ESTADO.as("end_estado"),
-                endereco.COORDENADAS.as("end_coordenadas")));
+                END.ID, END.CEP, END.LOGRADOURO, END.NUMERO,
+                END.COMPLEMENTO, END.BAIRRO, END.CIDADE, END.ESTADO,
+                END.COORDENADAS));
         }
 
         var step = dsl.select(extraFields).select(PESSOA.asterisk()).from(PESSOA);
         if (includeChefe)
-            step = step.leftJoin(chefe).on(PESSOA.CHEFE_DE_FAMILIA.eq(chefe.PESSOA_ID));
+            step = step.leftJoin(CHEFE).on(PESSOA.CHEFE_DE_FAMILIA.eq(CHEFE.PESSOA_ID));
         if (includeEndereco)
-            step = step.leftJoin(endereco).on(PESSOA.ENDERECO_ID.eq(endereco.ID));
+            step = step.leftJoin(END).on(PESSOA.ENDERECO_ID.eq(END.ID));
 
         List<Record> records;
         if (query.getPagination() != null) {
@@ -143,12 +144,10 @@ public class PessoaRepository {
     }
 
     public List<PessoaHistory> findHistoryByPersonId(Long pessoaId) {
-        var usuario = USUARIO.as("u");
-
         List<Record> records = dsl
-            .select(PESSOA_HISTORY.asterisk(), usuario.NAME.as("user_name"))
+            .select(PESSOA_HISTORY.asterisk(), USR.NAME)
             .from(PESSOA_HISTORY)
-            .leftJoin(usuario).on(PESSOA_HISTORY.UPDATED_BY.eq(usuario.ID))
+            .leftJoin(USR).on(PESSOA_HISTORY.UPDATED_BY.eq(USR.ID))
             .where(PESSOA_HISTORY.PESSOA_ID.eq(pessoaId))
             .orderBy(PESSOA_HISTORY.ADDED_AT.desc())
             .fetch();
@@ -164,7 +163,7 @@ public class PessoaRepository {
                 history.add(new PessoaHistory(
                     DateTimeHelper.fromDb(currentRecord.getAddedAt()),
                     currentRecord.getUpdatedBy(),
-                    records.get(i).get("user_name", String.class),
+                    records.get(i).get(USR.NAME),
                     changes
                 ));
             }
@@ -284,16 +283,14 @@ public class PessoaRepository {
         if (people.isEmpty()) return;
 
         List<Long> pessoaIds = people.stream().map(Pessoa::getId).toList();
-        var pp = PESSOA.as("pp");
-        var pr = PESSOA.as("pr");
 
         var records = dsl.select(
                 PESSOA_RELACIONAMENTO.asterisk(),
-                pp.NOME.as("nome_principal"), pp.SEXO.as("sexo_principal"),
-                pr.NOME.as("nome_relacionada"), pr.SEXO.as("sexo_relacionada"))
+                PP.NOME, PP.SEXO,
+                PR.NOME, PR.SEXO)
             .from(PESSOA_RELACIONAMENTO)
-            .leftJoin(pp).on(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(pp.PESSOA_ID))
-            .leftJoin(pr).on(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(pr.PESSOA_ID))
+            .leftJoin(PP).on(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(PP.PESSOA_ID))
+            .leftJoin(PR).on(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(PR.PESSOA_ID))
             .where(PESSOA_RELACIONAMENTO.PESSOA_ID.in(pessoaIds)
                 .or(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.in(pessoaIds)))
             .fetch();
@@ -302,9 +299,9 @@ public class PessoaRepository {
         for (var record : records) {
             Long principalId = record.get(PESSOA_RELACIONAMENTO.PESSOA_ID);
             Long relacionadaId = record.get(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID);
-            String nomePrincipal = record.get("nome_principal", String.class);
-            String nomeRelacionada = record.get("nome_relacionada", String.class);
-            var sexoPrincipal = record.get("sexo_principal", org.ipredencao.ipredencao_manager.jooq.enums.Sexo.class);
+            String nomePrincipal = record.get(PP.NOME);
+            String nomeRelacionada = record.get(PR.NOME);
+            var sexoPrincipal = record.get(PP.SEXO);
             var tipoDb = record.get(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO);
 
             if (pessoaIds.contains(principalId)) {
@@ -452,24 +449,24 @@ public class PessoaRepository {
     }
 
     private Endereco extractEnderecoFromRecord(Record record) {
-        Long endId = record.get("end_id", Long.class);
+        Long endId = record.get(END.ID);
         if (endId == null) return null;
         Endereco e = new Endereco();
         e.setId(endId);
-        e.setCep(record.get("end_cep", String.class));
-        e.setLogradouro(record.get("end_logradouro", String.class));
-        e.setNumero(record.get("end_numero", String.class));
-        e.setComplemento(record.get("end_complemento", String.class));
-        e.setBairro(record.get("end_bairro", String.class));
-        e.setCidade(record.get("end_cidade", String.class));
-        e.setEstado(record.get("end_estado", String.class));
-        e.setCoordenadas(record.get("end_coordenadas", String.class));
+        e.setCep(record.get(END.CEP));
+        e.setLogradouro(record.get(END.LOGRADOURO));
+        e.setNumero(record.get(END.NUMERO));
+        e.setComplemento(record.get(END.COMPLEMENTO));
+        e.setBairro(record.get(END.BAIRRO));
+        e.setCidade(record.get(END.CIDADE));
+        e.setEstado(record.get(END.ESTADO));
+        e.setCoordenadas(record.get(END.COORDENADAS));
         return e;
     }
 
     private ChefeDeFamiliaRef extractChefeFromRecord(Record record, Long chefeId) {
         if (chefeId == null) return null;
-        String chefeNome = record.get("chefe_nome", String.class);
+        String chefeNome = record.get(CHEFE.NOME);
         if (chefeNome == null) return null;
         return new ChefeDeFamiliaRef(chefeId, chefeNome);
     }
