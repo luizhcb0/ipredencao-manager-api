@@ -16,6 +16,9 @@ AWS_PROFILE="personal"
 
 IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}"
 
+echo "🔄 Generating JOOQ code..."
+./gradlew generateJooq -x composeUp
+
 echo "📦 Building Docker image..."
 docker buildx build --platform linux/amd64 -t ${IMAGE_URI} .
 
