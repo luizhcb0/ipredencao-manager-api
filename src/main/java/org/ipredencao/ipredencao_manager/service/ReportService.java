@@ -11,6 +11,7 @@ import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
 import org.ipredencao.ipredencao_manager.repository.FormularioPessoaRepository;
 import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
+import org.ipredencao.ipredencao_manager.util.TimezoneContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -105,7 +106,7 @@ public class ReportService {
             bySex
         );
 
-        response.setBirthdays(filterBirthdays(people, LocalDate.now()));
+        response.setBirthdays(filterBirthdays(people, TimezoneContext.now()));
 
         return response;
     }
