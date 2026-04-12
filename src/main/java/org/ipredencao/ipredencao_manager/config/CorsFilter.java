@@ -5,6 +5,8 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import org.ipredencao.ipredencao_manager.util.TimezoneContext;
+
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -41,7 +43,7 @@ public class CorsFilter implements Filter {
         response.setHeader("Access-Control-Max-Age", "3600");
         response.setHeader("Access-Control-Allow-Headers",
                 "Content-Type, Authorization, X-Requested-With, Accept, Origin, " +
-                "Access-Control-Request-Method, Access-Control-Request-Headers");
+                "Access-Control-Request-Method, Access-Control-Request-Headers, " + TimezoneContext.HEADER);
 
         // Handle preflight requests
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
