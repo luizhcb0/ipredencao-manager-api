@@ -5,11 +5,13 @@ import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPesso
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoaQuery;
 import org.ipredencao.ipredencao_manager.model.*;
 import org.ipredencao.ipredencao_manager.model.pessoa.AgregadorCategoriaEnum;
+import org.ipredencao.ipredencao_manager.model.pessoa.IgrejaCampus;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus;
 import org.ipredencao.ipredencao_manager.repository.FormularioPessoaRepository;
 import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
+import org.ipredencao.ipredencao_manager.util.TimezoneContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +51,7 @@ public class ReportService {
     public SummaryResponse generateSummary() {
         log.info("Gerando resumo de dados...");
 
-        List<Pessoa> people = pessoaRepository.find(PessoaQuery.builder().build());
+        List<Pessoa> people = pessoaRepository.find(PessoaQuery.builder().includes().build());
         List<FormularioPessoa> forms = formularioRepository.find(FormularioPessoaQuery.builder().build());
         
         List<Pessoa> members = people.stream()
@@ -104,13 +106,14 @@ public class ReportService {
             bySex
         );
 
-        response.setBirthdays(filterBirthdays(people, LocalDate.now()));
+        response.setBirthdays(filterBirthdays(people, TimezoneContext.now()));
 
         return response;
     }
 
     private boolean isEligibleForBirthday(Pessoa p) {
         if (p.getDataNascimento() == null || p.getDataFalecimento() != null) return false;
+        if (!IgrejaCampus.SEDE.name().equals(p.getCampus())) return false;
         return BIRTHDAY_AGGREGGATORS.contains(p.getCategoria().getAgregadorCategoria());
     }
 

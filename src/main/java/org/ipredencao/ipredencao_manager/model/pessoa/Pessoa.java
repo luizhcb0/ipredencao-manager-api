@@ -24,8 +24,6 @@ public class Pessoa {
     private String rg;
     private EstadoCivil estadoCivil;
     private String igrejaAnterior;
-    private String situacaoIgrejaAnterior;
-    private String tempoNaIgreja;
     private String motivosParaAdmissao;
     private TipoBatismo tipoBatismo;
     private DateTime dataBatismo;
@@ -75,10 +73,6 @@ public class Pessoa {
     public void setEstadoCivil(EstadoCivil estadoCivil) { this.estadoCivil = estadoCivil; }
     public String getIgrejaAnterior() { return igrejaAnterior; }
     public void setIgrejaAnterior(String igrejaAnterior) { this.igrejaAnterior = igrejaAnterior; }
-    public String getSituacaoIgrejaAnterior() { return situacaoIgrejaAnterior; }
-    public void setSituacaoIgrejaAnterior(String situacaoIgrejaAnterior) { this.situacaoIgrejaAnterior = situacaoIgrejaAnterior; }
-    public String getTempoNaIgreja() { return tempoNaIgreja; }
-    public void setTempoNaIgreja(String tempoNaIgreja) { this.tempoNaIgreja = tempoNaIgreja; }
     public String getMotivosParaAdmissao() { return motivosParaAdmissao; }
     public void setMotivosParaAdmissao(String motivosParaAdmissao) { this.motivosParaAdmissao = motivosParaAdmissao; }
     public TipoBatismo getTipoBatismo() { return tipoBatismo; }
