@@ -35,6 +35,10 @@ application-local.properties
 /target/generated-sources/
 /lambda/firebase-proxy/target/
 
+# Scripts
+scripts/.env.local
+scripts/.dump/
+
 # Outros
 *.class
 *.jar
