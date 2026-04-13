@@ -256,4 +256,137 @@ Com o dump completo:
 - ~2.931 atos oficiais (admissão/demissão) para ~1.454 pessoas
 - Endereços copiados do chefe de família conforme necessário
 
+---
 
+# Desenvolvimento Local
+
+Scripts para rodar o backend localmente com dados de produção, sem afetar o ambiente de produção.
+
+## Pré-requisitos
+
+| Ferramenta | Para que | Necessário em |
+|------------|----------|---------------|
+| Docker | Rodar PostgreSQL, LocalStack e a API | Ambos os scripts |
+| PostgreSQL 17+ client tools | `pg_dump`, `pg_restore`, `createdb`, `dropdb` | `sync-prod-data.sh` (comandos `dump`, `restore`, `sync`) |
+| AWS CLI (`aws`) | Sincronizar bucket S3 | `sync-prod-data.sh` (comandos `s3`, `sync`) |
+| Credenciais de prod (DB + AWS) | Acesso aos dados de produção | `sync-prod-data.sh` apenas |
+
+> O `test-docker-local.sh` precisa apenas de **Docker**. Não requer PostgreSQL client tools, AWS CLI nem credenciais de produção.
+
+### Configurar credenciais (apenas para sync)
+
+```bash
+cp scripts/.env.local.example scripts/.env.local
+```
+
+Preencha os valores no `.env.local`:
+
+```
+PROD_DB_HOST=ipredencao-prod-db.cqon6ha0kufq.us-east-1.rds.amazonaws.com
+PROD_DB_PORT=5432
+PROD_DB_NAME=ipredencao_manager
+PROD_DB_USER=ipredencao_admin
+PROD_DB_PASSWORD=<sua-senha>
+
+AWS_ACCESS_KEY_ID=<sua-access-key>
+AWS_SECRET_ACCESS_KEY=<sua-secret-key>
+```
+
+> O arquivo `.env.local` é ignorado pelo git. Essas credenciais são usadas **apenas** pelo `sync-prod-data.sh` para baixar dados de produção.
+
+### PostgreSQL 17
+
+Se o `pg_dump` no PATH for uma versão anterior, o script tenta encontrar a versão 17 automaticamente em caminhos conhecidos (Homebrew no macOS, `/usr/lib/postgresql` no Linux, `Program Files` no Windows).
+
+Para forçar um caminho específico:
+
+```bash
+export PG_BIN_DIR="/opt/homebrew/opt/postgresql@17/bin"
+```
+
+## sync-prod-data.sh
+
+Sincroniza dados de produção (DB e S3) para o ambiente local Docker.
+
+### Comandos
+
+```bash
+# Sincronização completa: dump DB + restore DB + sync S3 (padrão)
+./scripts/sync-prod-data.sh
+
+# Apenas dump do banco de produção
+./scripts/sync-prod-data.sh dump
+
+# Apenas restore do dump para o DB local
+./scripts/sync-prod-data.sh restore
+
+# Apenas sync dos arquivos S3
+./scripts/sync-prod-data.sh s3
+
+# Ajuda
+./scripts/sync-prod-data.sh help
+```
+
+### O que cada comando faz
+
+| Comando   | Descrição |
+|-----------|-----------|
+| `sync`    | Executa `dump` + `restore` + `s3` em sequência |
+| `dump`    | Faz `pg_dump` do banco de produção e salva em `scripts/.dump/prod.dump` |
+| `restore` | Recria o DB local a partir do dump (encerra conexões ativas, dropa e recria o banco) |
+| `s3`      | Baixa os arquivos do bucket S3 de produção para `scripts/.dump/s3/` e sobe para o LocalStack local |
+
+### Fluxo
+
+```
+Produção                          Local
+┌──────────┐   pg_dump    ┌─────────────────┐
+│  RDS DB  │ ──────────── │ scripts/.dump/   │
+└──────────┘              │   prod.dump      │
+                          └────────┬────────┘
+                            pg_restore │
+                          ┌────────▼────────┐
+                          │ Docker Postgres  │
+                          │ localhost:54329  │
+                          └─────────────────┘
+
+┌──────────┐   aws s3 sync   ┌──────────────┐   aws s3 sync   ┌─────────────────┐
+│  S3 Prod │ ──────────────  │ scripts/.dump │ ──────────────  │   LocalStack    │
+│  Bucket  │                 │   /s3/        │                 │ localhost:4566  │
+└──────────┘                 └──────────────┘                  └─────────────────┘
+```
+
+## test-docker-local.sh
+
+Roda a imagem Docker do backend apontando para os serviços locais (DB + S3).
+
+```bash
+./scripts/test-docker-local.sh
+```
+
+### O que faz
+
+1. Sobe PostgreSQL e LocalStack via `docker compose`
+2. Roda o container da API na porta `8080` apontando para:
+   - **DB:** `host.docker.internal:54329` (PostgreSQL local)
+   - **S3:** `host.docker.internal:4566` (LocalStack local, bucket `ipredencao-storage`)
+3. Liquibase desabilitado (`LIQUIBASE_ENABLED=false`) — o schema já vem do dump
+4. Credenciais AWS são dummy (`localstack`/`localstack`) — o LocalStack aceita qualquer valor
+
+> **Nenhuma credencial de produção é necessária** para rodar este script. Tudo aponta para serviços locais.
+
+## Fluxo completo de setup
+
+```bash
+# 1. Configurar credenciais (uma vez)
+cp scripts/.env.local.example scripts/.env.local
+# Editar .env.local com suas credenciais
+
+# 2. Sincronizar dados de produção
+./scripts/sync-prod-data.sh
+
+# 3. Rodar o backend local
+./scripts/test-docker-local.sh
+
+# App disponível em http://localhost:8080
+```
