@@ -1,72 +1,72 @@
 #!/bin/bash
 set -e
 
-# Script para testar a imagem Docker localmente
+# Script para testar a imagem Docker localmente (apontando para DB local)
+#
+# Pre-requisito: sincronize os dados de prod antes com:
+#   ./sync-prod-data.sh sync
+#
 # Uso: ./test-docker-local.sh
 
-echo "🐳 Testando imagem Docker localmente..."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+API_DIR="$(dirname "$SCRIPT_DIR")"
+ENV_FILE="$SCRIPT_DIR/.env.local"
+
+if [ -f "$ENV_FILE" ]; then
+    source "$ENV_FILE"
+fi
+
+echo "Testando imagem Docker localmente..."
 echo ""
 
 # Verificar se o arquivo Firebase existe
-if [ ! -f "src/main/resources/ipredencao-manager-api-firebase-adminsdk.json" ]; then
-    echo "❌ Arquivo Firebase não encontrado!"
-    echo "   src/main/resources/ipredencao-manager-api-firebase-adminsdk.json"
+FIREBASE_PATH="$API_DIR/src/main/resources/ipredencao-manager-api-firebase-adminsdk.json"
+if [ ! -f "$FIREBASE_PATH" ]; then
+    echo "ERRO: Arquivo Firebase nao encontrado: $FIREBASE_PATH"
     exit 1
 fi
 
-# Verificar se jq está instalado
-if ! command -v jq &> /dev/null; then
-    echo "⚠️  jq não encontrado, tentando sem compactação..."
-    FIREBASE_JSON=$(cat src/main/resources/ipredencao-manager-api-firebase-adminsdk.json | tr -d '\n' | tr -d ' ')
+if command -v jq &> /dev/null; then
+    FIREBASE_JSON=$(jq -c < "$FIREBASE_PATH")
 else
-    FIREBASE_JSON=$(cat src/main/resources/ipredencao-manager-api-firebase-adminsdk.json | jq -c)
+    FIREBASE_JSON=$(tr -d '\n ' < "$FIREBASE_PATH")
 fi
 
-echo "✅ Firebase JSON carregado"
-echo ""
+echo "Firebase JSON carregado"
 
-# Configurações
-IMAGE_NAME="045935420308.dkr.ecr.us-east-1.amazonaws.com/ipredencao-manager-api:latest"
-# DB_HOST="host.docker.internal"  # Use seu IP no Linux
-# DB_PORT="54329"                  # Porta mapeada do seu PostgreSQL local
-DB_HOST="ipredencao-prod-db.cqon6ha0kufq.us-east-1.rds.amazonaws.com"
-DB_PORT="5432"
+# DB local (compose.yaml)
+DB_HOST="host.docker.internal"
+DB_PORT="54329"
 DB_NAME="ipredencao_manager"
-DB_USER="ipredencao_admin"
-DB_PASSWORD="${DB_PASSWORD:-ipredencao_manager}"  # Passar via env var se necessário
-AWS_ACCESS_KEY_ID="AKIAQVMPW4OKMX36BK5N"
-AWS_SECRET_ACCESS_KEY="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"
+DB_USER="ipredencao_manager"
+DB_PASSWORD="ipredencao_manager"
 
-echo "🚀 Rodando container..."
-echo "   Imagem: $IMAGE_NAME"
-echo "   Porta: 8080"
+# Garantir que DB local e LocalStack estao rodando
+docker compose -f "$API_DIR/compose.yaml" up -d --wait postgres localstack
+
+IMAGE_NAME="045935420308.dkr.ecr.us-east-1.amazonaws.com/ipredencao-manager-api:latest"
+
+echo "Rodando container..."
+echo "  Imagem: $IMAGE_NAME"
+echo "  DB: $DB_HOST:$DB_PORT (local)"
+echo "  Porta: 8080"
 echo ""
-
-# Verificar se as credenciais AWS estão configuradas
-if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
-    echo "⚠️  Credenciais AWS não encontradas!"
-    echo "   Configure as variáveis de ambiente:"
-    echo "   export AWS_ACCESS_KEY_ID='sua-access-key'"
-    echo "   export AWS_SECRET_ACCESS_KEY='sua-secret-key'"
-    echo ""
-    echo "   Ou use as credenciais do IAM user ipredencao-apprunner"
-    echo ""
-    exit 1
-fi
 
 docker run --rm -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e SERVER_PORT=8080 \
+  -e LIQUIBASE_ENABLED=false \
   -e DB_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}" \
   -e DB_USERNAME="${DB_USER}" \
   -e DB_PASSWORD="${DB_PASSWORD}" \
   -e FIREBASE_SERVICE_ACCOUNT_KEY_CONTENT="${FIREBASE_JSON}" \
   -e FIREBASE_LAMBDA_NAME="" \
   -e JWT_SECRET="test-secret-key-for-local-development-must-be-256-bits" \
-  -e S3_BUCKET_NAME="ipredencao-prod-storage" \
+  -e S3_BUCKET_NAME="ipredencao-storage" \
+  -e CLOUD_AWS_S3_ENDPOINT="http://host.docker.internal:4566" \
   -e AWS_REGION="us-east-1" \
-  -e AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
-  -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
+  -e AWS_ACCESS_KEY_ID="localstack" \
+  -e AWS_SECRET_ACCESS_KEY="localstack" \
   -e ALLOWED_ORIGINS="http://localhost:3000,http://localhost:3001" \
   ${IMAGE_NAME}
 
