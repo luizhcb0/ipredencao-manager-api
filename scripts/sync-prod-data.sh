@@ -76,6 +76,7 @@ resolve_pg_tools() {
     PG_RESTORE=$(find_pg_bin pg_restore) || true
     DROPDB=$(find_pg_bin dropdb) || true
     CREATEDB=$(find_pg_bin createdb) || true
+    PSQL=$(find_pg_bin psql) || true
 }
 
 usage() {
@@ -108,7 +109,7 @@ check_pg_prerequisites() {
     resolve_pg_tools
 
     local missing=0
-    for var in PG_DUMP PG_RESTORE DROPDB CREATEDB; do
+    for var in PG_DUMP PG_RESTORE DROPDB CREATEDB PSQL; do
         if [ -z "${!var}" ]; then
             echo "ERROR: ${var,,} (PostgreSQL $REQUIRED_PG_VERSION+) not found."
             missing=1
@@ -180,7 +181,7 @@ do_restore() {
     ensure_local_db
 
     echo "Restoring to local DB..."
-    PGPASSWORD="$LOCAL_DB_PASSWORD" psql \
+    PGPASSWORD="$LOCAL_DB_PASSWORD" "$PSQL" \
         -h "$LOCAL_DB_HOST" \
         -p "$LOCAL_DB_PORT" \
         -U "$LOCAL_DB_USER" \
@@ -209,6 +210,15 @@ do_restore() {
         --no-owner \
         --no-privileges \
         "$DUMP_FILE"
+
+    echo "Normalizing Liquibase changelog filenames for local Gradle..."
+    PGPASSWORD="$LOCAL_DB_PASSWORD" "$PSQL" \
+        -h "$LOCAL_DB_HOST" \
+        -p "$LOCAL_DB_PORT" \
+        -U "$LOCAL_DB_USER" \
+        -d "$LOCAL_DB_NAME" \
+        -c "UPDATE databasechangelog SET filename = 'src/main/resources/' || filename WHERE filename LIKE 'db/changelog/%';" \
+        --quiet
 
     echo "Restore complete. Local DB updated with prod data."
 }
