@@ -152,13 +152,15 @@ public class PessoaRepository {
             .orderBy(PESSOA_HISTORY.ADDED_AT.desc())
             .fetch();
 
+        Map<Long, String> chefeDeFamiliaNomes = loadChefeDeFamiliaNomes(records);
+
         List<PessoaHistory> history = new ArrayList<>();
         for (int i = 0; i < records.size(); i++) {
             PessoaHistoryRecord currentRecord = records.get(i).into(PESSOA_HISTORY);
             PessoaHistoryRecord previousRecord = (i + 1 < records.size())
                 ? records.get(i + 1).into(PESSOA_HISTORY) : null;
 
-            List<PessoaHistoryChange> changes = PessoaHistoryDiff.compare(currentRecord, previousRecord);
+            List<PessoaHistoryChange> changes = PessoaHistoryDiff.compare(currentRecord, previousRecord, chefeDeFamiliaNomes);
             if (!changes.isEmpty()) {
                 history.add(new PessoaHistory(
                     DateTimeHelper.fromDb(currentRecord.getAddedAt()),
@@ -169,6 +171,21 @@ public class PessoaRepository {
             }
         }
         return history;
+    }
+
+    private Map<Long, String> loadChefeDeFamiliaNomes(List<Record> historyRecords) {
+        Set<Long> ids = historyRecords.stream()
+            .map(r -> r.get(PESSOA_HISTORY.CHEFE_DE_FAMILIA))
+            .filter(Objects::nonNull)
+            .collect(java.util.stream.Collectors.toSet());
+
+        if (ids.isEmpty()) return Map.of();
+
+        return dsl
+            .select(PESSOA.PESSOA_ID, PESSOA.NOME)
+            .from(PESSOA)
+            .where(PESSOA.PESSOA_ID.in(ids))
+            .fetchMap(PESSOA.PESSOA_ID, PESSOA.NOME);
     }
 
     // CRUD para relacionamentos qualificados
