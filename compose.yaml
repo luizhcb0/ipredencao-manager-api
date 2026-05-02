@@ -1,6 +1,6 @@
 services:
   localstack:
-    image: localstack/localstack:latest
+    image: localstack/localstack:4.14.0
     container_name: localstack
     ports:
       - "4566:4566"
@@ -16,7 +16,7 @@ services:
       - "./localstack/create-buckets.sh:/etc/localstack/init/ready.d/create-buckets.sh"
       
   postgres:
-    image: 'postgres:15'
+    image: 'postgres:17'
     container_name: db
     environment:
       - 'POSTGRES_DB=ipredencao_manager'
