@@ -1,0 +1,2 @@
+ALTER TYPE tipo_relacionamento ADD VALUE IF NOT EXISTS 'EX_CONJUGE';
+ALTER TYPE tipo_relacionamento RENAME VALUE 'IRMÃO' TO 'IRMAO';

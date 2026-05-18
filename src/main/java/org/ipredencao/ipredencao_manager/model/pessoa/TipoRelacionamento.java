@@ -3,8 +3,8 @@ package org.ipredencao.ipredencao_manager.model.pessoa;
 import java.util.List;
 
 public enum TipoRelacionamento {
-    SEM_RELACIONAMENTO,
     CONJUGE,
+    EX_CONJUGE,
     NOIVO,
     NAMORADO,
     FILHO,
@@ -14,17 +14,17 @@ public enum TipoRelacionamento {
     RESPONSAVEL,
     VIUVO;
 
-    public static TipoRelacionamento inverter(TipoRelacionamento tipo, Sexo sexo) {
+    public static TipoRelacionamento invert(TipoRelacionamento tipo, Sexo sexo) {
         return switch (tipo) {
-            case SEM_RELACIONAMENTO, CONJUGE, NOIVO, NAMORADO, IRMAO, VIUVO -> tipo;
+            case CONJUGE, EX_CONJUGE, NOIVO, NAMORADO, IRMAO, VIUVO -> tipo;
             case FILHO -> (sexo == Sexo.FEMININO) ? MAE : PAI;
             case PAI, MAE, RESPONSAVEL -> FILHO;
         };
     }
 
-    public static List<TipoRelacionamento> getInversos(TipoRelacionamento tipo) {
+    public static List<TipoRelacionamento> getInverses(TipoRelacionamento tipo) {
         return switch (tipo) {
-            case SEM_RELACIONAMENTO, CONJUGE, NOIVO, NAMORADO, IRMAO, VIUVO -> List.of(tipo);
+            case CONJUGE, EX_CONJUGE, NOIVO, NAMORADO, IRMAO, VIUVO -> List.of(tipo);
             case FILHO -> List.of(PAI, MAE);
             case PAI, MAE, RESPONSAVEL -> List.of(FILHO);
         };
