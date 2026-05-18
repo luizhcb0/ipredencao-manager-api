@@ -248,7 +248,7 @@ public class PessoaService {
         if (rel.getPessoaRelacionadaId() == null && rel.getNomePessoaRelacionada() != null && !rel.getNomePessoaRelacionada().trim().isEmpty()) {
             Pessoa newPerson = new Pessoa();
             newPerson.setNome(rel.getNomePessoaRelacionada().trim());
-            newPerson.setCategoria(CategoriaEnum.AGREGADO_FAMILIAR);
+            newPerson.setCategoria(CategoriaEnum.PESSOA_REFERENCIADA);
             Pessoa createdPerson = pessoaRepository.insert(newPerson);
             rel.setPessoaRelacionadaId(createdPerson.getId());
         }
