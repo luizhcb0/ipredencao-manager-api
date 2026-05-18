@@ -288,9 +288,9 @@ public class FormularioPessoaService {
             case CASADO -> Optional.of(TipoRelacionamento.CONJUGE);
             case SOLTEIRO_NAMORANDO, DIVORCIADO_NAMORANDO, VIUVO_NAMORANDO -> Optional.of(TipoRelacionamento.NAMORADO);
             case SOLTEIRO_NOIVO, VIUVO_NOIVO, DIVORCIADO_NOIVO -> Optional.of(TipoRelacionamento.NOIVO);
-            case VIUVO_SEM_RELACIONAMENTO -> Optional.of(TipoRelacionamento.VIUVO);
-            case DIVORCIADO_SEM_RELACIONAMENTO -> Optional.of(TipoRelacionamento.EX_CONJUGE);
-            case SOLTEIRO_SEM_RELACIONAMENTO -> Optional.empty();
+            case SOLTEIRO_SEM_RELACIONAMENTO,
+                 DIVORCIADO_SEM_RELACIONAMENTO,
+                 VIUVO_SEM_RELACIONAMENTO -> Optional.empty();
         };
     }
 

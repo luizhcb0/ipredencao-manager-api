@@ -4,7 +4,6 @@ import java.util.List;
 
 public enum TipoRelacionamento {
     CONJUGE,
-    EX_CONJUGE,
     NOIVO,
     NAMORADO,
     FILHO,
@@ -16,7 +15,7 @@ public enum TipoRelacionamento {
 
     public static TipoRelacionamento invert(TipoRelacionamento tipo, Sexo sexo) {
         return switch (tipo) {
-            case CONJUGE, EX_CONJUGE, NOIVO, NAMORADO, IRMAO, VIUVO -> tipo;
+            case CONJUGE, NOIVO, NAMORADO, IRMAO, VIUVO -> tipo;
             case FILHO -> (sexo == Sexo.FEMININO) ? MAE : PAI;
             case PAI, MAE, RESPONSAVEL -> FILHO;
         };
@@ -24,7 +23,7 @@ public enum TipoRelacionamento {
 
     public static List<TipoRelacionamento> getInverses(TipoRelacionamento tipo) {
         return switch (tipo) {
-            case CONJUGE, EX_CONJUGE, NOIVO, NAMORADO, IRMAO, VIUVO -> List.of(tipo);
+            case CONJUGE, NOIVO, NAMORADO, IRMAO, VIUVO -> List.of(tipo);
             case FILHO -> List.of(PAI, MAE);
             case PAI, MAE, RESPONSAVEL -> List.of(FILHO);
         };
