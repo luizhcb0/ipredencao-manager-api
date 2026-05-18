@@ -97,7 +97,12 @@ jooq {
 liquibase {
 	activities {
 		main {
-			changelogFile 'src/main/resources/db/changelog/db.changelog-master.xml'
+			// searchPath + changelogFile relativo garantem que o filename gravado
+			// em databasechangelog seja 'db/changelog/...', igual ao que o
+			// Spring Boot Liquibase (classpath:db/changelog/...) usa em prod e
+			// no container local. Evita divergencia de paths entre Gradle e Spring.
+			searchPath 'src/main/resources'
+			changelogFile 'db/changelog/db.changelog-master.xml'
 			url 'jdbc:postgresql://localhost:54329/ipredencao_manager'
 			username 'ipredencao_manager'
 			password 'ipredencao_manager'

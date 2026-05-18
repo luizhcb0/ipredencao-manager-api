@@ -235,7 +235,7 @@ public class PessoaRepository {
             return directRecord;
         }
         
-        List<TipoRelacionamento> tiposInversos = TipoRelacionamento.getInversos(tipo);
+        List<TipoRelacionamento> tiposInversos = TipoRelacionamento.getInverses(tipo);
         
         for (TipoRelacionamento tipoInverso : tiposInversos) {
             PessoaRelacionamentoRecord inverseRecord = dsl.selectFrom(PESSOA_RELACIONAMENTO)
@@ -278,7 +278,7 @@ public class PessoaRepository {
             if (record.getTipoRelacionamento() != null) {
                 TipoRelacionamento tipoOriginal = TipoRelacionamento.valueOf(record.getTipoRelacionamento().name());
                 Sexo sexo = find(PessoaQuery.builder().id(record.getPessoaId()).includes().build()).getFirst().getSexo();
-                rel.setTipoRelacionamento(TipoRelacionamento.inverter(tipoOriginal, sexo));
+                rel.setTipoRelacionamento(TipoRelacionamento.invert(tipoOriginal, sexo));
             }
         }
         
@@ -340,7 +340,7 @@ public class PessoaRepository {
                 if (tipoDb != null) {
                     TipoRelacionamento tipoOriginal = TipoRelacionamento.valueOf(tipoDb.name());
                     Sexo sexoModel = (sexoPrincipal != null) ? Sexo.valueOf(sexoPrincipal.name()) : null;
-                    rel.setTipoRelacionamento(TipoRelacionamento.inverter(tipoOriginal, sexoModel));
+                    rel.setTipoRelacionamento(TipoRelacionamento.invert(tipoOriginal, sexoModel));
                 }
                 relMap.computeIfAbsent(relacionadaId, k -> new ArrayList<>()).add(rel);
             }

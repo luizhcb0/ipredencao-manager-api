@@ -211,15 +211,6 @@ do_restore() {
         --no-privileges \
         "$DUMP_FILE"
 
-    echo "Normalizing Liquibase changelog filenames for local Gradle..."
-    PGPASSWORD="$LOCAL_DB_PASSWORD" "$PSQL" \
-        -h "$LOCAL_DB_HOST" \
-        -p "$LOCAL_DB_PORT" \
-        -U "$LOCAL_DB_USER" \
-        -d "$LOCAL_DB_NAME" \
-        -c "UPDATE databasechangelog SET filename = 'src/main/resources/' || filename WHERE filename LIKE 'db/changelog/%';" \
-        --quiet
-
     echo "Restore complete. Local DB updated with prod data."
 }
 

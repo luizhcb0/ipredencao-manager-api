@@ -55,7 +55,7 @@ echo ""
 docker run --rm -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e SERVER_PORT=8080 \
-  -e LIQUIBASE_ENABLED=false \
+  -e LIQUIBASE_ENABLED=true \
   -e DB_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}" \
   -e DB_USERNAME="${DB_USER}" \
   -e DB_PASSWORD="${DB_PASSWORD}" \

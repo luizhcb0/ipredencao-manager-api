@@ -58,13 +58,14 @@ public class FormularioPessoaRepository {
         Condition finalCondition = conditions.stream()
             .reduce(DSL.noCondition(), Condition::and);
 
-        // Montar query com ou sem paginação
+        // Montar query com ou sem paginação. Sempre ordena pelo id mais recente.
         if (query.getPagination() != null) {
             int limit = query.getPagination().getLimit() != null ? query.getPagination().getLimit() : Integer.MAX_VALUE;
             int offset = query.getPagination().getOffset() != null ? query.getPagination().getOffset() : 0;
-            
+
             return dsl.selectFrom(FORMULARIO_PESSOA)
                     .where(finalCondition)
+                    .orderBy(FORMULARIO_PESSOA.FORMULARIO_PESSOA_ID.desc())
                     .limit(limit)
                     .offset(offset)
                     .fetch()
@@ -74,6 +75,7 @@ public class FormularioPessoaRepository {
         } else {
             return dsl.selectFrom(FORMULARIO_PESSOA)
                     .where(finalCondition)
+                    .orderBy(FORMULARIO_PESSOA.FORMULARIO_PESSOA_ID.desc())
                     .fetch()
                     .stream()
                     .map(FormularioPessoaRepository::fromRepository)

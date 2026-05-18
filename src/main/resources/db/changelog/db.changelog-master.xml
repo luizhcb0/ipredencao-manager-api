@@ -10,5 +10,6 @@
     <include file="V003__2025-11-06_add_bairro_and_bookmark.sql" relativeToChangelogFile="true"/>
     <include file="V004__person_note.sql" relativeToChangelogFile="true"/>
     <include file="V005__drop_informacoes_adicionais.sql" relativeToChangelogFile="true"/>
+    <include file="V006__update_relationship_types.sql" relativeToChangelogFile="true"/>
 
 </databaseChangeLog> 
