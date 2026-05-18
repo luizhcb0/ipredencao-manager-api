@@ -10,7 +10,6 @@ import org.ipredencao.ipredencao_manager.model.pessoa.TipoBatismo;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
-import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import java.util.Arrays;
@@ -53,10 +52,7 @@ public class FormularioPessoaRepository {
     }
 
     public List<FormularioPessoa> find(FormularioPessoaQuery query) {
-        List<Condition> conditions = buildConditions(query);
-
-        Condition finalCondition = conditions.stream()
-            .reduce(DSL.noCondition(), Condition::and);
+        Condition finalCondition = QueryConditions.reduceToAnd(buildConditions(query));
 
         // Montar query com ou sem paginação. Sempre ordena pelo id mais recente.
         if (query.getPagination() != null) {
@@ -88,10 +84,7 @@ public class FormularioPessoaRepository {
      * (usado para paginação)
      */
     public long count(FormularioPessoaQuery query) {
-        List<Condition> conditions = buildConditions(query);
-
-        Condition finalCondition = conditions.stream()
-            .reduce(DSL.noCondition(), Condition::and);
+        Condition finalCondition = QueryConditions.reduceToAnd(buildConditions(query));
 
         return dsl.selectCount()
             .from(FORMULARIO_PESSOA)
@@ -104,15 +97,15 @@ public class FormularioPessoaRepository {
 
         if (query.getId() != null) conditions.add(FORMULARIO_PESSOA.FORMULARIO_PESSOA_ID.eq(query.getId()));
         if (query.getIds() != null && !query.getIds().isEmpty()) conditions.add(FORMULARIO_PESSOA.FORMULARIO_PESSOA_ID.in(query.getIds()));
-        if (query.getNome() != null && !query.getNome().trim().isEmpty()) conditions.add(FORMULARIO_PESSOA.NOME.likeIgnoreCase("%" + query.getNome() + "%"));
-        if (query.getApelido() != null && !query.getApelido().trim().isEmpty()) conditions.add(FORMULARIO_PESSOA.APELIDO.likeIgnoreCase("%" + query.getApelido() + "%"));
-        if (query.getEmail() != null && !query.getEmail().trim().isEmpty()) conditions.add(FORMULARIO_PESSOA.EMAIL.eq(query.getEmail()));
-        if (query.getTelefone() != null && !query.getTelefone().trim().isEmpty()) conditions.add(FORMULARIO_PESSOA.TELEFONE.eq(query.getTelefone()));
-        if (query.getCpf() != null && !query.getCpf().trim().isEmpty()) conditions.add(FORMULARIO_PESSOA.CPF.eq(query.getCpf()));
-        if (query.getRg() != null && !query.getRg().trim().isEmpty()) conditions.add(FORMULARIO_PESSOA.RG.eq(query.getRg()));
+        QueryConditions.addUnaccentedLike(conditions, FORMULARIO_PESSOA.NOME, query.getNome());
+        QueryConditions.addUnaccentedLike(conditions, FORMULARIO_PESSOA.APELIDO, query.getApelido());
+        QueryConditions.addEqIfNotBlank(conditions, FORMULARIO_PESSOA.EMAIL, query.getEmail());
+        QueryConditions.addEqIfNotBlank(conditions, FORMULARIO_PESSOA.TELEFONE, query.getTelefone());
+        QueryConditions.addEqIfNotBlank(conditions, FORMULARIO_PESSOA.CPF, query.getCpf());
+        QueryConditions.addEqIfNotBlank(conditions, FORMULARIO_PESSOA.RG, query.getRg());
+        QueryConditions.addEqIfNotBlank(conditions, FORMULARIO_PESSOA.CAMPUS, query.getCampus());
         if (query.getEstadoCivil() != null)
             conditions.add(FORMULARIO_PESSOA.ESTADO_CIVIL.eq(org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil.valueOf(query.getEstadoCivil().name())));
-        if (query.getCampus() != null && !query.getCampus().trim().isEmpty()) conditions.add(FORMULARIO_PESSOA.CAMPUS.eq(query.getCampus()));
         if (query.getDataNascimentoFrom() != null)
             conditions.add(FORMULARIO_PESSOA.DATA_NASCIMENTO.greaterOrEqual(DateTimeHelper.toDb(query.getDataNascimentoFrom())));
         if (query.getDataNascimentoTo() != null)

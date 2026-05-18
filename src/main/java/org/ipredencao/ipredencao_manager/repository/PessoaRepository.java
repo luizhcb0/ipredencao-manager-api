@@ -31,7 +31,6 @@ import org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil;
 import org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.jooq.Condition;
-import org.jooq.impl.DSL;
 @Repository
 public class PessoaRepository {
 
@@ -352,45 +351,30 @@ public class PessoaRepository {
     }
 
     private Condition buildFinalCondition(PessoaQuery query) {
-        return buildConditions(query).stream()
-            .reduce(DSL.noCondition(), Condition::and);
+        return QueryConditions.reduceToAnd(buildConditions(query));
     }
 
     private List<Condition> buildConditions(PessoaQuery query) {
         List<Condition> conditions = new ArrayList<>();
-        
+
         if (query.getId() != null) conditions.add(PESSOA.PESSOA_ID.eq(query.getId()));
         if (query.getIds() != null && !query.getIds().isEmpty()) conditions.add(PESSOA.PESSOA_ID.in(query.getIds()));
-        
-        // Busca por nome ignorando acentos e case
-        if (query.getNome() != null && !query.getNome().trim().isEmpty()) {
-            conditions.add(
-                DSL.lower(DSL.function("unaccent", String.class, PESSOA.NOME))
-                    .like(DSL.lower(DSL.function("unaccent", String.class, DSL.inline("%" + query.getNome() + "%"))))
-            );
-        }
-        
-        // Busca por apelido ignorando acentos e case
-        if (query.getApelido() != null && !query.getApelido().trim().isEmpty()) {
-            conditions.add(
-                DSL.lower(DSL.function("unaccent", String.class, PESSOA.APELIDO))
-                    .like(DSL.lower(DSL.function("unaccent", String.class, DSL.inline("%" + query.getApelido() + "%"))))
-            );
-        }
-        if (query.getEmail() != null && !query.getEmail().trim().isEmpty()) conditions.add(PESSOA.EMAIL.eq(query.getEmail()));
-        if (query.getTelefone() != null && !query.getTelefone().trim().isEmpty()) conditions.add(PESSOA.TELEFONE.eq(query.getTelefone()));
-        if (query.getCpf() != null && !query.getCpf().trim().isEmpty()) conditions.add(PESSOA.CPF.eq(query.getCpf()));
-        if (query.getRg() != null && !query.getRg().trim().isEmpty()) conditions.add(PESSOA.RG.eq(query.getRg()));
-        if (query.getSexo() != null) 
+        QueryConditions.addUnaccentedLike(conditions, PESSOA.NOME, query.getNome());
+        QueryConditions.addUnaccentedLike(conditions, PESSOA.APELIDO, query.getApelido());
+        QueryConditions.addEqIfNotBlank(conditions, PESSOA.EMAIL, query.getEmail());
+        QueryConditions.addEqIfNotBlank(conditions, PESSOA.TELEFONE, query.getTelefone());
+        QueryConditions.addEqIfNotBlank(conditions, PESSOA.CPF, query.getCpf());
+        QueryConditions.addEqIfNotBlank(conditions, PESSOA.RG, query.getRg());
+        QueryConditions.addEqIfNotBlank(conditions, PESSOA.CAMPUS, query.getCampus());
+        if (query.getSexo() != null)
             conditions.add(PESSOA.SEXO.eq(org.ipredencao.ipredencao_manager.jooq.enums.Sexo.valueOf(query.getSexo().name())));
-        if (query.getEstadoCivil() != null) 
+        if (query.getEstadoCivil() != null)
             conditions.add(PESSOA.ESTADO_CIVIL.eq(org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil.valueOf(query.getEstadoCivil().name())));
-        if (query.getCampus() != null && !query.getCampus().trim().isEmpty()) conditions.add(PESSOA.CAMPUS.eq(query.getCampus()));
         if (query.getDataNascimentoFrom() != null)
             conditions.add(PESSOA.DATA_NASCIMENTO.greaterOrEqual(DateTimeHelper.toDb(query.getDataNascimentoFrom())));
-        if (query.getDataNascimentoTo() != null) 
+        if (query.getDataNascimentoTo() != null)
             conditions.add(PESSOA.DATA_NASCIMENTO.lessOrEqual(DateTimeHelper.toDb(query.getDataNascimentoTo())));
-        if (query.getTipoBatismo() != null) 
+        if (query.getTipoBatismo() != null)
             conditions.add(PESSOA.TIPO_BATISMO.eq(org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo.valueOf(query.getTipoBatismo().name())));
         if (query.getCategorias() != null && !query.getCategorias().isEmpty()) {
             List<Long> categoriaIds = query.getCategorias().stream()
@@ -398,12 +382,8 @@ public class PessoaRepository {
                 .toList();
             conditions.add(PESSOA.CATEGORIA_ID.in(categoriaIds));
         }
-        if (query.getEnderecoId() != null) {
-            conditions.add(PESSOA.ENDERECO_ID.eq(query.getEnderecoId()));
-        }
-        if (query.getBookmark() != null) {
-            conditions.add(PESSOA.BOOKMARK.eq(query.getBookmark()));
-        }
+        if (query.getEnderecoId() != null) conditions.add(PESSOA.ENDERECO_ID.eq(query.getEnderecoId()));
+        if (query.getBookmark() != null) conditions.add(PESSOA.BOOKMARK.eq(query.getBookmark()));
         return conditions;
     }
 
