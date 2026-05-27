@@ -4,7 +4,7 @@ import org.ipredencao.ipredencao_manager.model.official_act.FieldType;
 import org.ipredencao.ipredencao_manager.model.official_act.MetadataFieldSpec;
 import org.ipredencao.ipredencao_manager.controller.form.OfficialActCreateForm;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActFormEnum;
-import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -50,9 +50,9 @@ public final class OfficialActFixture {
             createForm.setOfficialActFormId(form.getId());
         }
 
-        public Builder actDate(DateTime actDate) { createForm.setActDate(actDate); return this; }
+        public Builder actDate(LocalDate actDate) { createForm.setActDate(actDate); return this; }
         public Builder minuteNumber(String minuteNumber) { createForm.setMinuteNumber(minuteNumber); return this; }
-        public Builder minuteDate(DateTime minuteDate) { createForm.setMinuteDate(minuteDate); return this; }
+        public Builder minuteDate(LocalDate minuteDate) { createForm.setMinuteDate(minuteDate); return this; }
         public Builder personIds(List<Long> personIds) { createForm.setPersonIds(personIds); return this; }
         public Builder personId(Long personId) { createForm.setPersonIds(List.of(personId)); return this; }
         public Builder notes(String notes) { createForm.setNotes(notes); return this; }

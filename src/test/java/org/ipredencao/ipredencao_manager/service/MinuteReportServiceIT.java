@@ -15,6 +15,7 @@ import org.ipredencao.ipredencao_manager.support.IntegrationTestBase;
 import org.ipredencao.ipredencao_manager.support.OfficialActFixture;
 import org.ipredencao.ipredencao_manager.support.PessoaFixture;
 import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,10 +64,10 @@ class MinuteReportServiceIT extends IntegrationTestBase {
     @Test
     void generate_returnsHeaderWithMinuteNumberAndDate() {
         String minute = uniqueMinute("HDR");
-        DateTime minuteDate = new DateTime(2024, 3, 10, 0, 0);
+        LocalDate minuteDate = new LocalDate(2024, 3, 10);
         createAct(OfficialActFormEnum.ADM_MC_PROFISSAO_FE,
                 somePessoa("Header"),
-                new DateTime(2024, 3, 5, 0, 0),
+                new LocalDate(2024, 3, 5),
                 minute, minuteDate);
 
         MinuteReportResponse report = service.generate(minute);
@@ -81,7 +82,7 @@ class MinuteReportServiceIT extends IntegrationTestBase {
     void generate_categorySectionsRenderInCanonicalOrder() {
         // Inserted in reverse order; the service must still emit ADMISSAO → DEMISSAO.
         String minute = uniqueMinute("ORD");
-        DateTime date = new DateTime(2024, 4, 1, 0, 0);
+        LocalDate date = new LocalDate(2024, 4, 1);
         createAct(OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO, somePessoa("Dem"), date, minute, date);
         createAct(OfficialActFormEnum.ADM_MC_PROFISSAO_FE,      somePessoa("Adm"), date, minute, date);
 
@@ -100,7 +101,7 @@ class MinuteReportServiceIT extends IntegrationTestBase {
     @Test
     void generate_skipsCategoriesWithNoActs() {
         String minute = uniqueMinute("SKIP");
-        DateTime date = new DateTime(2024, 5, 1, 0, 0);
+        LocalDate date = new LocalDate(2024, 5, 1);
         createAct(OfficialActFormEnum.ADM_MC_PROFISSAO_FE, somePessoa("Only adm"), date, minute, date);
 
         MinuteReportResponse report = service.generate(minute);
@@ -116,7 +117,7 @@ class MinuteReportServiceIT extends IntegrationTestBase {
     void generate_groupsByTypeWithinCategory() {
         // Two admission types in the same minute: MC (type id 1) and MNC (type id 2).
         String minute = uniqueMinute("TYPE");
-        DateTime date = new DateTime(2024, 6, 1, 0, 0);
+        LocalDate date = new LocalDate(2024, 6, 1);
         createAct(OfficialActFormEnum.ADM_MC_PROFISSAO_FE,     somePessoa("Mc 1"),  date, minute, date);
         createAct(OfficialActFormEnum.ADM_MNC_BATISMO_INFANCIA, somePessoaInfantil("Mnc 1"), date, minute, date);
 
@@ -134,7 +135,7 @@ class MinuteReportServiceIT extends IntegrationTestBase {
     void generate_groupsLinesByFormWithinType() {
         // Two MC admission forms: ADM_MC_PROFISSAO_FE (id 1) and ADM_MC_CARTA_TRANSFERENCIA (id 3).
         String minute = uniqueMinute("FORM");
-        DateTime date = new DateTime(2024, 7, 1, 0, 0);
+        LocalDate date = new LocalDate(2024, 7, 1);
         createAct(OfficialActFormEnum.ADM_MC_PROFISSAO_FE,       somePessoa("Form A"), date, minute, date);
         createAct(OfficialActFormEnum.ADM_MC_PROFISSAO_FE,       somePessoa("Form B"), date, minute, date);
         createAct(OfficialActFormEnum.ADM_MC_CARTA_TRANSFERENCIA, somePessoa("Form C"), date, minute, date);
@@ -167,7 +168,7 @@ class MinuteReportServiceIT extends IntegrationTestBase {
     @Test
     void generate_linesCarryActIdPersonIdAndAdmissionOrderNumber() {
         String minute = uniqueMinute("LINE");
-        DateTime date = new DateTime(2024, 8, 1, 0, 0);
+        LocalDate date = new LocalDate(2024, 8, 1);
         Pessoa pessoa = somePessoa("Carry");
         OfficialAct admission = createAct(OfficialActFormEnum.ADM_MC_PROFISSAO_FE, pessoa, date, minute, date);
 
@@ -184,7 +185,7 @@ class MinuteReportServiceIT extends IntegrationTestBase {
     @Test
     void generate_lineTextContainsRenderedFragmentsFromFormatter() {
         String minute = uniqueMinute("TXT");
-        DateTime actDate = new DateTime(2024, 9, 15, 0, 0);
+        LocalDate actDate = new LocalDate(2024, 9, 15);
         Pessoa pessoa = somePessoa("João da Silva");
         OfficialAct admission = createAct(OfficialActFormEnum.ADM_MC_PROFISSAO_FE, pessoa, actDate, minute, actDate);
 
@@ -203,7 +204,7 @@ class MinuteReportServiceIT extends IntegrationTestBase {
     void generate_ignoresActsFromOtherMinutes() {
         String mine  = uniqueMinute("OWN");
         String other = uniqueMinute("OTH");
-        DateTime date = new DateTime(2024, 10, 1, 0, 0);
+        LocalDate date = new LocalDate(2024, 10, 1);
         Pessoa pessoaA = somePessoa("Own");
         Pessoa pessoaB = somePessoa("Other");
         createAct(OfficialActFormEnum.ADM_MC_PROFISSAO_FE, pessoaA, date, mine,  date);
@@ -228,8 +229,8 @@ class MinuteReportServiceIT extends IntegrationTestBase {
                 pessoaService, nome, Sexo.FEMININO, new DateTime(2020, 5, 5, 0, 0));
     }
 
-    private OfficialAct createAct(OfficialActFormEnum form, Pessoa pessoa, DateTime actDate,
-                                  String minuteNumber, DateTime minuteDate) {
+    private OfficialAct createAct(OfficialActFormEnum form, Pessoa pessoa, LocalDate actDate,
+                                  String minuteNumber, LocalDate minuteDate) {
         OfficialActCreateForm createForm = OfficialActFixture.builder(form)
                 .personId(pessoa.getId())
                 .actDate(actDate)

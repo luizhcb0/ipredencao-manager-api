@@ -19,13 +19,13 @@ public class DateTimeHelper {
         return new DateTime(localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
     }
 
-    public static LocalDate toDbDate(DateTime dateTime) {
-        if (dateTime == null) return null;
-        return LocalDate.of(dateTime.getYear(), dateTime.getMonthOfYear(), dateTime.getDayOfMonth());
+    public static LocalDate toDbDate(org.joda.time.LocalDate localDate) {
+        if (localDate == null) return null;
+        return LocalDate.of(localDate.getYear(), localDate.getMonthOfYear(), localDate.getDayOfMonth());
     }
 
-    public static DateTime fromDbDate(LocalDate localDate) {
+    public static org.joda.time.LocalDate fromDbDate(LocalDate localDate) {
         if (localDate == null) return null;
-        return new DateTime(localDate.getYear(), localDate.getMonthValue(), localDate.getDayOfMonth(), 0, 0);
+        return new org.joda.time.LocalDate(localDate.getYear(), localDate.getMonthValue(), localDate.getDayOfMonth());
     }
 }

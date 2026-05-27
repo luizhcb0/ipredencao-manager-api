@@ -1,14 +1,14 @@
 package org.ipredencao.ipredencao_manager.model.official_act;
 
 import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
-import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 
 import java.util.List;
 
 public class OfficialActQuery {
     private String minuteNumber;
-    private DateTime startDate;
-    private DateTime endDate;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private List<Long> typeIds;
     private List<Long> formIds;
     private Long personId;
@@ -19,10 +19,10 @@ public class OfficialActQuery {
 
     public String getMinuteNumber() { return minuteNumber; }
     public void setMinuteNumber(String minuteNumber) { this.minuteNumber = minuteNumber; }
-    public DateTime getStartDate() { return startDate; }
-    public void setStartDate(DateTime startDate) { this.startDate = startDate; }
-    public DateTime getEndDate() { return endDate; }
-    public void setEndDate(DateTime endDate) { this.endDate = endDate; }
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
     public List<Long> getTypeIds() { return typeIds; }
     public void setTypeIds(List<Long> typeIds) { this.typeIds = typeIds; }
     public List<Long> getFormIds() { return formIds; }

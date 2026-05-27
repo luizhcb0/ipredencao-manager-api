@@ -3,6 +3,7 @@ package org.ipredencao.ipredencao_manager.model.official_act;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 
 import java.util.Map;
 
@@ -12,9 +13,9 @@ public class OfficialAct {
     private Long id;
     private Long officialActFormId;
     private Long personId;
-    private DateTime actDate;
+    private LocalDate actDate;
     private String minuteNumber;
-    private DateTime minuteDate;
+    private LocalDate minuteDate;
     private Long admissionOrderNumber;
     private Map<String, Object> metadata;
     private String notes;
@@ -41,12 +42,12 @@ public class OfficialAct {
     public void setOfficialActFormId(Long officialActFormId) { this.officialActFormId = officialActFormId; }
     public Long getPersonId() { return personId; }
     public void setPersonId(Long personId) { this.personId = personId; }
-    public DateTime getActDate() { return actDate; }
-    public void setActDate(DateTime actDate) { this.actDate = actDate; }
+    public LocalDate getActDate() { return actDate; }
+    public void setActDate(LocalDate actDate) { this.actDate = actDate; }
     public String getMinuteNumber() { return minuteNumber; }
     public void setMinuteNumber(String minuteNumber) { this.minuteNumber = minuteNumber; }
-    public DateTime getMinuteDate() { return minuteDate; }
-    public void setMinuteDate(DateTime minuteDate) { this.minuteDate = minuteDate; }
+    public LocalDate getMinuteDate() { return minuteDate; }
+    public void setMinuteDate(LocalDate minuteDate) { this.minuteDate = minuteDate; }
     public Long getAdmissionOrderNumber() { return admissionOrderNumber; }
     public void setAdmissionOrderNumber(Long admissionOrderNumber) { this.admissionOrderNumber = admissionOrderNumber; }
     public Map<String, Object> getMetadata() { return metadata; }

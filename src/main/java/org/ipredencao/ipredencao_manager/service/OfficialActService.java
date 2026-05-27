@@ -211,14 +211,14 @@ public class OfficialActService {
 
             case ADM_MC_PROFISSAO_FE_E_BATISMO -> {
                 pessoa.setCategoria(CategoriaEnum.MEMBRO_COMUNGANTE);
-                pessoa.setDataBatismo(act.getActDate());
+                pessoa.setDataBatismo(act.getActDate().toDateTimeAtStartOfDay());
                 pessoa.setTipoBatismo(TipoBatismo.ADULTO);
-                pessoa.setDataProfissaoDeFe(act.getActDate());
+                pessoa.setDataProfissaoDeFe(act.getActDate().toDateTimeAtStartOfDay());
             }
 
             case ADM_MNC_BATISMO_INFANCIA -> {
                 pessoa.setCategoria(CategoriaEnum.MEMBRO_NAO_COMUNGANTE);
-                pessoa.setDataBatismo(act.getActDate());
+                pessoa.setDataBatismo(act.getActDate().toDateTimeAtStartOfDay());
                 pessoa.setTipoBatismo(TipoBatismo.INFANTIL);
             }
 
@@ -241,12 +241,12 @@ public class OfficialActService {
             case DEM_MC_FALECIMENTO,
                  DEM_MNC_FALECIMENTO -> {
                 pessoa.setCategoria(CategoriaEnum.EX_MEMBRO);
-                pessoa.setDataFalecimento(act.getActDate());
+                pessoa.setDataFalecimento(act.getActDate().toDateTimeAtStartOfDay());
             }
 
             case DEM_MNC_PROFISSAO_FE -> {                          // Art. 24, d (promoção MNC -> MC)
                 pessoa.setCategoria(CategoriaEnum.MEMBRO_COMUNGANTE);
-                pessoa.setDataProfissaoDeFe(act.getActDate());
+                pessoa.setDataProfissaoDeFe(act.getActDate().toDateTimeAtStartOfDay());
             }
         }
     }

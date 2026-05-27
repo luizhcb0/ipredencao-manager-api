@@ -9,6 +9,7 @@ import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoRelacionamento;
 import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
 import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.springframework.stereotype.Component;
@@ -285,6 +286,10 @@ public class MinuteReportFormatter {
             }
         }
         return null;
+    }
+
+    private static String formatDate(LocalDate ld) {
+        return ld != null ? BR_DATE.print(ld) : "[data não informada]";
     }
 
     private static String formatDate(DateTime dt) {

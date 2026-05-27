@@ -14,6 +14,7 @@ import org.ipredencao.ipredencao_manager.support.IntegrationTestBase;
 import org.ipredencao.ipredencao_manager.support.OfficialActFixture;
 import org.ipredencao.ipredencao_manager.support.PessoaFixture;
 import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -98,7 +99,7 @@ class OfficialActControllerIT extends IntegrationTestBase {
 
         OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personIds(List.of(a.getId(), b.getId()))
-                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .actDate(new LocalDate(2024, 1, 1))
                 .build();
 
         mockMvc.perform(post(BASE)
@@ -124,7 +125,7 @@ class OfficialActControllerIT extends IntegrationTestBase {
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("officialActFormId", OfficialActFormEnum.ADM_MC_PROFISSAO_FE.getId());
-        body.put("actDate", "2024-01-01T00:00:00.000-03:00");
+        body.put("actDate", "2024-01-01");
         body.put("personIds", List.of(p.getId()));
         body.put("metadata", Map.of("celebrant", Map.of("name", "Rev. Teste")));
         body.put("skipEffects", true);
@@ -148,7 +149,7 @@ class OfficialActControllerIT extends IntegrationTestBase {
         Pessoa p = somePessoa("Bad form");
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("officialActFormId", 99999);
-        body.put("actDate", "2024-01-01T00:00:00.000-03:00");
+        body.put("actDate", "2024-01-01");
         body.put("personIds", List.of(p.getId()));
 
         mockMvc.perform(post(BASE)
@@ -186,7 +187,7 @@ class OfficialActControllerIT extends IntegrationTestBase {
 
         OfficialActUpdateForm patch = new OfficialActUpdateForm();
         patch.setMinuteNumber("ATA-777");
-        patch.setMinuteDate(new DateTime(2024, 12, 1, 0, 0));
+        patch.setMinuteDate(new LocalDate(2024, 12, 1));
         patch.setNotes("updated via http");
         patch.setMetadata(java.util.Map.of("celebrant", java.util.Map.of("id", 7, "name", "Rev. HTTP")));
 
@@ -305,16 +306,16 @@ class OfficialActControllerIT extends IntegrationTestBase {
     private OfficialAct createOneAct(Pessoa pessoa) {
         return officialActService.create(OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(pessoa.getId())
-                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .actDate(new LocalDate(2024, 1, 1))
                 .build()).get(0);
     }
 
     private OfficialAct createOneActWithMinute(Pessoa pessoa, String minute) {
         return officialActService.create(OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(pessoa.getId())
-                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .actDate(new LocalDate(2024, 1, 1))
                 .minuteNumber(minute)
-                .minuteDate(new DateTime(2024, 1, 5, 0, 0))
+                .minuteDate(new LocalDate(2024, 1, 5))
                 .build()).get(0);
     }
 }

@@ -14,6 +14,7 @@ import org.ipredencao.ipredencao_manager.support.IntegrationTestBase;
 import org.ipredencao.ipredencao_manager.support.OfficialActFixture;
 import org.ipredencao.ipredencao_manager.support.PessoaFixture;
 import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Propagation;
@@ -109,7 +110,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
         // ADM_MC_PROFISSAO_FE requires `celebrant` (PERSON_REF).
         OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(somePessoa("Missing meta").getId())
-                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .actDate(new LocalDate(2024, 1, 1))
                 .metadata(Map.of())
                 .build();
 
@@ -123,7 +124,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
         // PERSON_REF é objeto {id?, name}; `name` em branco deve falhar como "vazio".
         OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(somePessoa("Blank meta").getId())
-                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .actDate(new LocalDate(2024, 1, 1))
                 .metadata(Map.of("celebrant", Map.of("name", "   ")))
                 .build();
 
@@ -137,7 +138,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
         // PERSON_REF accepts {id?, name}; if `id` is present it must be numeric.
         OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(somePessoa("Bad id type").getId())
-                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .actDate(new LocalDate(2024, 1, 1))
                 .metadata(Map.of("celebrant", Map.of("id", "not-a-number", "name", "Fulano")))
                 .build();
 
@@ -151,7 +152,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
         // DEM_MC_EXCLUSAO_A_PEDIDO has only one optional field (reason).
         OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO)
                 .personId(somePessoa("Null meta ok").getId())
-                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .actDate(new LocalDate(2024, 1, 1))
                 .metadata(null)
                 .build();
         form.setMetadata(null); // builder defaults to metadataMinimo when not set; force null.
@@ -170,7 +171,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
         Pessoa b = somePessoa("Fan B");
         OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personIds(List.of(a.getId(), b.getId()))
-                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .actDate(new LocalDate(2024, 1, 1))
                 .build();
 
         List<OfficialAct> created = service.create(form);
@@ -187,7 +188,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
         Pessoa b = somePessoa("Dedup B");
         OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personIds(List.of(a.getId(), b.getId(), a.getId(), b.getId()))
-                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .actDate(new LocalDate(2024, 1, 1))
                 .build();
 
         List<OfficialAct> created = service.create(form);
@@ -207,7 +208,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
         Pessoa b = somePessoa("Seq B");
         OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personIds(List.of(a.getId(), b.getId()))
-                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .actDate(new LocalDate(2024, 1, 1))
                 .build();
 
         List<OfficialAct> created = service.create(form);
@@ -221,7 +222,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
     void create_dismissalLeavesAdmissionOrderNumberNull() {
         OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO)
                 .personId(somePessoa("Dismissal null seq").getId())
-                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .actDate(new LocalDate(2024, 1, 1))
                 .build();
 
         OfficialAct created = service.create(form).get(0);
@@ -237,13 +238,13 @@ class OfficialActServiceIT extends IntegrationTestBase {
         OfficialAct admission = service.create(
                 OfficialActFixture.builder(OfficialActFormEnum.ADM_MNC_BATISMO_INFANCIA)
                         .personId(p.getId())
-                        .actDate(new DateTime(2024, 1, 1, 0, 0))
+                        .actDate(new LocalDate(2024, 1, 1))
                         .build()).get(0);
 
         OfficialAct promotion = service.create(
                 OfficialActFixture.builder(OfficialActFormEnum.DEM_MNC_PROFISSAO_FE)
                         .personId(p.getId())
-                        .actDate(new DateTime(2024, 6, 1, 0, 0))
+                        .actDate(new LocalDate(2024, 6, 1))
                         .build()).get(0);
 
         assertThat(admission.getAdmissionOrderNumber()).isNotNull();
@@ -255,7 +256,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
         OfficialAct promotion = service.create(
                 OfficialActFixture.builder(OfficialActFormEnum.DEM_MNC_PROFISSAO_FE)
                         .personId(somePessoa("Promotion no prior").getId())
-                        .actDate(new DateTime(2024, 6, 1, 0, 0))
+                        .actDate(new LocalDate(2024, 6, 1))
                         .build()).get(0);
 
         assertThat(promotion.getAdmissionOrderNumber()).isNull();
@@ -266,7 +267,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
     @Test
     void create_admissionMcWithBatismoSetsBatismoAndProfissaoDeFe() {
         Pessoa p = somePessoa("MC+Batismo");
-        DateTime actDate = new DateTime(2024, 3, 3, 0, 0);
+        LocalDate actDate = new LocalDate(2024, 3, 3);
 
         service.create(OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE_E_BATISMO)
                 .personId(p.getId())
@@ -275,15 +276,15 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
         Pessoa reloaded = pessoaService.findById(p.getId());
         assertThat(reloaded.getCategoria()).isEqualTo(CategoriaEnum.MEMBRO_COMUNGANTE);
-        assertThat(reloaded.getDataBatismo()).isEqualTo(actDate);
+        assertThat(reloaded.getDataBatismo()).isEqualTo(actDate.toDateTimeAtStartOfDay());
         assertThat(reloaded.getTipoBatismo()).isEqualTo(TipoBatismo.ADULTO);
-        assertThat(reloaded.getDataProfissaoDeFe()).isEqualTo(actDate);
+        assertThat(reloaded.getDataProfissaoDeFe()).isEqualTo(actDate.toDateTimeAtStartOfDay());
     }
 
     @Test
     void create_admissionMncBatismoSetsCategoryAndBatismoInfantil() {
         Pessoa p = somePessoaInfantil("MNC Batismo");
-        DateTime actDate = new DateTime(2024, 3, 3, 0, 0);
+        LocalDate actDate = new LocalDate(2024, 3, 3);
 
         service.create(OfficialActFixture.builder(OfficialActFormEnum.ADM_MNC_BATISMO_INFANCIA)
                 .personId(p.getId())
@@ -292,7 +293,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
         Pessoa reloaded = pessoaService.findById(p.getId());
         assertThat(reloaded.getCategoria()).isEqualTo(CategoriaEnum.MEMBRO_NAO_COMUNGANTE);
-        assertThat(reloaded.getDataBatismo()).isEqualTo(actDate);
+        assertThat(reloaded.getDataBatismo()).isEqualTo(actDate.toDateTimeAtStartOfDay());
         assertThat(reloaded.getTipoBatismo()).isEqualTo(TipoBatismo.INFANTIL);
         assertThat(reloaded.getDataProfissaoDeFe()).isNull();
     }
@@ -303,7 +304,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
         service.create(OfficialActFixture.builder(OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO)
                 .personId(p.getId())
-                .actDate(new DateTime(2024, 4, 1, 0, 0))
+                .actDate(new LocalDate(2024, 4, 1))
                 .build());
 
         Pessoa reloaded = pessoaService.findById(p.getId());
@@ -314,7 +315,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
     @Test
     void create_falecimentoSetsCategoryExMembroAndDataFalecimento() {
         Pessoa p = somePessoa("Falecimento");
-        DateTime actDate = new DateTime(2024, 5, 10, 0, 0);
+        LocalDate actDate = new LocalDate(2024, 5, 10);
 
         service.create(OfficialActFixture.builder(OfficialActFormEnum.DEM_MC_FALECIMENTO)
                 .personId(p.getId())
@@ -323,13 +324,13 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
         Pessoa reloaded = pessoaService.findById(p.getId());
         assertThat(reloaded.getCategoria()).isEqualTo(CategoriaEnum.EX_MEMBRO);
-        assertThat(reloaded.getDataFalecimento()).isEqualTo(actDate);
+        assertThat(reloaded.getDataFalecimento()).isEqualTo(actDate.toDateTimeAtStartOfDay());
     }
 
     @Test
     void create_promotionMncProfissaoDeFeSetsCategoryAndDataProfissaoDeFe() {
         Pessoa p = somePessoaInfantil("MNC->MC");
-        DateTime actDate = new DateTime(2024, 7, 1, 0, 0);
+        LocalDate actDate = new LocalDate(2024, 7, 1);
 
         service.create(OfficialActFixture.builder(OfficialActFormEnum.DEM_MNC_PROFISSAO_FE)
                 .personId(p.getId())
@@ -338,7 +339,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
         Pessoa reloaded = pessoaService.findById(p.getId());
         assertThat(reloaded.getCategoria()).isEqualTo(CategoriaEnum.MEMBRO_COMUNGANTE);
-        assertThat(reloaded.getDataProfissaoDeFe()).isEqualTo(actDate);
+        assertThat(reloaded.getDataProfissaoDeFe()).isEqualTo(actDate.toDateTimeAtStartOfDay());
     }
 
     // ===== update =====
@@ -349,24 +350,24 @@ class OfficialActServiceIT extends IntegrationTestBase {
     @Test
     void update_changesMutableFieldsAndKeepsImmutablesIntact() {
         Pessoa p = somePessoa("Update");
-        DateTime actDate = new DateTime(2024, 1, 1, 0, 0);
+        LocalDate actDate = new LocalDate(2024, 1, 1);
         OfficialAct created = service.create(OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(p.getId())
                 .actDate(actDate)
                 .minuteNumber("100")
-                .minuteDate(new DateTime(2024, 1, 5, 0, 0))
+                .minuteDate(new LocalDate(2024, 1, 5))
                 .notes("orig")
                 .build()).get(0);
 
         OfficialActUpdateForm patch = new OfficialActUpdateForm();
         patch.setMinuteNumber("200");
-        patch.setMinuteDate(new DateTime(2024, 2, 1, 0, 0));
+        patch.setMinuteDate(new LocalDate(2024, 2, 1));
         patch.setNotes("changed");
 
         OfficialAct updated = service.update(created.getId(), patch);
 
         assertThat(updated.getMinuteNumber()).isEqualTo("200");
-        assertThat(updated.getMinuteDate()).isEqualTo(new DateTime(2024, 2, 1, 0, 0));
+        assertThat(updated.getMinuteDate()).isEqualTo(new LocalDate(2024, 2, 1));
         assertThat(updated.getNotes()).isEqualTo("changed");
         // Immutable fields stay untouched.
         assertThat(updated.getOfficialActFormId()).isEqualTo(created.getOfficialActFormId());
@@ -379,7 +380,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
         Pessoa p = somePessoa("Metadata Update");
         OfficialAct created = service.create(OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(p.getId())
-                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .actDate(new LocalDate(2024, 1, 1))
                 .metadata(Map.of("celebrant", Map.of("name", "Rev. Antigo")))
                 .build()).get(0);
 
@@ -399,7 +400,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
         Pessoa p = somePessoa("Metadata Invalid");
         OfficialAct created = service.create(OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(p.getId())
-                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .actDate(new LocalDate(2024, 1, 1))
                 .metadata(Map.of("celebrant", Map.of("name", "Rev. Original")))
                 .build()).get(0);
 
@@ -416,7 +417,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
         Pessoa p = somePessoa("Metadata Preserved");
         OfficialAct created = service.create(OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(p.getId())
-                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .actDate(new LocalDate(2024, 1, 1))
                 .metadata(Map.of("celebrant", Map.of("name", "Rev. Mantido")))
                 .build()).get(0);
 
@@ -455,7 +456,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
         OfficialAct admission = service.create(
                 OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                         .personId(p.getId())
-                        .actDate(new DateTime(2024, 1, 1, 0, 0))
+                        .actDate(new LocalDate(2024, 1, 1))
                         .build()).get(0);
 
         assertThat(pessoaService.findById(p.getId()).getCategoria())
@@ -474,7 +475,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
     void delete_doesNotRevertDataBatismoOrProfissaoDeFe() throws InterruptedException {
         Pessoa p = somePessoa("Delete data-keep");
         Thread.sleep(10);
-        DateTime actDate = new DateTime(2024, 2, 2, 0, 0);
+        LocalDate actDate = new LocalDate(2024, 2, 2);
 
         OfficialAct admission = service.create(
                 OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE_E_BATISMO)
@@ -486,9 +487,9 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
         Pessoa reloaded = pessoaService.findById(p.getId());
         // Dates carry historic meaning; only category is reverted.
-        assertThat(reloaded.getDataBatismo()).isEqualTo(actDate);
+        assertThat(reloaded.getDataBatismo()).isEqualTo(actDate.toDateTimeAtStartOfDay());
         assertThat(reloaded.getTipoBatismo()).isEqualTo(TipoBatismo.ADULTO);
-        assertThat(reloaded.getDataProfissaoDeFe()).isEqualTo(actDate);
+        assertThat(reloaded.getDataProfissaoDeFe()).isEqualTo(actDate.toDateTimeAtStartOfDay());
     }
 
     @Test
@@ -510,11 +511,11 @@ class OfficialActServiceIT extends IntegrationTestBase {
         Pessoa p = somePessoa("Pag");
         service.create(OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(p.getId())
-                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .actDate(new LocalDate(2024, 1, 1))
                 .build());
         service.create(OfficialActFixture.builder(OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO)
                 .personId(p.getId())
-                .actDate(new DateTime(2024, 2, 1, 0, 0))
+                .actDate(new LocalDate(2024, 2, 1))
                 .build());
 
         OfficialActQuery query = new OfficialActQuery();
@@ -545,7 +546,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
     private OfficialActCreateForm baseForm(Pessoa pessoa, OfficialActFormEnum form) {
         OfficialActCreateForm createForm = new OfficialActCreateForm();
         createForm.setOfficialActFormId(form.getId());
-        createForm.setActDate(new DateTime(2024, 1, 1, 0, 0));
+        createForm.setActDate(new LocalDate(2024, 1, 1));
         createForm.setPersonIds(List.of(pessoa.getId()));
         createForm.setMetadata(new HashMap<>(OfficialActFixture.metadataMinimo(form)));
         return createForm;

@@ -10,6 +10,7 @@ import org.ipredencao.ipredencao_manager.service.PessoaService;
 import org.ipredencao.ipredencao_manager.support.IntegrationTestBase;
 import org.ipredencao.ipredencao_manager.support.PessoaFixture;
 import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Propagation;
@@ -39,7 +40,7 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
     @Test
     void insert_persistsAllFieldsAndAssignsId() {
         Pessoa pessoa = somePessoa("Inserted Person");
-        DateTime actDate = new DateTime(2024, 11, 17, 0, 0);
+        LocalDate actDate = new LocalDate(2024, 11, 17);
         OfficialAct act = newAct(pessoa, OfficialActFormEnum.ADM_MNC_BATISMO_INFANCIA);
         act.setActDate(actDate);
         act.setMinuteNumber("298");
@@ -120,10 +121,10 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
         String minute = "299";
 
         // Insert intentionally out of order — repo must reorder by (type_id, form_id, act_date, id).
-        OfficialAct demLate = insertAct(pessoa, OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO, minute, new DateTime(2024, 11, 5, 0, 0));
-        OfficialAct demEarly = insertAct(pessoa, OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO, minute, new DateTime(2024, 11, 1, 0, 0));
-        OfficialAct admEarly = insertAct(pessoa, OfficialActFormEnum.ADM_MC_PROFISSAO_FE, minute, new DateTime(2024, 11, 3, 0, 0));
-        OfficialAct admLate = insertAct(pessoa, OfficialActFormEnum.ADM_MC_PROFISSAO_FE, minute, new DateTime(2024, 11, 7, 0, 0));
+        OfficialAct demLate = insertAct(pessoa, OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO, minute, new LocalDate(2024, 11, 5));
+        OfficialAct demEarly = insertAct(pessoa, OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO, minute, new LocalDate(2024, 11, 1));
+        OfficialAct admEarly = insertAct(pessoa, OfficialActFormEnum.ADM_MC_PROFISSAO_FE, minute, new LocalDate(2024, 11, 3));
+        OfficialAct admLate = insertAct(pessoa, OfficialActFormEnum.ADM_MC_PROFISSAO_FE, minute, new LocalDate(2024, 11, 7));
 
         List<OfficialAct> acts = repo.findByMinuteNumber(minute);
 
@@ -142,9 +143,9 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
     void findByPersonId_ordersByActDateAndIdDescending() {
         Pessoa pessoa = somePessoa("History Person");
 
-        OfficialAct older = insertAct(pessoa, OfficialActFormEnum.ADM_MNC_BATISMO_INFANCIA, "300", new DateTime(2020, 1, 1, 0, 0));
-        OfficialAct middle = insertAct(pessoa, OfficialActFormEnum.ADM_MC_PROFISSAO_FE,     "310", new DateTime(2024, 6, 1, 0, 0));
-        OfficialAct newer = insertAct(pessoa, OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO, "320", new DateTime(2025, 1, 1, 0, 0));
+        OfficialAct older = insertAct(pessoa, OfficialActFormEnum.ADM_MNC_BATISMO_INFANCIA, "300", new LocalDate(2020, 1, 1));
+        OfficialAct middle = insertAct(pessoa, OfficialActFormEnum.ADM_MC_PROFISSAO_FE,     "310", new LocalDate(2024, 6, 1));
+        OfficialAct newer = insertAct(pessoa, OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO, "320", new LocalDate(2025, 1, 1));
 
         List<OfficialAct> acts = repo.findByPersonId(pessoa.getId());
 
@@ -172,13 +173,13 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
             Thread.sleep(10);
 
             saved.setMinuteNumber("999");
-            saved.setMinuteDate(new DateTime(2025, 3, 1, 0, 0));
+            saved.setMinuteDate(new LocalDate(2025, 3, 1));
             saved.setNotes("changed");
             saved.setMetadata(Map.of("celebrant", Map.of("name", "Rev. Updated")));
             OfficialAct updated = repo.update(saved);
 
             assertThat(updated.getMinuteNumber()).isEqualTo("999");
-            assertThat(updated.getMinuteDate()).isEqualTo(new DateTime(2025, 3, 1, 0, 0));
+            assertThat(updated.getMinuteDate()).isEqualTo(new LocalDate(2025, 3, 1));
             assertThat(updated.getNotes()).isEqualTo("changed");
             assertThat(updated.getMetadata()).containsKey("celebrant");
             assertThat(((Map<?, ?>) updated.getMetadata().get("celebrant")).get("name"))
@@ -206,18 +207,18 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
         Pessoa pessoa = somePessoa("Numero Person");
 
         OfficialAct first = newAct(pessoa, OfficialActFormEnum.ADM_MNC_BATISMO_INFANCIA);
-        first.setActDate(new DateTime(2010, 5, 1, 0, 0));
+        first.setActDate(new LocalDate(2010, 5, 1));
         first.setAdmissionOrderNumber(50L);
         repo.insert(first);
 
         OfficialAct second = newAct(pessoa, OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
-        second.setActDate(new DateTime(2024, 11, 1, 0, 0));
+        second.setActDate(new LocalDate(2024, 11, 1));
         second.setAdmissionOrderNumber(50L); // promotion inherits the same number
         repo.insert(second);
 
         // Demissão posterior sem admission_order_number deve ser ignorada pelo query.
         OfficialAct ignored = newAct(pessoa, OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO);
-        ignored.setActDate(new DateTime(2025, 1, 1, 0, 0));
+        ignored.setActDate(new LocalDate(2025, 1, 1));
         ignored.setAdmissionOrderNumber(null);
         repo.insert(ignored);
 
@@ -245,9 +246,9 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
     void findByQuery_filtersByMinuteNumberAndAppliesPagination() {
         Pessoa pessoa = somePessoa("Query Person");
         for (int i = 0; i < 5; i++) {
-            insertAct(pessoa, OfficialActFormEnum.ADM_MC_PROFISSAO_FE, "400", new DateTime(2024, 1, 1, 0, 0).plusDays(i));
+            insertAct(pessoa, OfficialActFormEnum.ADM_MC_PROFISSAO_FE, "400", new LocalDate(2024, 1, 1).plusDays(i));
         }
-        insertAct(pessoa, OfficialActFormEnum.ADM_MC_PROFISSAO_FE, "OTHER", new DateTime(2024, 6, 1, 0, 0));
+        insertAct(pessoa, OfficialActFormEnum.ADM_MC_PROFISSAO_FE, "OTHER", new LocalDate(2024, 6, 1));
 
         OfficialActQuery query = new OfficialActQuery();
         query.setMinuteNumber("400");
@@ -265,9 +266,9 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
     void findByQuery_filtersByFormIdsAndPersonId() {
         Pessoa target = somePessoa("Target Person");
         Pessoa other = somePessoa("Other Person");
-        insertAct(target, OfficialActFormEnum.ADM_MC_PROFISSAO_FE,    "500", new DateTime(2024, 1, 1, 0, 0));
-        insertAct(target, OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO, "500", new DateTime(2024, 2, 1, 0, 0));
-        insertAct(other,  OfficialActFormEnum.ADM_MC_PROFISSAO_FE,    "500", new DateTime(2024, 3, 1, 0, 0));
+        insertAct(target, OfficialActFormEnum.ADM_MC_PROFISSAO_FE,    "500", new LocalDate(2024, 1, 1));
+        insertAct(target, OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO, "500", new LocalDate(2024, 2, 1));
+        insertAct(other,  OfficialActFormEnum.ADM_MC_PROFISSAO_FE,    "500", new LocalDate(2024, 3, 1));
 
         OfficialActQuery query = new OfficialActQuery();
         query.setPersonId(target.getId());
@@ -306,12 +307,12 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
         OfficialAct act = new OfficialAct();
         act.setOfficialActFormId(form.getId());
         act.setPersonId(pessoa.getId());
-        act.setActDate(new DateTime(2024, 1, 1, 0, 0));
+        act.setActDate(new LocalDate(2024, 1, 1));
         act.setMetadata(new HashMap<>());
         return act;
     }
 
-    private OfficialAct insertAct(Pessoa pessoa, OfficialActFormEnum form, String minute, DateTime actDate) {
+    private OfficialAct insertAct(Pessoa pessoa, OfficialActFormEnum form, String minute, LocalDate actDate) {
         OfficialAct act = newAct(pessoa, form);
         act.setActDate(actDate);
         act.setMinuteNumber(minute);
