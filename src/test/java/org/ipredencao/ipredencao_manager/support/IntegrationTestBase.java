@@ -6,13 +6,14 @@ import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Base for integration test suites. Boots a Postgres container once per test run,
@@ -22,7 +23,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Testcontainers
+@Import(IntegrationTestBase.PostgresContainerConfig.class)
 public abstract class IntegrationTestBase {
 
     static {
@@ -31,15 +32,18 @@ public abstract class IntegrationTestBase {
         System.setProperty("api.version", "1.44");
     }
 
-    @Container
-    @ServiceConnection
-    @SuppressWarnings("resource")
-    protected static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:16-alpine")
+    @TestConfiguration
+    static class PostgresContainerConfig {
+        @Bean
+        @ServiceConnection
+        @SuppressWarnings("resource")
+        PostgreSQLContainer<?> postgresContainer() {
+            return new PostgreSQLContainer<>("postgres:16-alpine")
                     .withDatabaseName("ipredencao_test")
                     .withUsername("test")
-                    .withPassword("test")
-                    .withReuse(true);
+                    .withPassword("test");
+        }
+    }
 
     /** Neutralizes {@code @PostConstruct} that would try to load Firebase credentials. */
     @MockitoBean

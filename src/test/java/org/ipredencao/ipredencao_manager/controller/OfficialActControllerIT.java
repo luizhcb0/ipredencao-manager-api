@@ -283,10 +283,10 @@ class OfficialActControllerIT extends IntegrationTestBase {
 
     @Test
     @WithMockUser(roles = "PRESBITERO")
-    void catalog_returnsAllFiveTypes() throws Exception {
+    void catalog_returnsAllFourTypes() throws Exception {
         mockMvc.perform(get(BASE + "/catalogo"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(5)))
+                .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(4)))
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].forms").isArray());
     }

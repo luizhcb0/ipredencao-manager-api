@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 20
 
     services:
-      # Postgres para Liquibase + codegen JOOQ (generateJooq → update).
+      # Postgres só para Liquibase + JOOQ codegen (generateJooq → update).
       # Os testes IT usam Testcontainers com Postgres efêmero próprio.
       postgres:
         image: postgres:17
