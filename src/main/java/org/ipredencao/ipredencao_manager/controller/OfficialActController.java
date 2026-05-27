@@ -1,10 +1,10 @@
 package org.ipredencao.ipredencao_manager.controller;
 
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialAct;
-import org.ipredencao.ipredencao_manager.model.official_act.OfficialActCreateDto;
+import org.ipredencao.ipredencao_manager.controller.form.OfficialActCreateForm;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActQuery;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActType;
-import org.ipredencao.ipredencao_manager.model.official_act.OfficialActUpdateDto;
+import org.ipredencao.ipredencao_manager.controller.form.OfficialActUpdateForm;
 import org.ipredencao.ipredencao_manager.model.official_act.minute_report.MinuteReportResponse;
 import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.repository.OfficialActCatalogRepository;
@@ -41,7 +41,7 @@ public class OfficialActController {
     }
 
     @PostMapping
-    public ResponseEntity<List<OfficialAct>> create(@RequestBody OfficialActCreateDto dto) {
+    public ResponseEntity<List<OfficialAct>> create(@RequestBody OfficialActCreateForm dto) {
         // Defesa: as flags de backfill nunca devem ser definidas por callers HTTP.
         if (dto != null) {
             dto.setSkipEffects(false);
@@ -56,7 +56,7 @@ public class OfficialActController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<OfficialAct> update(@PathVariable Long id, @RequestBody OfficialActUpdateDto dto) {
+    public ResponseEntity<OfficialAct> update(@PathVariable Long id, @RequestBody OfficialActUpdateForm dto) {
         return ResponseEntity.ok(officialActService.update(id, dto));
     }
 

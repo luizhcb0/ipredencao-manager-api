@@ -1,10 +1,10 @@
 package org.ipredencao.ipredencao_manager.controller;
 
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialAct;
-import org.ipredencao.ipredencao_manager.model.official_act.OfficialActCreateDto;
+import org.ipredencao.ipredencao_manager.controller.form.OfficialActCreateForm;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActFormEnum;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActQuery;
-import org.ipredencao.ipredencao_manager.model.official_act.OfficialActUpdateDto;
+import org.ipredencao.ipredencao_manager.controller.form.OfficialActUpdateForm;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
@@ -96,7 +96,7 @@ class OfficialActControllerIT extends IntegrationTestBase {
         Pessoa a = somePessoa("Create A");
         Pessoa b = somePessoa("Create B");
 
-        OfficialActCreateDto dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
+        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personIds(List.of(a.getId(), b.getId()))
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
                 .build();
@@ -184,7 +184,7 @@ class OfficialActControllerIT extends IntegrationTestBase {
     void update_returnsOkAndModifiesMutableFields() throws Exception {
         OfficialAct act = createOneAct(somePessoa("Update"));
 
-        OfficialActUpdateDto patch = new OfficialActUpdateDto();
+        OfficialActUpdateForm patch = new OfficialActUpdateForm();
         patch.setMinuteNumber("ATA-777");
         patch.setMinuteDate(new DateTime(2024, 12, 1, 0, 0));
         patch.setNotes("updated via http");

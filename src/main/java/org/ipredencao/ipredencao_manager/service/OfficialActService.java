@@ -3,11 +3,11 @@ package org.ipredencao.ipredencao_manager.service;
 import org.ipredencao.ipredencao_manager.model.official_act.FieldType;
 import org.ipredencao.ipredencao_manager.model.official_act.MetadataFieldSpec;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialAct;
-import org.ipredencao.ipredencao_manager.model.official_act.OfficialActCreateDto;
+import org.ipredencao.ipredencao_manager.model.official_act.OfficialActCreateForm;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActForm;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActFormEnum;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActQuery;
-import org.ipredencao.ipredencao_manager.model.official_act.OfficialActUpdateDto;
+import org.ipredencao.ipredencao_manager.model.official_act.OfficialActUpdateForm;
 import org.ipredencao.ipredencao_manager.model.pagination.PageInfo;
 import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
@@ -43,7 +43,7 @@ public class OfficialActService {
     // ===== CREATE =====
 
     @Transactional
-    public List<OfficialAct> create(OfficialActCreateDto dto) {
+    public List<OfficialAct> create(OfficialActCreateForm dto) {
         validateCreateDto(dto);
         validateMetadata(dto.getOfficialActFormId(), dto.getMetadata());
 
@@ -67,7 +67,7 @@ public class OfficialActService {
     // ===== UPDATE (restritivo) =====
 
     @Transactional
-    public OfficialAct update(Long id, OfficialActUpdateDto dto) {
+    public OfficialAct update(Long id, OfficialActUpdateForm dto) {
         OfficialAct existing = repo.findById(id);
         if (existing == null) {
             throw new NoSuchElementException("Ato oficial " + id + " não encontrado");
@@ -138,7 +138,7 @@ public class OfficialActService {
 
     // ===== VALIDAÇÃO =====
 
-    private void validateCreateDto(OfficialActCreateDto dto) {
+    private void validateCreateDto(OfficialActCreateForm dto) {
         if (dto == null) {
             throw new IllegalArgumentException("DTO de criação é obrigatório");
         }
@@ -192,7 +192,7 @@ public class OfficialActService {
 
     // ===== NÚMERO DE ORDEM DE ADMISSÃO =====
 
-    void assignNumeroOrdemAdmissao(OfficialAct act, OfficialActCreateDto dto) {
+    void assignNumeroOrdemAdmissao(OfficialAct act, OfficialActCreateForm dto) {
         if (dto.isSkipNumeroOrdemAdmissao()) return;
         OfficialActFormEnum form = OfficialActFormEnum.fromId(act.getOfficialActFormId());
         if (form.isAdmission()) {
@@ -276,7 +276,7 @@ public class OfficialActService {
         pessoa.setCategoria(CategoriaEnum.fromId(previousCategoriaId));
     }
 
-    private OfficialAct buildAct(OfficialActCreateDto dto, Long personId, Long currentUserId) {
+    private OfficialAct buildAct(OfficialActCreateForm dto, Long personId, Long currentUserId) {
         OfficialAct act = new OfficialAct();
         act.setOfficialActFormId(dto.getOfficialActFormId());
         act.setPersonId(personId);

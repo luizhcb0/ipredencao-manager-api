@@ -1,7 +1,7 @@
 package org.ipredencao.ipredencao_manager.service;
 
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialAct;
-import org.ipredencao.ipredencao_manager.model.official_act.OfficialActCreateDto;
+import org.ipredencao.ipredencao_manager.controller.form.OfficialActCreateForm;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActFormEnum;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActTypeEnum;
 import org.ipredencao.ipredencao_manager.model.official_act.minute_report.CategorySection;
@@ -230,7 +230,7 @@ class MinuteReportServiceIT extends IntegrationTestBase {
 
     private OfficialAct createAct(OfficialActFormEnum form, Pessoa pessoa, DateTime actDate,
                                   String minuteNumber, DateTime minuteDate) {
-        OfficialActCreateDto dto = OfficialActFixture.builder(form)
+        OfficialActCreateForm dto = OfficialActFixture.builder(form)
                 .personId(pessoa.getId())
                 .actDate(actDate)
                 .minuteNumber(minuteNumber)

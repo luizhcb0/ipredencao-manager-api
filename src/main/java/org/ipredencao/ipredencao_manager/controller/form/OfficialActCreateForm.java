@@ -1,4 +1,4 @@
-package org.ipredencao.ipredencao_manager.model.official_act;
+package org.ipredencao.ipredencao_manager.controller.form;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class OfficialActCreateDto {
+public class OfficialActCreateForm {
     private Long officialActFormId;
     private DateTime actDate;
     private String minuteNumber;
@@ -25,7 +25,7 @@ public class OfficialActCreateDto {
     @JsonIgnore
     private boolean skipNumeroOrdemAdmissao = false;
 
-    public OfficialActCreateDto() {}
+    public OfficialActCreateForm() {}
 
     public Long getOfficialActFormId() { return officialActFormId; }
     public void setOfficialActFormId(Long officialActFormId) { this.officialActFormId = officialActFormId; }

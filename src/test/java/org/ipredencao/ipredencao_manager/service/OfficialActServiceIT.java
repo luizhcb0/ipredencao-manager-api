@@ -1,10 +1,10 @@
 package org.ipredencao.ipredencao_manager.service;
 
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialAct;
-import org.ipredencao.ipredencao_manager.model.official_act.OfficialActCreateDto;
+import org.ipredencao.ipredencao_manager.controller.form.OfficialActCreateForm;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActFormEnum;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActQuery;
-import org.ipredencao.ipredencao_manager.model.official_act.OfficialActUpdateDto;
+import org.ipredencao.ipredencao_manager.controller.form.OfficialActUpdateForm;
 import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
@@ -54,7 +54,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
     @Test
     void create_throwsWhenFormIdIsNull() {
-        OfficialActCreateDto dto = baseDto(somePessoa("Form null"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
+        OfficialActCreateForm dto = baseDto(somePessoa("Form null"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
         dto.setOfficialActFormId(null);
 
         assertThatThrownBy(() -> service.create(dto))
@@ -64,7 +64,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
     @Test
     void create_throwsWhenFormIdIsUnknown() {
-        OfficialActCreateDto dto = baseDto(somePessoa("Form unknown"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
+        OfficialActCreateForm dto = baseDto(somePessoa("Form unknown"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
         dto.setOfficialActFormId(99999L);
 
         assertThatThrownBy(() -> service.create(dto))
@@ -73,7 +73,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
     @Test
     void create_throwsWhenActDateIsNull() {
-        OfficialActCreateDto dto = baseDto(somePessoa("Act date null"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
+        OfficialActCreateForm dto = baseDto(somePessoa("Act date null"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
         dto.setActDate(null);
 
         assertThatThrownBy(() -> service.create(dto))
@@ -83,7 +83,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
     @Test
     void create_throwsWhenPersonIdsIsEmpty() {
-        OfficialActCreateDto dto = baseDto(somePessoa("PersonIds empty"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
+        OfficialActCreateForm dto = baseDto(somePessoa("PersonIds empty"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
         dto.setPersonIds(List.of());
 
         assertThatThrownBy(() -> service.create(dto))
@@ -94,7 +94,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
     @Test
     void create_throwsWhenPersonIdsContainsNull() {
         Pessoa p = somePessoa("PersonIds contains null");
-        OfficialActCreateDto dto = baseDto(p, OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
+        OfficialActCreateForm dto = baseDto(p, OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
         dto.setPersonIds(java.util.Arrays.asList(p.getId(), null));
 
         assertThatThrownBy(() -> service.create(dto))
@@ -107,7 +107,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
     @Test
     void create_throwsWhenRequiredMetadataIsMissing() {
         // ADM_MC_PROFISSAO_FE requires `celebrante` (PERSON_REF).
-        OfficialActCreateDto dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
+        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(somePessoa("Missing meta").getId())
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
                 .metadata(Map.of())
@@ -121,7 +121,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
     @Test
     void create_throwsWhenRequiredMetadataIsBlank() {
         // PERSON_REF é objeto {id?, name}; `name` em branco deve falhar como "vazio".
-        OfficialActCreateDto dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
+        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(somePessoa("Blank meta").getId())
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
                 .metadata(Map.of("celebrante", Map.of("name", "   ")))
@@ -135,7 +135,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
     @Test
     void create_acceptsNullMetadataWhenAllFieldsAreOptional() {
         // DEM_MC_EXCLUSAO_A_PEDIDO has only one optional field (motivo).
-        OfficialActCreateDto dto = OfficialActFixture.builder(OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO)
+        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO)
                 .personId(somePessoa("Null meta ok").getId())
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
                 .metadata(null)
@@ -154,7 +154,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
     void create_returnsOneActPerPersonInOrder() {
         Pessoa a = somePessoa("Fan A");
         Pessoa b = somePessoa("Fan B");
-        OfficialActCreateDto dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
+        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personIds(List.of(a.getId(), b.getId()))
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
                 .build();
@@ -171,7 +171,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
     void create_deduplicatesPersonIdsPreservingOrder() {
         Pessoa a = somePessoa("Dedup A");
         Pessoa b = somePessoa("Dedup B");
-        OfficialActCreateDto dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
+        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personIds(List.of(a.getId(), b.getId(), a.getId(), b.getId()))
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
                 .build();
@@ -191,7 +191,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
     void create_admissionAssignsSequentialNumeroOrdemAdmissao() {
         Pessoa a = somePessoa("Seq A");
         Pessoa b = somePessoa("Seq B");
-        OfficialActCreateDto dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
+        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personIds(List.of(a.getId(), b.getId()))
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
                 .build();
@@ -205,7 +205,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
     @Test
     void create_dismissalLeavesNumeroOrdemAdmissaoNull() {
-        OfficialActCreateDto dto = OfficialActFixture.builder(OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO)
+        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO)
                 .personId(somePessoa("Dismissal null seq").getId())
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
                 .build();
@@ -344,7 +344,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
                 .notes("orig")
                 .build()).get(0);
 
-        OfficialActUpdateDto patch = new OfficialActUpdateDto();
+        OfficialActUpdateForm patch = new OfficialActUpdateForm();
         patch.setMinuteNumber("200");
         patch.setMinuteDate(new DateTime(2024, 2, 1, 0, 0));
         patch.setNotes("changed");
@@ -369,7 +369,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
                 .metadata(Map.of("celebrante", Map.of("name", "Rev. Antigo")))
                 .build()).get(0);
 
-        OfficialActUpdateDto patch = new OfficialActUpdateDto();
+        OfficialActUpdateForm patch = new OfficialActUpdateForm();
         patch.setMetadata(Map.of("celebrante", Map.of("id", 42, "name", "Rev. Novo")));
 
         OfficialAct updated = service.update(created.getId(), patch);
@@ -389,7 +389,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
                 .metadata(Map.of("celebrante", Map.of("name", "Rev. Original")))
                 .build()).get(0);
 
-        OfficialActUpdateDto patch = new OfficialActUpdateDto();
+        OfficialActUpdateForm patch = new OfficialActUpdateForm();
         patch.setMetadata(Map.of("celebrante", Map.of("name", "   ")));
 
         assertThatThrownBy(() -> service.update(created.getId(), patch))
@@ -406,7 +406,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
                 .metadata(Map.of("celebrante", Map.of("name", "Rev. Mantido")))
                 .build()).get(0);
 
-        OfficialActUpdateDto patch = new OfficialActUpdateDto();
+        OfficialActUpdateForm patch = new OfficialActUpdateForm();
         patch.setNotes("only notes changed");
 
         OfficialAct updated = service.update(created.getId(), patch);
@@ -418,7 +418,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
     @Test
     void update_throwsWhenIdUnknown() {
-        OfficialActUpdateDto patch = new OfficialActUpdateDto();
+        OfficialActUpdateForm patch = new OfficialActUpdateForm();
         patch.setMinuteNumber("anything");
 
         assertThatThrownBy(() -> service.update(999_999L, patch))
@@ -528,8 +528,8 @@ class OfficialActServiceIT extends IntegrationTestBase {
                 new DateTime(2020, 5, 5, 0, 0));
     }
 
-    private OfficialActCreateDto baseDto(Pessoa pessoa, OfficialActFormEnum form) {
-        OfficialActCreateDto dto = new OfficialActCreateDto();
+    private OfficialActCreateForm baseDto(Pessoa pessoa, OfficialActFormEnum form) {
+        OfficialActCreateForm dto = new OfficialActCreateForm();
         dto.setOfficialActFormId(form.getId());
         dto.setActDate(new DateTime(2024, 1, 1, 0, 0));
         dto.setPersonIds(List.of(pessoa.getId()));

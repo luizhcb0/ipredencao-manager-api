@@ -1,4 +1,4 @@
-package org.ipredencao.ipredencao_manager.model.official_act;
+package org.ipredencao.ipredencao_manager.controller.form;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.joda.time.DateTime;
@@ -12,13 +12,13 @@ import java.util.Map;
  * opcionais, etc. — não tem efeito colateral algum no domínio.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class OfficialActUpdateDto {
+public class OfficialActUpdateForm {
     private String minuteNumber;
     private DateTime minuteDate;
     private String notes;
     private Map<String, Object> metadata;
 
-    public OfficialActUpdateDto() {}
+    public OfficialActUpdateForm() {}
 
     public String getMinuteNumber() { return minuteNumber; }
     public void setMinuteNumber(String minuteNumber) { this.minuteNumber = minuteNumber; }

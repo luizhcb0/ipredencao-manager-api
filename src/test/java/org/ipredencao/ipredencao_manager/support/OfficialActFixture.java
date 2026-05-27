@@ -2,7 +2,7 @@ package org.ipredencao.ipredencao_manager.support;
 
 import org.ipredencao.ipredencao_manager.model.official_act.FieldType;
 import org.ipredencao.ipredencao_manager.model.official_act.MetadataFieldSpec;
-import org.ipredencao.ipredencao_manager.model.official_act.OfficialActCreateDto;
+import org.ipredencao.ipredencao_manager.controller.form.OfficialActCreateForm;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActFormEnum;
 import org.joda.time.DateTime;
 
@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Builds {@link OfficialActCreateDto} for tests. Does not persist — call the service explicitly. */
+/** Builds {@link OfficialActCreateForm} for tests. Does not persist — call the service explicitly. */
 public final class OfficialActFixture {
 
     private OfficialActFixture() {}
@@ -41,7 +41,7 @@ public final class OfficialActFixture {
     }
 
     public static final class Builder {
-        private final OfficialActCreateDto dto = new OfficialActCreateDto();
+        private final OfficialActCreateForm dto = new OfficialActCreateForm();
         private final OfficialActFormEnum form;
         private boolean metadataSet = false;
 
@@ -72,7 +72,7 @@ public final class OfficialActFixture {
 
         public Builder skipNumeroOrdemAdmissao(boolean skip) { dto.setSkipNumeroOrdemAdmissao(skip); return this; }
 
-        public OfficialActCreateDto build() {
+        public OfficialActCreateForm build() {
             if (!metadataSet) {
                 dto.setMetadata(OfficialActFixture.metadataMinimo(form));
             }
