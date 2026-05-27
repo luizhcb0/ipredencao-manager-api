@@ -32,8 +32,9 @@ application-local.properties
 
 # Segredos — nunca commitar; copie dos .example e preencha localmente
 /apprunner-config.json
-**/firebase-adminsdk*.json
-!**/firebase-adminsdk*.json.example
+src/main/resources/ipredencao-manager-api-firebase-adminsdk.json
+**/*firebase-adminsdk*.json
+!**/*firebase-adminsdk*.json.example
 .env
 .env.*
 !.env*.example
