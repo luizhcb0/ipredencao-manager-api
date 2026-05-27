@@ -16,7 +16,7 @@ public class OfficialAct {
     private String minuteNumber;
     private DateTime minuteDate;
     /** Só preenchido em admissões (Tipo 1/2) e na promoção MNC→MC (Art. 24, d, que herda). */
-    private Long numeroOrdemAdmissao;
+    private Long admissionOrderNumber;
     private Map<String, Object> metadata;
     private String notes;
     private DateTime addedAt;
@@ -50,8 +50,8 @@ public class OfficialAct {
     public void setMinuteNumber(String minuteNumber) { this.minuteNumber = minuteNumber; }
     public DateTime getMinuteDate() { return minuteDate; }
     public void setMinuteDate(DateTime minuteDate) { this.minuteDate = minuteDate; }
-    public Long getNumeroOrdemAdmissao() { return numeroOrdemAdmissao; }
-    public void setNumeroOrdemAdmissao(Long numeroOrdemAdmissao) { this.numeroOrdemAdmissao = numeroOrdemAdmissao; }
+    public Long getAdmissionOrderNumber() { return admissionOrderNumber; }
+    public void setAdmissionOrderNumber(Long admissionOrderNumber) { this.admissionOrderNumber = admissionOrderNumber; }
     public Map<String, Object> getMetadata() { return metadata; }
     public void setMetadata(Map<String, Object> metadata) { this.metadata = metadata; }
     public String getNotes() { return notes; }

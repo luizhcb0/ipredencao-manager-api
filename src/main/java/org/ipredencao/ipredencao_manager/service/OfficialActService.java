@@ -43,20 +43,20 @@ public class OfficialActService {
     // ===== CREATE =====
 
     @Transactional
-    public List<OfficialAct> create(OfficialActCreateForm dto) {
-        validateCreateDto(dto);
-        validateMetadata(dto.getOfficialActFormId(), dto.getMetadata());
+    public List<OfficialAct> create(OfficialActCreateForm form) {
+        validateCreateForm(form);
+        validateMetadata(form.getOfficialActFormId(), form.getMetadata());
 
         Long currentUserId = securityUtils.getCurrentUserId();
-        List<Long> personIds = new ArrayList<>(new LinkedHashSet<>(dto.getPersonIds()));
+        List<Long> personIds = new ArrayList<>(new LinkedHashSet<>(form.getPersonIds()));
 
         List<OfficialAct> created = new ArrayList<>();
         for (Long personId : personIds) {
-            OfficialAct act = buildAct(dto, personId, currentUserId);
-            assignNumeroOrdemAdmissao(act, dto);
+            OfficialAct act = buildAct(form, personId, currentUserId);
+            assignAdmissionOrderNumber(act, form);
             act = repo.insert(act);
 
-            if (!dto.isSkipEffects()) {
+            if (!form.isSkipEffects()) {
                 persistCreateEffects(act);
             }
             created.add(act);
@@ -67,20 +67,20 @@ public class OfficialActService {
     // ===== UPDATE (restritivo) =====
 
     @Transactional
-    public OfficialAct update(Long id, OfficialActUpdateForm dto) {
+    public OfficialAct update(Long id, OfficialActUpdateForm form) {
         OfficialAct existing = repo.findById(id);
         if (existing == null) {
             throw new NoSuchElementException("Ato oficial " + id + " não encontrado");
         }
         // Metadata segue o mesmo contrato do create: campos required precisam estar
         // preenchidos. Validar antes de persistir para impedir downgrades acidentais.
-        if (dto.getMetadata() != null) {
-            validateMetadata(existing.getOfficialActFormId(), dto.getMetadata());
-            existing.setMetadata(dto.getMetadata());
+        if (form.getMetadata() != null) {
+            validateMetadata(existing.getOfficialActFormId(), form.getMetadata());
+            existing.setMetadata(form.getMetadata());
         }
-        existing.setMinuteNumber(dto.getMinuteNumber());
-        existing.setMinuteDate(dto.getMinuteDate());
-        existing.setNotes(dto.getNotes());
+        existing.setMinuteNumber(form.getMinuteNumber());
+        existing.setMinuteDate(form.getMinuteDate());
+        existing.setNotes(form.getNotes());
         existing.setUpdatedBy(securityUtils.getCurrentUserId());
         return repo.update(existing);
     }
@@ -138,21 +138,21 @@ public class OfficialActService {
 
     // ===== VALIDAÇÃO =====
 
-    private void validateCreateDto(OfficialActCreateForm dto) {
-        if (dto == null) {
-            throw new IllegalArgumentException("DTO de criação é obrigatório");
+    private void validateCreateForm(OfficialActCreateForm form) {
+        if (form == null) {
+            throw new IllegalArgumentException("Form de criação é obrigatório");
         }
-        if (dto.getOfficialActFormId() == null) {
+        if (form.getOfficialActFormId() == null) {
             throw new IllegalArgumentException("officialActFormId é obrigatório");
         }
-        catalog.getFormById(dto.getOfficialActFormId());
-        if (dto.getActDate() == null) {
+        catalog.getFormById(form.getOfficialActFormId());
+        if (form.getActDate() == null) {
             throw new IllegalArgumentException("actDate é obrigatório");
         }
-        if (dto.getPersonIds() == null || dto.getPersonIds().isEmpty()) {
+        if (form.getPersonIds() == null || form.getPersonIds().isEmpty()) {
             throw new IllegalArgumentException("personIds deve conter ao menos uma pessoa");
         }
-        if (dto.getPersonIds().stream().anyMatch(id -> id == null)) {
+        if (form.getPersonIds().stream().anyMatch(id -> id == null)) {
             throw new IllegalArgumentException("personIds não pode conter valores nulos");
         }
     }
@@ -169,11 +169,21 @@ public class OfficialActService {
                                 + " (" + spec.helperText() + ")");
             }
             // PERSON_REF é armazenado como objeto {id?, name}; exige pelo menos `name` preenchido.
+            // Se `id` estiver presente, precisa ser numérico.
             // Demais tipos exigem string não-vazia (DATE também chega como ISO string).
             if (spec.type() == FieldType.PERSON_REF) {
-                if (!(value instanceof Map<?, ?> m) || isBlank(stringOrNull(m.get("name")))) {
+                if (!(value instanceof Map<?, ?> m)) {
                     throw new IllegalArgumentException(
                             "Campo obrigatório vazio em metadata: " + spec.key());
+                }
+                String name = stringOrNull(m.get("name"));
+                if (name == null || name.isBlank()) {
+                    throw new IllegalArgumentException(
+                            "Campo obrigatório vazio em metadata: " + spec.key());
+                }
+                if (m.containsKey("id") && !(m.get("id") instanceof Number)) {
+                    throw new IllegalArgumentException(
+                            "ID inválido em PERSON_REF: " + spec.key());
                 }
             } else if (value instanceof String s && s.isBlank()) {
                 throw new IllegalArgumentException(
@@ -186,20 +196,16 @@ public class OfficialActService {
         return v != null ? v.toString() : null;
     }
 
-    private static boolean isBlank(String s) {
-        return s == null || s.isBlank();
-    }
-
     // ===== NÚMERO DE ORDEM DE ADMISSÃO =====
 
-    void assignNumeroOrdemAdmissao(OfficialAct act, OfficialActCreateForm dto) {
-        if (dto.isSkipNumeroOrdemAdmissao()) return;
-        OfficialActFormEnum form = OfficialActFormEnum.fromId(act.getOfficialActFormId());
-        if (form.isAdmission()) {
-            act.setNumeroOrdemAdmissao(repo.nextNumeroOrdemAdmissao());
-        } else if (form.isPromotionFromMnc()) {
-            repo.findLatestNumeroOrdemAdmissao(act.getPersonId())
-                    .ifPresent(act::setNumeroOrdemAdmissao);
+    void assignAdmissionOrderNumber(OfficialAct act, OfficialActCreateForm form) {
+        if (form.isSkipAdmissionOrderNumber()) return;
+        OfficialActFormEnum formEnum = OfficialActFormEnum.fromId(act.getOfficialActFormId());
+        if (formEnum.isAdmission()) {
+            act.setAdmissionOrderNumber(repo.nextAdmissionOrderNumber());
+        } else if (formEnum.isPromotionFromMnc()) {
+            repo.findLatestAdmissionOrderNumber(act.getPersonId())
+                    .ifPresent(act::setAdmissionOrderNumber);
             // Se a pessoa não tinha admissão anterior (backfill incompleto), fica null.
         }
     }
@@ -276,15 +282,15 @@ public class OfficialActService {
         pessoa.setCategoria(CategoriaEnum.fromId(previousCategoriaId));
     }
 
-    private OfficialAct buildAct(OfficialActCreateForm dto, Long personId, Long currentUserId) {
+    private OfficialAct buildAct(OfficialActCreateForm form, Long personId, Long currentUserId) {
         OfficialAct act = new OfficialAct();
-        act.setOfficialActFormId(dto.getOfficialActFormId());
+        act.setOfficialActFormId(form.getOfficialActFormId());
         act.setPersonId(personId);
-        act.setActDate(dto.getActDate());
-        act.setMinuteNumber(dto.getMinuteNumber());
-        act.setMinuteDate(dto.getMinuteDate());
-        act.setMetadata(dto.getMetadata() != null ? dto.getMetadata() : new HashMap<>());
-        act.setNotes(dto.getNotes());
+        act.setActDate(form.getActDate());
+        act.setMinuteNumber(form.getMinuteNumber());
+        act.setMinuteDate(form.getMinuteDate());
+        act.setMetadata(form.getMetadata() != null ? form.getMetadata() : new HashMap<>());
+        act.setNotes(form.getNotes());
         act.setUpdatedBy(currentUserId);
         return act;
     }

@@ -96,14 +96,14 @@ class OfficialActControllerIT extends IntegrationTestBase {
         Pessoa a = somePessoa("Create A");
         Pessoa b = somePessoa("Create B");
 
-        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
+        OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personIds(List.of(a.getId(), b.getId()))
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
                 .build();
 
         mockMvc.perform(post(BASE)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(objectMapper.writeValueAsString(form)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(2)))
                 .andExpect(jsonPath("$[0].personId").value(a.getId()))
@@ -114,7 +114,7 @@ class OfficialActControllerIT extends IntegrationTestBase {
 
     /**
      * Defense-in-depth: even if a client sends skip flags in the JSON, the controller
-     * forces them to {@code false}. The proof is observable: numero_ordem_admissao is
+     * forces them to {@code false}. The proof is observable: admission_order_number is
      * assigned and the pessoa's categoria is mutated.
      */
     @Test
@@ -126,15 +126,15 @@ class OfficialActControllerIT extends IntegrationTestBase {
         body.put("officialActFormId", OfficialActFormEnum.ADM_MC_PROFISSAO_FE.getId());
         body.put("actDate", "2024-01-01T00:00:00.000-03:00");
         body.put("personIds", List.of(p.getId()));
-        body.put("metadata", Map.of("celebrante", Map.of("name", "Rev. Teste")));
+        body.put("metadata", Map.of("celebrant", Map.of("name", "Rev. Teste")));
         body.put("skipEffects", true);
-        body.put("skipNumeroOrdemAdmissao", true);
+        body.put("skipAdmissionOrderNumber", true);
 
         mockMvc.perform(post(BASE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].numeroOrdemAdmissao").isNumber()); // assigned despite skip=true
+                .andExpect(jsonPath("$[0].admissionOrderNumber").isNumber()); // assigned despite skip=true
 
         Pessoa reloaded = pessoaService.findById(p.getId());
         assertThat(reloaded.getCategoria())
@@ -188,7 +188,7 @@ class OfficialActControllerIT extends IntegrationTestBase {
         patch.setMinuteNumber("ATA-777");
         patch.setMinuteDate(new DateTime(2024, 12, 1, 0, 0));
         patch.setNotes("updated via http");
-        patch.setMetadata(java.util.Map.of("celebrante", java.util.Map.of("id", 7, "name", "Rev. HTTP")));
+        patch.setMetadata(java.util.Map.of("celebrant", java.util.Map.of("id", 7, "name", "Rev. HTTP")));
 
         mockMvc.perform(put(BASE + "/" + act.getId())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -197,8 +197,8 @@ class OfficialActControllerIT extends IntegrationTestBase {
                 .andExpect(jsonPath("$.id").value(act.getId()))
                 .andExpect(jsonPath("$.minuteNumber").value("ATA-777"))
                 .andExpect(jsonPath("$.notes").value("updated via http"))
-                .andExpect(jsonPath("$.metadata.celebrante.name").value("Rev. HTTP"))
-                .andExpect(jsonPath("$.metadata.celebrante.id").value(7))
+                .andExpect(jsonPath("$.metadata.celebrant.name").value("Rev. HTTP"))
+                .andExpect(jsonPath("$.metadata.celebrant.id").value(7))
                 // immutable fields stay put
                 .andExpect(jsonPath("$.officialActFormId").value(act.getOfficialActFormId()))
                 .andExpect(jsonPath("$.personId").value(act.getPersonId()));

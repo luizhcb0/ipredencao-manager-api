@@ -11,9 +11,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
+import org.ipredencao.ipredencao_manager.model.pessoa.PessoaInclude;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.util.SecurityUtils;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -114,6 +116,19 @@ public class PessoaService {
         } catch (NoSuchElementException e) {
             throw new NoSuchElementException("Pessoa com ID " + id + " não encontrada");
         }
+    }
+
+    /**
+     * Busca várias pessoas por IDs em uma única query ({@code WHERE pessoa_id IN (?)}).
+     * Inclui endereço e relacionamentos — suficiente para o {@code MinuteReportFormatter}.
+     */
+    public List<Pessoa> findByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        return pessoaRepository.find(
+                PessoaQuery.builder()
+                        .ids(List.copyOf(ids))
+                        .includes(PessoaInclude.ENDERECO, PessoaInclude.RELACIONAMENTOS)
+                        .build());
     }
 
     public List<Pessoa> find(PessoaQuery query) {

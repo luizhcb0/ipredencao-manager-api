@@ -14,11 +14,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Monta o relatório de uma ata em hierarquia categoria → tipo → forma → linhas.
@@ -51,11 +53,12 @@ public class MinuteReportService {
             throw new NoSuchElementException("Nenhum ato encontrado para a ata " + minuteNumber);
         }
 
-        // Cache de pessoa por id para evitar reload em atos múltiplos da mesma pessoa.
-        Map<Long, Pessoa> peopleById = new HashMap<>();
-        for (OfficialAct act : acts) {
-            peopleById.computeIfAbsent(act.getPersonId(), pessoaService::findById);
-        }
+        // Batch: uma única query IN (?) carrega todas as pessoas de uma vez.
+        Set<Long> personIds = acts.stream()
+                .map(OfficialAct::getPersonId)
+                .collect(Collectors.toSet());
+        Map<Long, Pessoa> peopleById = pessoaService.findByIds(personIds).stream()
+                .collect(Collectors.toMap(Pessoa::getId, Function.identity()));
 
         Map<String, Map<Long, Map<Long, List<MinuteReportLine>>>> hierarchy = buildHierarchy(acts, peopleById);
         List<CategorySection> sections = renderSections(hierarchy);
@@ -77,7 +80,7 @@ public class MinuteReportService {
             MinuteReportLine line = new MinuteReportLine(
                     act.getId(),
                     act.getPersonId(),
-                    act.getNumeroOrdemAdmissao(),
+                    act.getAdmissionOrderNumber(),
                     formatter.format(act, peopleById.get(act.getPersonId()))
             );
 

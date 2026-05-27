@@ -22,7 +22,7 @@ public class OfficialActCreateForm {
     private boolean skipEffects = false;
     /** Reservado para o backfill. Sempre sanitizado para {@code false} no controller público. */
     @JsonIgnore
-    private boolean skipNumeroOrdemAdmissao = false;
+    private boolean skipAdmissionOrderNumber = false;
 
     public OfficialActCreateForm() {}
 
@@ -43,6 +43,6 @@ public class OfficialActCreateForm {
 
     public boolean isSkipEffects() { return skipEffects; }
     public void setSkipEffects(boolean skipEffects) { this.skipEffects = skipEffects; }
-    public boolean isSkipNumeroOrdemAdmissao() { return skipNumeroOrdemAdmissao; }
-    public void setSkipNumeroOrdemAdmissao(boolean skipNumeroOrdemAdmissao) { this.skipNumeroOrdemAdmissao = skipNumeroOrdemAdmissao; }
+    public boolean isSkipAdmissionOrderNumber() { return skipAdmissionOrderNumber; }
+    public void setSkipAdmissionOrderNumber(boolean skipAdmissionOrderNumber) { this.skipAdmissionOrderNumber = skipAdmissionOrderNumber; }
 }

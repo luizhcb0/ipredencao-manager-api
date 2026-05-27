@@ -41,13 +41,13 @@ public class OfficialActController {
     }
 
     @PostMapping
-    public ResponseEntity<List<OfficialAct>> create(@RequestBody OfficialActCreateForm dto) {
+    public ResponseEntity<List<OfficialAct>> create(@RequestBody OfficialActCreateForm form) {
         // Defesa: as flags de backfill nunca devem ser definidas por callers HTTP.
-        if (dto != null) {
-            dto.setSkipEffects(false);
-            dto.setSkipNumeroOrdemAdmissao(false);
+        if (form != null) {
+            form.setSkipEffects(false);
+            form.setSkipAdmissionOrderNumber(false);
         }
-        return ResponseEntity.ok(officialActService.create(dto));
+        return ResponseEntity.ok(officialActService.create(form));
     }
 
     @GetMapping("/{id}")
@@ -56,8 +56,8 @@ public class OfficialActController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<OfficialAct> update(@PathVariable Long id, @RequestBody OfficialActUpdateForm dto) {
-        return ResponseEntity.ok(officialActService.update(id, dto));
+    public ResponseEntity<OfficialAct> update(@PathVariable Long id, @RequestBody OfficialActUpdateForm form) {
+        return ResponseEntity.ok(officialActService.update(id, form));
     }
 
     @DeleteMapping("/{id}")

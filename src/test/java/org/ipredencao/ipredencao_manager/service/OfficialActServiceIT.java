@@ -28,8 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Integration tests for {@link OfficialActService}. Covers DTO/metadata validation,
- * fan-out, numero_ordem_admissao assignment/inheritance, per-form effects on {@link Pessoa},
+ * Integration tests for {@link OfficialActService}. Covers Form/metadata validation,
+ * fan-out, admission_order_number assignment/inheritance, per-form effects on {@link Pessoa},
  * the restricted update, the delete-reverts-category flow, and pagination.
  *
  * <p>Most tests are {@link Transactional} and roll back automatically. Tests that require
@@ -43,50 +43,50 @@ class OfficialActServiceIT extends IntegrationTestBase {
     @Autowired private OfficialActService service;
     @Autowired private PessoaService pessoaService;
 
-    // ===== validateCreateDto =====
+    // ===== validateCreateForm =====
 
     @Test
-    void create_throwsWhenDtoIsNull() {
+    void create_throwsWhenFormIsNull() {
         assertThatThrownBy(() -> service.create(null))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("DTO");
+                .hasMessageContaining("Form");
     }
 
     @Test
     void create_throwsWhenFormIdIsNull() {
-        OfficialActCreateForm dto = baseDto(somePessoa("Form null"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
-        dto.setOfficialActFormId(null);
+        OfficialActCreateForm form = baseForm(somePessoa("Form null"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
+        form.setOfficialActFormId(null);
 
-        assertThatThrownBy(() -> service.create(dto))
+        assertThatThrownBy(() -> service.create(form))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("officialActFormId");
     }
 
     @Test
     void create_throwsWhenFormIdIsUnknown() {
-        OfficialActCreateForm dto = baseDto(somePessoa("Form unknown"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
-        dto.setOfficialActFormId(99999L);
+        OfficialActCreateForm form = baseForm(somePessoa("Form unknown"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
+        form.setOfficialActFormId(99999L);
 
-        assertThatThrownBy(() -> service.create(dto))
+        assertThatThrownBy(() -> service.create(form))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void create_throwsWhenActDateIsNull() {
-        OfficialActCreateForm dto = baseDto(somePessoa("Act date null"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
-        dto.setActDate(null);
+        OfficialActCreateForm form = baseForm(somePessoa("Act date null"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
+        form.setActDate(null);
 
-        assertThatThrownBy(() -> service.create(dto))
+        assertThatThrownBy(() -> service.create(form))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("actDate");
     }
 
     @Test
     void create_throwsWhenPersonIdsIsEmpty() {
-        OfficialActCreateForm dto = baseDto(somePessoa("PersonIds empty"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
-        dto.setPersonIds(List.of());
+        OfficialActCreateForm form = baseForm(somePessoa("PersonIds empty"), OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
+        form.setPersonIds(List.of());
 
-        assertThatThrownBy(() -> service.create(dto))
+        assertThatThrownBy(() -> service.create(form))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("personIds");
     }
@@ -94,10 +94,10 @@ class OfficialActServiceIT extends IntegrationTestBase {
     @Test
     void create_throwsWhenPersonIdsContainsNull() {
         Pessoa p = somePessoa("PersonIds contains null");
-        OfficialActCreateForm dto = baseDto(p, OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
-        dto.setPersonIds(java.util.Arrays.asList(p.getId(), null));
+        OfficialActCreateForm form = baseForm(p, OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
+        form.setPersonIds(java.util.Arrays.asList(p.getId(), null));
 
-        assertThatThrownBy(() -> service.create(dto))
+        assertThatThrownBy(() -> service.create(form))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("nulos");
     }
@@ -106,43 +106,57 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
     @Test
     void create_throwsWhenRequiredMetadataIsMissing() {
-        // ADM_MC_PROFISSAO_FE requires `celebrante` (PERSON_REF).
-        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
+        // ADM_MC_PROFISSAO_FE requires `celebrant` (PERSON_REF).
+        OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(somePessoa("Missing meta").getId())
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
                 .metadata(Map.of())
                 .build();
 
-        assertThatThrownBy(() -> service.create(dto))
+        assertThatThrownBy(() -> service.create(form))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("celebrante");
+                .hasMessageContaining("celebrant");
     }
 
     @Test
     void create_throwsWhenRequiredMetadataIsBlank() {
         // PERSON_REF é objeto {id?, name}; `name` em branco deve falhar como "vazio".
-        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
+        OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(somePessoa("Blank meta").getId())
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
-                .metadata(Map.of("celebrante", Map.of("name", "   ")))
+                .metadata(Map.of("celebrant", Map.of("name", "   ")))
                 .build();
 
-        assertThatThrownBy(() -> service.create(dto))
+        assertThatThrownBy(() -> service.create(form))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("vazio");
     }
 
     @Test
+    void create_throwsWhenPersonRefIdIsNotNumber() {
+        // PERSON_REF accepts {id?, name}; if `id` is present it must be numeric.
+        OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
+                .personId(somePessoa("Bad id type").getId())
+                .actDate(new DateTime(2024, 1, 1, 0, 0))
+                .metadata(Map.of("celebrant", Map.of("id", "not-a-number", "name", "Fulano")))
+                .build();
+
+        assertThatThrownBy(() -> service.create(form))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("ID inválido");
+    }
+
+    @Test
     void create_acceptsNullMetadataWhenAllFieldsAreOptional() {
-        // DEM_MC_EXCLUSAO_A_PEDIDO has only one optional field (motivo).
-        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO)
+        // DEM_MC_EXCLUSAO_A_PEDIDO has only one optional field (reason).
+        OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO)
                 .personId(somePessoa("Null meta ok").getId())
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
                 .metadata(null)
                 .build();
-        dto.setMetadata(null); // builder defaults to metadataMinimo when not set; force null.
+        form.setMetadata(null); // builder defaults to metadataMinimo when not set; force null.
 
-        List<OfficialAct> created = service.create(dto);
+        List<OfficialAct> created = service.create(form);
 
         assertThat(created).hasSize(1);
         assertThat(created.get(0).getMetadata()).isNotNull(); // service stores empty map, not null
@@ -154,12 +168,12 @@ class OfficialActServiceIT extends IntegrationTestBase {
     void create_returnsOneActPerPersonInOrder() {
         Pessoa a = somePessoa("Fan A");
         Pessoa b = somePessoa("Fan B");
-        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
+        OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personIds(List.of(a.getId(), b.getId()))
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
                 .build();
 
-        List<OfficialAct> created = service.create(dto);
+        List<OfficialAct> created = service.create(form);
 
         assertThat(created)
                 .hasSize(2)
@@ -171,12 +185,12 @@ class OfficialActServiceIT extends IntegrationTestBase {
     void create_deduplicatesPersonIdsPreservingOrder() {
         Pessoa a = somePessoa("Dedup A");
         Pessoa b = somePessoa("Dedup B");
-        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
+        OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personIds(List.of(a.getId(), b.getId(), a.getId(), b.getId()))
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
                 .build();
 
-        List<OfficialAct> created = service.create(dto);
+        List<OfficialAct> created = service.create(form);
 
         assertThat(created)
                 .hasSize(2)
@@ -188,31 +202,31 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    void create_admissionAssignsSequentialNumeroOrdemAdmissao() {
+    void create_admissionAssignsSequentialAdmissionOrderNumber() {
         Pessoa a = somePessoa("Seq A");
         Pessoa b = somePessoa("Seq B");
-        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
+        OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personIds(List.of(a.getId(), b.getId()))
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
                 .build();
 
-        List<OfficialAct> created = service.create(dto);
+        List<OfficialAct> created = service.create(form);
 
-        assertThat(created.get(0).getNumeroOrdemAdmissao()).isNotNull();
-        assertThat(created.get(1).getNumeroOrdemAdmissao())
-                .isEqualTo(created.get(0).getNumeroOrdemAdmissao() + 1);
+        assertThat(created.get(0).getAdmissionOrderNumber()).isNotNull();
+        assertThat(created.get(1).getAdmissionOrderNumber())
+                .isEqualTo(created.get(0).getAdmissionOrderNumber() + 1);
     }
 
     @Test
-    void create_dismissalLeavesNumeroOrdemAdmissaoNull() {
-        OfficialActCreateForm dto = OfficialActFixture.builder(OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO)
+    void create_dismissalLeavesAdmissionOrderNumberNull() {
+        OfficialActCreateForm form = OfficialActFixture.builder(OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO)
                 .personId(somePessoa("Dismissal null seq").getId())
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
                 .build();
 
-        OfficialAct created = service.create(dto).get(0);
+        OfficialAct created = service.create(form).get(0);
 
-        assertThat(created.getNumeroOrdemAdmissao()).isNull();
+        assertThat(created.getAdmissionOrderNumber()).isNull();
     }
 
     @Test
@@ -232,8 +246,8 @@ class OfficialActServiceIT extends IntegrationTestBase {
                         .actDate(new DateTime(2024, 6, 1, 0, 0))
                         .build()).get(0);
 
-        assertThat(admission.getNumeroOrdemAdmissao()).isNotNull();
-        assertThat(promotion.getNumeroOrdemAdmissao()).isEqualTo(admission.getNumeroOrdemAdmissao());
+        assertThat(admission.getAdmissionOrderNumber()).isNotNull();
+        assertThat(promotion.getAdmissionOrderNumber()).isEqualTo(admission.getAdmissionOrderNumber());
     }
 
     @Test
@@ -244,7 +258,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
                         .actDate(new DateTime(2024, 6, 1, 0, 0))
                         .build()).get(0);
 
-        assertThat(promotion.getNumeroOrdemAdmissao()).isNull();
+        assertThat(promotion.getAdmissionOrderNumber()).isNull();
     }
 
     // ===== effects on Pessoa (create) =====
@@ -329,7 +343,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
     // ===== update =====
     // Form, person and actDate stay immutable (mutating them would invalidate
-    // numeroOrdemAdmissao and the category side-effects). Everything else — including
+    // admissionOrderNumber and the category side-effects). Everything else — including
     // metadata — is editable.
 
     @Test
@@ -366,18 +380,18 @@ class OfficialActServiceIT extends IntegrationTestBase {
         OfficialAct created = service.create(OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(p.getId())
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
-                .metadata(Map.of("celebrante", Map.of("name", "Rev. Antigo")))
+                .metadata(Map.of("celebrant", Map.of("name", "Rev. Antigo")))
                 .build()).get(0);
 
         OfficialActUpdateForm patch = new OfficialActUpdateForm();
-        patch.setMetadata(Map.of("celebrante", Map.of("id", 42, "name", "Rev. Novo")));
+        patch.setMetadata(Map.of("celebrant", Map.of("id", 42, "name", "Rev. Novo")));
 
         OfficialAct updated = service.update(created.getId(), patch);
 
-        Object celebrante = updated.getMetadata().get("celebrante");
-        assertThat(celebrante).isInstanceOf(Map.class);
-        assertThat(((Map<?, ?>) celebrante).get("name")).isEqualTo("Rev. Novo");
-        assertThat(((Map<?, ?>) celebrante).get("id")).isEqualTo(42);
+        Object celebrant = updated.getMetadata().get("celebrant");
+        assertThat(celebrant).isInstanceOf(Map.class);
+        assertThat(((Map<?, ?>) celebrant).get("name")).isEqualTo("Rev. Novo");
+        assertThat(((Map<?, ?>) celebrant).get("id")).isEqualTo(42);
     }
 
     @Test
@@ -386,15 +400,15 @@ class OfficialActServiceIT extends IntegrationTestBase {
         OfficialAct created = service.create(OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(p.getId())
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
-                .metadata(Map.of("celebrante", Map.of("name", "Rev. Original")))
+                .metadata(Map.of("celebrant", Map.of("name", "Rev. Original")))
                 .build()).get(0);
 
         OfficialActUpdateForm patch = new OfficialActUpdateForm();
-        patch.setMetadata(Map.of("celebrante", Map.of("name", "   ")));
+        patch.setMetadata(Map.of("celebrant", Map.of("name", "   ")));
 
         assertThatThrownBy(() -> service.update(created.getId(), patch))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("celebrante");
+                .hasMessageContaining("celebrant");
     }
 
     @Test
@@ -403,7 +417,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
         OfficialAct created = service.create(OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
                 .personId(p.getId())
                 .actDate(new DateTime(2024, 1, 1, 0, 0))
-                .metadata(Map.of("celebrante", Map.of("name", "Rev. Mantido")))
+                .metadata(Map.of("celebrant", Map.of("name", "Rev. Mantido")))
                 .build()).get(0);
 
         OfficialActUpdateForm patch = new OfficialActUpdateForm();
@@ -411,9 +425,9 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
         OfficialAct updated = service.update(created.getId(), patch);
 
-        Object celebrante = updated.getMetadata().get("celebrante");
-        assertThat(celebrante).isInstanceOf(Map.class);
-        assertThat(((Map<?, ?>) celebrante).get("name")).isEqualTo("Rev. Mantido");
+        Object celebrant = updated.getMetadata().get("celebrant");
+        assertThat(celebrant).isInstanceOf(Map.class);
+        assertThat(((Map<?, ?>) celebrant).get("name")).isEqualTo("Rev. Mantido");
     }
 
     @Test
@@ -528,12 +542,12 @@ class OfficialActServiceIT extends IntegrationTestBase {
                 new DateTime(2020, 5, 5, 0, 0));
     }
 
-    private OfficialActCreateForm baseDto(Pessoa pessoa, OfficialActFormEnum form) {
-        OfficialActCreateForm dto = new OfficialActCreateForm();
-        dto.setOfficialActFormId(form.getId());
-        dto.setActDate(new DateTime(2024, 1, 1, 0, 0));
-        dto.setPersonIds(List.of(pessoa.getId()));
-        dto.setMetadata(new HashMap<>(OfficialActFixture.metadataMinimo(form)));
-        return dto;
+    private OfficialActCreateForm baseForm(Pessoa pessoa, OfficialActFormEnum form) {
+        OfficialActCreateForm createForm = new OfficialActCreateForm();
+        createForm.setOfficialActFormId(form.getId());
+        createForm.setActDate(new DateTime(2024, 1, 1, 0, 0));
+        createForm.setPersonIds(List.of(pessoa.getId()));
+        createForm.setMetadata(new HashMap<>(OfficialActFixture.metadataMinimo(form)));
+        return createForm;
     }
 }

@@ -15,105 +15,105 @@ public enum OfficialActFormEnum {
 
     // Admissão de membro comungante (Art. 16)
     ADM_MC_PROFISSAO_FE(1L, ADMISSAO_MEMBRO_COMUNGANTE, "Art. 16, a", List.of(
-            req("celebrante", FieldType.PERSON_REF, "Celebrante")
+            req("celebrant", FieldType.PERSON_REF, "Celebrante")
     )),
     ADM_MC_PROFISSAO_FE_E_BATISMO(2L, ADMISSAO_MEMBRO_COMUNGANTE, "Art. 16, b", List.of(
-            req("celebrante", FieldType.PERSON_REF, "Celebrante")
+            req("celebrant", FieldType.PERSON_REF, "Celebrante")
     )),
     ADM_MC_CARTA_TRANSFERENCIA(3L, ADMISSAO_MEMBRO_COMUNGANTE, "Art. 16, c", List.of(
-            req("igrejaOrigem",      FieldType.STRING, "Nome + cidade/UF da igreja de procedência"),
-            opt("presbiterioOrigem", FieldType.STRING, "Presbitério de origem"),
-            opt("numeroCarta",       FieldType.STRING, "Referência da carta")
+            req("originChurch",      FieldType.STRING, "Nome + cidade/UF da igreja de procedência"),
+            opt("originPresbytery",  FieldType.STRING, "Presbitério de origem"),
+            opt("letterNumber",      FieldType.STRING, "Referência da carta")
     )),
     ADM_MC_JURISDICAO_A_PEDIDO(4L, ADMISSAO_MEMBRO_COMUNGANTE, "Art. 16, d", List.of(
-            req("igrejaOrigem",      FieldType.STRING, "Igreja de origem"),
-            opt("presbiterioOrigem", FieldType.STRING, "Presbitério de origem"),
-            opt("motivo",            FieldType.TEXT,   "Motivo do pedido")
+            req("originChurch",      FieldType.STRING, "Igreja de origem"),
+            opt("originPresbytery",  FieldType.STRING, "Presbitério de origem"),
+            opt("reason",            FieldType.TEXT,   "Motivo do pedido")
     )),
     ADM_MC_JURISDICAO_EX_OFFICIO(5L, ADMISSAO_MEMBRO_COMUNGANTE, "Art. 16, e", List.of(
-            req("igrejaOrigem",      FieldType.STRING, "Igreja de origem"),
-            opt("presbiterioOrigem", FieldType.STRING, "Presbitério de origem"),
-            opt("numeroResolucao",   FieldType.STRING, "Número da resolução")
+            req("originChurch",      FieldType.STRING, "Igreja de origem"),
+            opt("originPresbytery",  FieldType.STRING, "Presbitério de origem"),
+            opt("resolutionNumber",  FieldType.STRING, "Número da resolução")
     )),
     ADM_MC_RESTAURACAO(6L, ADMISSAO_MEMBRO_COMUNGANTE, "Art. 16, f", List.of(
-            opt("motivo", FieldType.TEXT, "Motivo / contexto da restauração")
+            opt("reason", FieldType.TEXT, "Motivo / contexto da restauração")
     )),
     ADM_MC_DESIGNACAO_PRESBITERIO(7L, ADMISSAO_MEMBRO_COMUNGANTE, "Art. 16, g", List.of(
-            req("presbiterioOrigem", FieldType.STRING, "Presbitério designante"),
-            opt("numeroResolucao",   FieldType.STRING, "Número da resolução"),
-            opt("motivo",            FieldType.TEXT,   "Motivo")
+            req("originPresbytery",  FieldType.STRING, "Presbitério designante"),
+            opt("resolutionNumber",  FieldType.STRING, "Número da resolução"),
+            opt("reason",            FieldType.TEXT,   "Motivo")
     )),
 
     // Admissão de membro não comungante (Art. 17)
     ADM_MNC_BATISMO_INFANCIA(8L, ADMISSAO_MEMBRO_NAO_COMUNGANTE, "Art. 17, a", List.of(
-            req("celebrante", FieldType.PERSON_REF, "Celebrante")
+            req("celebrant", FieldType.PERSON_REF, "Celebrante")
     )),
     ADM_MNC_TRANSFERENCIA_PAIS(9L, ADMISSAO_MEMBRO_NAO_COMUNGANTE, "Art. 17, b", List.of(
-            req("igrejaOrigem",      FieldType.STRING, "Igreja de origem dos pais"),
-            opt("presbiterioOrigem", FieldType.STRING, "Presbitério de origem")
+            req("originChurch",      FieldType.STRING, "Igreja de origem dos pais"),
+            opt("originPresbytery",  FieldType.STRING, "Presbitério de origem")
     )),
     ADM_MNC_JURISDICAO_PAIS(10L, ADMISSAO_MEMBRO_NAO_COMUNGANTE, "Art. 17, c", List.of(
-            req("igrejaOrigem",      FieldType.STRING, "Igreja de origem dos pais"),
-            opt("presbiterioOrigem", FieldType.STRING, "Presbitério de origem")
+            req("originChurch",      FieldType.STRING, "Igreja de origem dos pais"),
+            opt("originPresbytery",  FieldType.STRING, "Presbitério de origem")
     )),
 
     // Demissão de membro comungante (Art. 23)
     DEM_MC_EXCLUSAO_DISCIPLINA(11L, DEMISSAO_MEMBRO_COMUNGANTE, "Art. 23, a", List.of(
-            req("motivo",                    FieldType.TEXT,   "Motivo / falta disciplinar"),
-            opt("numeroProcessoDisciplinar", FieldType.STRING, "Nº do processo disciplinar")
+            req("reason",                      FieldType.TEXT,   "Motivo / falta disciplinar"),
+            opt("disciplinaryProcessNumber",   FieldType.STRING, "Nº do processo disciplinar")
     )),
     DEM_MC_EXCLUSAO_A_PEDIDO(12L, DEMISSAO_MEMBRO_COMUNGANTE, "Art. 23, b", List.of(
-            opt("motivo", FieldType.TEXT, "Motivo declarado")
+            opt("reason", FieldType.TEXT, "Motivo declarado")
     )),
     DEM_MC_EXCLUSAO_AUSENCIA(13L, DEMISSAO_MEMBRO_COMUNGANTE, "Art. 23, c", List.of(
-            opt("motivo", FieldType.TEXT, "Contexto / tempo de ausência")
+            opt("reason", FieldType.TEXT, "Contexto / tempo de ausência")
     )),
     DEM_MC_CARTA_TRANSFERENCIA(14L, DEMISSAO_MEMBRO_COMUNGANTE, "Art. 23, d", List.of(
-            req("igrejaDestino",      FieldType.STRING, "Igreja destino"),
-            opt("presbiterioDestino", FieldType.STRING, "Presbitério destino"),
-            opt("numeroCarta",        FieldType.STRING, "Referência da carta")
+            req("destinationChurch",      FieldType.STRING, "Igreja destino"),
+            opt("destinationPresbytery",  FieldType.STRING, "Presbitério destino"),
+            opt("letterNumber",           FieldType.STRING, "Referência da carta")
     )),
     DEM_MC_JURISDICAO_OUTRA_IGREJA(15L, DEMISSAO_MEMBRO_COMUNGANTE, "Art. 23, e", List.of(
-            req("igrejaDestino",      FieldType.STRING, "Igreja que assumiu jurisdição"),
-            opt("presbiterioDestino", FieldType.STRING, "Presbitério destino")
+            req("destinationChurch",      FieldType.STRING, "Igreja que assumiu jurisdição"),
+            opt("destinationPresbytery",  FieldType.STRING, "Presbitério destino")
     )),
     DEM_MC_FALECIMENTO(16L, DEMISSAO_MEMBRO_COMUNGANTE, "Art. 23, f", List.of(
-            opt("dataCerimoniaFunebre",   FieldType.DATE,   "Data da cerimônia fúnebre"),
-            opt("localCerimoniaFunebre",  FieldType.STRING, "Local da cerimônia"),
-            opt("celebranteFunebreNome",  FieldType.STRING, "Celebrante"),
-            opt("causaMortis",            FieldType.STRING, "Causa mortis")
+            opt("funeralCeremonyDate",      FieldType.DATE,   "Data da cerimônia fúnebre"),
+            opt("funeralCeremonyLocation",  FieldType.STRING, "Local da cerimônia"),
+            opt("funeralCelebrantName",     FieldType.STRING, "Celebrante"),
+            opt("causeOfDeath",             FieldType.STRING, "Causa mortis")
     )),
     DEM_MC_ORDENACAO_MINISTRO(17L, DEMISSAO_MEMBRO_COMUNGANTE, "Art. 23, §3", List.of(
-            req("presbiterioOrigem", FieldType.STRING, "Presbitério ao qual o nome foi transferido"),
-            opt("numeroResolucao",   FieldType.STRING, "Número da resolução")
+            req("originPresbytery",  FieldType.STRING, "Presbitério ao qual o nome foi transferido"),
+            opt("resolutionNumber",  FieldType.STRING, "Número da resolução")
     )),
 
     // Demissão de membro não comungante (Art. 24)
     DEM_MNC_TRANSF_PAIS(18L, DEMISSAO_MEMBRO_NAO_COMUNGANTE, "Art. 24, a", List.of(
-            req("igrejaDestino",      FieldType.STRING, "Igreja destino"),
-            opt("presbiterioDestino", FieldType.STRING, "Presbitério destino")
+            req("destinationChurch",      FieldType.STRING, "Igreja destino"),
+            opt("destinationPresbytery",  FieldType.STRING, "Presbitério destino")
     )),
     DEM_MNC_TRANSF_PROPRIA(19L, DEMISSAO_MEMBRO_NAO_COMUNGANTE, "Art. 24, b", List.of(
-            req("igrejaDestino",      FieldType.STRING, "Igreja destino"),
-            opt("presbiterioDestino", FieldType.STRING, "Presbitério destino")
+            req("destinationChurch",      FieldType.STRING, "Igreja destino"),
+            opt("destinationPresbytery",  FieldType.STRING, "Presbitério destino")
     )),
     DEM_MNC_MAIORIDADE(20L, DEMISSAO_MEMBRO_NAO_COMUNGANTE, "Art. 24, c", List.of(
-            opt("motivo", FieldType.TEXT, "Observações")
+            opt("reason", FieldType.TEXT, "Observações")
     )),
     // Caso especial: promove para Membro Comungante (não vai para Ex-membro)
     DEM_MNC_PROFISSAO_FE(21L, DEMISSAO_MEMBRO_NAO_COMUNGANTE, "Art. 24, d", List.of(
-            req("celebrante", FieldType.PERSON_REF, "Celebrante")
+            req("celebrant", FieldType.PERSON_REF, "Celebrante")
     )),
     DEM_MNC_SOLIC_PAIS_OUTRA(22L, DEMISSAO_MEMBRO_NAO_COMUNGANTE, "Art. 24, e", List.of(
-            req("igrejaDestino",      FieldType.STRING, "Comunidade destino"),
-            opt("presbiterioDestino", FieldType.STRING, "Presbitério destino"),
-            opt("motivo",             FieldType.TEXT,   "Motivo")
+            req("destinationChurch",      FieldType.STRING, "Comunidade destino"),
+            opt("destinationPresbytery",  FieldType.STRING, "Presbitério destino"),
+            opt("reason",                 FieldType.TEXT,   "Motivo")
     )),
     DEM_MNC_FALECIMENTO(23L, DEMISSAO_MEMBRO_NAO_COMUNGANTE, "Art. 24, f", List.of(
-            opt("dataCerimoniaFunebre",   FieldType.DATE,   "Data da cerimônia fúnebre"),
-            opt("localCerimoniaFunebre",  FieldType.STRING, "Local"),
-            opt("celebranteFunebreNome",  FieldType.STRING, "Celebrante"),
-            opt("causaMortis",            FieldType.STRING, "Causa mortis")
+            opt("funeralCeremonyDate",      FieldType.DATE,   "Data da cerimônia fúnebre"),
+            opt("funeralCeremonyLocation",  FieldType.STRING, "Local"),
+            opt("funeralCelebrantName",     FieldType.STRING, "Celebrante"),
+            opt("causeOfDeath",             FieldType.STRING, "Causa mortis")
     ));
 
     private final Long id;
@@ -148,7 +148,7 @@ public enum OfficialActFormEnum {
         return "ADMISSAO".equals(type.getCategory());
     }
 
-    /** Art. 24, d — promove MNC para MC e herda o numero_ordem_admissao da admissão anterior. */
+    /** Art. 24, d — promove MNC para MC e herda o admission_order_number da admissão anterior. */
     public boolean isPromotionFromMnc() {
         return this == DEM_MNC_PROFISSAO_FE;
     }

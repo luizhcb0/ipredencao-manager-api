@@ -165,7 +165,7 @@ class MinuteReportServiceIT extends IntegrationTestBase {
     // ===== line content =====
 
     @Test
-    void generate_linesCarryActIdPersonIdAndNumeroOrdemAdmissao() {
+    void generate_linesCarryActIdPersonIdAndAdmissionOrderNumber() {
         String minute = uniqueMinute("LINE");
         DateTime date = new DateTime(2024, 8, 1, 0, 0);
         Pessoa pessoa = somePessoa("Carry");
@@ -176,9 +176,9 @@ class MinuteReportServiceIT extends IntegrationTestBase {
         MinuteReportLine line = report.getSections().get(0).getTypes().get(0).getForms().get(0).getLines().get(0);
         assertThat(line.getActId()).isEqualTo(admission.getId());
         assertThat(line.getPersonId()).isEqualTo(pessoa.getId());
-        assertThat(line.getNumeroOrdemAdmissao())
-                .as("admission consumes a numero_ordem_admissao and the line surfaces it")
-                .isEqualTo(admission.getNumeroOrdemAdmissao());
+        assertThat(line.getAdmissionOrderNumber())
+                .as("admission consumes a admission_order_number and the line surfaces it")
+                .isEqualTo(admission.getAdmissionOrderNumber());
     }
 
     @Test
@@ -195,7 +195,7 @@ class MinuteReportServiceIT extends IntegrationTestBase {
         assertThat(text)
                 .contains("15/09/2024")
                 .contains("JOÃO DA SILVA")
-                .contains("(" + admission.getNumeroOrdemAdmissao() + ")")
+                .contains("(" + admission.getAdmissionOrderNumber() + ")")
                 .contains("profissão de fé");
     }
 
@@ -230,13 +230,13 @@ class MinuteReportServiceIT extends IntegrationTestBase {
 
     private OfficialAct createAct(OfficialActFormEnum form, Pessoa pessoa, DateTime actDate,
                                   String minuteNumber, DateTime minuteDate) {
-        OfficialActCreateForm dto = OfficialActFixture.builder(form)
+        OfficialActCreateForm createForm = OfficialActFixture.builder(form)
                 .personId(pessoa.getId())
                 .actDate(actDate)
                 .minuteNumber(minuteNumber)
                 .minuteDate(minuteDate)
                 .build();
-        return officialActService.create(dto).get(0);
+        return officialActService.create(createForm).get(0);
     }
 
     private static FormGroup formById(TypeGroup type, Long formId) {

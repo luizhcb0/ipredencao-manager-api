@@ -33,7 +33,7 @@ import static org.ipredencao.ipredencao_manager.jooq.Tables.PESSOA;
 @Repository
 public class OfficialActRepository {
 
-    private static final String NUMERO_ORDEM_SEQ = "official_act_numero_ordem_admissao_seq";
+    private static final String ADMISSION_ORDER_SEQ = "official_act_admission_order_seq";
     private static final TypeReference<Map<String, Object>> METADATA_TYPE = new TypeReference<>() {};
 
     @Autowired
@@ -49,7 +49,7 @@ public class OfficialActRepository {
                 .set(OFFICIAL_ACT.ACT_DATE, DateTimeHelper.toDbDate(act.getActDate()))
                 .set(OFFICIAL_ACT.MINUTE_NUMBER, act.getMinuteNumber())
                 .set(OFFICIAL_ACT.MINUTE_DATE, DateTimeHelper.toDbDate(act.getMinuteDate()))
-                .set(OFFICIAL_ACT.NUMERO_ORDEM_ADMISSAO, act.getNumeroOrdemAdmissao())
+                .set(OFFICIAL_ACT.ADMISSION_ORDER_NUMBER, act.getAdmissionOrderNumber())
                 .set(OFFICIAL_ACT.METADATA, toJsonb(act.getMetadata()))
                 .set(OFFICIAL_ACT.NOTES, act.getNotes())
                 .set(OFFICIAL_ACT.UPDATED_BY, act.getUpdatedBy())
@@ -132,23 +132,23 @@ public class OfficialActRepository {
         return total != null ? total : 0;
     }
 
-    public Long nextNumeroOrdemAdmissao() {
-        return dsl.fetchValue(DSL.field("nextval('" + NUMERO_ORDEM_SEQ + "')", Long.class));
+    public Long nextAdmissionOrderNumber() {
+        return dsl.fetchValue(DSL.field("nextval('" + ADMISSION_ORDER_SEQ + "')", Long.class));
     }
 
     /**
      * Retorna o número de ordem de admissão da admissão (ou promoção MNC→MC) mais recente da pessoa.
      * Usado pela promoção {@code DEM_MNC_PROFISSAO_FE} (Art. 24, d), que herda o número.
      */
-    public Optional<Long> findLatestNumeroOrdemAdmissao(Long personId) {
+    public Optional<Long> findLatestAdmissionOrderNumber(Long personId) {
         if (personId == null) return Optional.empty();
-        Long value = dsl.select(OFFICIAL_ACT.NUMERO_ORDEM_ADMISSAO)
+        Long value = dsl.select(OFFICIAL_ACT.ADMISSION_ORDER_NUMBER)
                 .from(OFFICIAL_ACT)
                 .where(OFFICIAL_ACT.PERSON_ID.eq(personId))
-                .and(OFFICIAL_ACT.NUMERO_ORDEM_ADMISSAO.isNotNull())
+                .and(OFFICIAL_ACT.ADMISSION_ORDER_NUMBER.isNotNull())
                 .orderBy(OFFICIAL_ACT.ACT_DATE.desc(), OFFICIAL_ACT.ID.desc())
                 .limit(1)
-                .fetchOne(OFFICIAL_ACT.NUMERO_ORDEM_ADMISSAO);
+                .fetchOne(OFFICIAL_ACT.ADMISSION_ORDER_NUMBER);
         return Optional.ofNullable(value);
     }
 
@@ -205,7 +205,7 @@ public class OfficialActRepository {
         act.setActDate(DateTimeHelper.fromDbDate(record.get(OFFICIAL_ACT.ACT_DATE)));
         act.setMinuteNumber(record.get(OFFICIAL_ACT.MINUTE_NUMBER));
         act.setMinuteDate(DateTimeHelper.fromDbDate(record.get(OFFICIAL_ACT.MINUTE_DATE)));
-        act.setNumeroOrdemAdmissao(record.get(OFFICIAL_ACT.NUMERO_ORDEM_ADMISSAO));
+        act.setAdmissionOrderNumber(record.get(OFFICIAL_ACT.ADMISSION_ORDER_NUMBER));
         act.setMetadata(fromJsonb(record.get(OFFICIAL_ACT.METADATA)));
         act.setNotes(record.get(OFFICIAL_ACT.NOTES));
         act.setAddedAt(DateTimeHelper.fromDb(record.get(OFFICIAL_ACT.ADDED_AT)));

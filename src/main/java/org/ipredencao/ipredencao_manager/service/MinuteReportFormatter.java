@@ -33,71 +33,71 @@ public class MinuteReportFormatter {
         return switch (form) {
             // ===== Admissão de membro comungante (Art. 16) =====
             case ADM_MC_PROFISSAO_FE ->
-                buildAdmissaoMc(act, pessoa, null, "por profissão de fé, " + celebrante(md));
+                buildAdmissaoMc(act, pessoa, null, "por profissão de fé, " + celebrant(md));
             case ADM_MC_PROFISSAO_FE_E_BATISMO ->
-                buildAdmissaoMc(act, pessoa, null, "por profissão de fé e batismo, " + celebrante(md));
+                buildAdmissaoMc(act, pessoa, null, "por profissão de fé e batismo, " + celebrant(md));
             case ADM_MC_CARTA_TRANSFERENCIA ->
-                buildAdmissaoMc(act, pessoa, proveniencia(md), "por carta de transferência");
+                buildAdmissaoMc(act, pessoa, provenance(md), "por carta de transferência");
             case ADM_MC_JURISDICAO_A_PEDIDO ->
-                buildAdmissaoMc(act, pessoa, proveniencia(md), "por jurisdição a pedido");
+                buildAdmissaoMc(act, pessoa, provenance(md), "por jurisdição a pedido");
             case ADM_MC_JURISDICAO_EX_OFFICIO ->
-                buildAdmissaoMc(act, pessoa, proveniencia(md), "por jurisdição ex officio");
+                buildAdmissaoMc(act, pessoa, provenance(md), "por jurisdição ex officio");
             case ADM_MC_RESTAURACAO ->
-                buildAdmissaoMc(act, pessoa, null, "por restauração" + motivoOpcional(md));
+                buildAdmissaoMc(act, pessoa, null, "por restauração" + optionalReason(md));
             case ADM_MC_DESIGNACAO_PRESBITERIO ->
                 buildAdmissaoMc(act, pessoa, null, "por designação do Presbitério "
-                        + str(md, "presbiterioOrigem", "[presbitério não informado]")
-                        + numeroResolucaoOpcional(md));
+                        + str(md, "originPresbytery", "[presbitério não informado]")
+                        + optionalResolutionNumber(md));
 
             // ===== Admissão de membro não comungante (Art. 17) =====
             case ADM_MNC_BATISMO_INFANCIA ->
-                buildAdmissaoMnc(act, pessoa, "por batismo, " + celebrante(md));
+                buildAdmissaoMnc(act, pessoa, "por batismo, " + celebrant(md));
             case ADM_MNC_TRANSFERENCIA_PAIS ->
                 buildAdmissaoMnc(act, pessoa, "por transferência dos pais ou responsáveis, vindos da "
-                        + igrejaOrigem(md) + presbiterioOrigem(md));
+                        + originChurch(md) + originPresbytery(md));
             case ADM_MNC_JURISDICAO_PAIS ->
                 buildAdmissaoMnc(act, pessoa,
                         "por jurisdição assumida sobre os pais ou responsáveis, vindos da "
-                        + igrejaOrigem(md) + presbiterioOrigem(md));
+                        + originChurch(md) + originPresbytery(md));
 
             // ===== Demissão de membro comungante (Art. 23) =====
             case DEM_MC_EXCLUSAO_DISCIPLINA ->
                 buildDemissaoSimples(act, pessoa, "por exclusão por disciplina"
-                        + motivoOpcional(md)
-                        + opcional(md, "numeroProcessoDisciplinar", ", processo nº "));
+                        + optionalReason(md)
+                        + optional(md, "disciplinaryProcessNumber", ", processo nº "));
             case DEM_MC_EXCLUSAO_A_PEDIDO ->
-                buildDemissaoSimples(act, pessoa, "por exclusão a pedido" + motivoOpcional(md));
+                buildDemissaoSimples(act, pessoa, "por exclusão a pedido" + optionalReason(md));
             case DEM_MC_EXCLUSAO_AUSENCIA ->
-                buildDemissaoSimples(act, pessoa, "por exclusão por ausência" + motivoOpcional(md));
+                buildDemissaoSimples(act, pessoa, "por exclusão por ausência" + optionalReason(md));
             case DEM_MC_CARTA_TRANSFERENCIA ->
                 buildDemissaoSimples(act, pessoa, "por carta de transferência, destinada à "
-                        + igrejaDestino(md) + presbiterioDestino(md));
+                        + destinationChurch(md) + destinationPresbytery(md));
             case DEM_MC_JURISDICAO_OUTRA_IGREJA ->
                 buildDemissaoSimples(act, pessoa, "por jurisdição assumida por outra igreja, a "
-                        + igrejaDestino(md) + presbiterioDestino(md));
+                        + destinationChurch(md) + destinationPresbytery(md));
             case DEM_MC_ORDENACAO_MINISTRO ->
                 buildDemissaoSimples(act, pessoa, "por ordenação ao ministério, transferido ao Presbitério "
-                        + str(md, "presbiterioOrigem", "[presbitério não informado]")
-                        + numeroResolucaoOpcional(md));
+                        + str(md, "originPresbytery", "[presbitério não informado]")
+                        + optionalResolutionNumber(md));
             case DEM_MC_FALECIMENTO ->
                 buildFalecimento(act, pessoa, md);
 
             // ===== Demissão de membro não comungante (Art. 24) =====
             case DEM_MNC_TRANSF_PAIS ->
                 buildDemissaoSimples(act, pessoa, "por carta de transferência dos pais ou responsáveis, destinada à "
-                        + igrejaDestino(md) + presbiterioDestino(md));
+                        + destinationChurch(md) + destinationPresbytery(md));
             case DEM_MNC_TRANSF_PROPRIA ->
                 buildDemissaoSimples(act, pessoa, "por carta de transferência, destinada à "
-                        + igrejaDestino(md) + presbiterioDestino(md));
+                        + destinationChurch(md) + destinationPresbytery(md));
             case DEM_MNC_MAIORIDADE ->
                 buildDemissaoSimples(act, pessoa, "por atingimento da maioridade (18 anos)"
-                        + motivoOpcional(md));
+                        + optionalReason(md));
             case DEM_MNC_PROFISSAO_FE ->                              // Art. 24, d — promoção
                 buildPromocaoArt24d(act, pessoa, md);
             case DEM_MNC_SOLIC_PAIS_OUTRA ->
                 buildDemissaoSimples(act, pessoa,
                         "por solicitação dos pais (aderiram a outra comunidade), destinada à "
-                        + igrejaDestino(md) + presbiterioDestino(md) + motivoOpcional(md));
+                        + destinationChurch(md) + destinationPresbytery(md) + optionalReason(md));
             case DEM_MNC_FALECIMENTO ->
                 buildFalecimento(act, pessoa, md);
         };
@@ -110,18 +110,18 @@ public class MinuteReportFormatter {
      * e endereço (quando cadastrados). Pais e a palavra "comungante" não são emitidos
      * conforme requisito de produto (e o regulamento Art. 12, §2º, II não os exige).
      *
-     * @param proveniencia trecho opcional "proveniente da X, Presbitério de Y" para formas
-     *                     com {@code igrejaOrigem}; {@code null} para as demais.
+     * @param provenance trecho opcional "proveniente da X, Presbitério de Y" para formas
+     *                   com {@code originChurch}; {@code null} para as demais.
      * @param causa trecho final "por <modo de recepção>".
      */
-    private String buildAdmissaoMc(OfficialAct act, Pessoa pessoa, String proveniencia, String causa) {
+    private String buildAdmissaoMc(OfficialAct act, Pessoa pessoa, String provenance, String causa) {
         StringBuilder sb = new StringBuilder();
         sb.append("em ").append(formatDate(act.getActDate())).append(", ")
                 .append(personHeader(act, pessoa));
         appendIfNotBlank(sb, ", ", birth(pessoa));
         appendIfNotBlank(sb, ", ", estadoCivil(pessoa));
         appendIfNotBlank(sb, ", ", residencia(pessoa));
-        appendIfNotBlank(sb, ", ", proveniencia);
+        appendIfNotBlank(sb, ", ", provenance);
         sb.append(", ").append(causa).append(".");
         return sb.toString();
     }
@@ -144,17 +144,16 @@ public class MinuteReportFormatter {
     }
 
     private String buildFalecimento(OfficialAct act, Pessoa pessoa, Map<String, Object> md) {
-        String genero = isFeminino(pessoa) ? "Faleceu" : "Faleceu";
         StringBuilder sb = new StringBuilder();
-        sb.append(genero).append(" em ").append(formatDate(act.getActDate())).append(", ")
+        sb.append("Faleceu em ").append(formatDate(act.getActDate())).append(", ")
                 .append(personHeader(act, pessoa));
-        appendIfNotBlank(sb, ", causa mortis: ", str(md, "causaMortis", null));
-        DateTime cer = dt(md, "dataCerimoniaFunebre");
+        appendIfNotBlank(sb, ", causa mortis: ", str(md, "causeOfDeath", null));
+        DateTime cer = dt(md, "funeralCeremonyDate");
         if (cer != null) {
             sb.append(", cerimônia fúnebre em ").append(formatDate(cer));
         }
-        appendIfNotBlank(sb, ", em ", str(md, "localCerimoniaFunebre", null));
-        appendIfNotBlank(sb, ", oficiada por ", str(md, "celebranteFunebreNome", null));
+        appendIfNotBlank(sb, ", em ", str(md, "funeralCeremonyLocation", null));
+        appendIfNotBlank(sb, ", oficiada por ", str(md, "funeralCelebrantName", null));
         sb.append(".");
         return sb.toString();
     }
@@ -162,7 +161,7 @@ public class MinuteReportFormatter {
     private String buildPromocaoArt24d(OfficialAct act, Pessoa pessoa, Map<String, Object> md) {
         return "em " + formatDate(act.getActDate()) + ", " + personHeader(act, pessoa)
                 + ", admitido(a) à comunhão plena por profissão de fé (Art. 24, d), "
-                + celebrante(md) + ".";
+                + celebrant(md) + ".";
     }
 
     // ===== Helpers de campos =====
@@ -174,7 +173,7 @@ public class MinuteReportFormatter {
      */
     private String personHeader(OfficialAct act, Pessoa pessoa) {
         String nome = pessoa.getNome() != null ? pessoa.getNome().toUpperCase() : "[NOME NÃO CADASTRADO]";
-        Long numero = act.getNumeroOrdemAdmissao();
+        Long numero = act.getAdmissionOrderNumber();
         return numero != null ? nome + " (" + numero + ")" : nome;
     }
 
@@ -250,12 +249,12 @@ public class MinuteReportFormatter {
     // ===== Helpers de metadata =====
 
     /**
-     * Lê o nome do celebrante a partir de {@code metadata.celebrante}, que é armazenado
+     * Lê o nome do celebrante a partir de {@code metadata.celebrant}, que é armazenado
      * como objeto {@code {id?, name}} (PERSON_REF). Quando o campo está ausente ou sem
      * {@code name}, retorna placeholder para o redator perceber e completar.
      */
-    private String celebrante(Map<String, Object> md) {
-        Object v = md.get("celebrante");
+    private String celebrant(Map<String, Object> md) {
+        Object v = md.get("celebrant");
         String nome = null;
         if (v instanceof Map<?, ?> m) {
             Object n = m.get("name");
@@ -266,44 +265,44 @@ public class MinuteReportFormatter {
         return isBlank(nome) ? "por [celebrante]" : "por " + nome;
     }
 
-    private String igrejaOrigem(Map<String, Object> md) {
-        return str(md, "igrejaOrigem", "[igreja de origem não informada]");
+    private String originChurch(Map<String, Object> md) {
+        return str(md, "originChurch", "[igreja de origem não informada]");
     }
 
     /**
-     * Trecho "proveniente da {@code igrejaOrigem}[, Presbitério de X]" para inserção
+     * Trecho "proveniente da {@code originChurch}[, Presbitério de X]" para inserção
      * antes da causa em admissões MC. Mantém o placeholder de igreja quando ausente,
-     * já que essas formas exigem {@code igrejaOrigem} no schema.
+     * já que essas formas exigem {@code originChurch} no schema.
      */
-    private String proveniencia(Map<String, Object> md) {
-        return "proveniente da " + igrejaOrigem(md) + presbiterioOrigem(md);
+    private String provenance(Map<String, Object> md) {
+        return "proveniente da " + originChurch(md) + originPresbytery(md);
     }
 
-    private String igrejaDestino(Map<String, Object> md) {
-        return str(md, "igrejaDestino", "[igreja de destino não informada]");
+    private String destinationChurch(Map<String, Object> md) {
+        return str(md, "destinationChurch", "[igreja de destino não informada]");
     }
 
-    private String presbiterioOrigem(Map<String, Object> md) {
-        String v = str(md, "presbiterioOrigem", null);
+    private String originPresbytery(Map<String, Object> md) {
+        String v = str(md, "originPresbytery", null);
         return isBlank(v) ? "" : ", Presbitério de " + v;
     }
 
-    private String presbiterioDestino(Map<String, Object> md) {
-        String v = str(md, "presbiterioDestino", null);
+    private String destinationPresbytery(Map<String, Object> md) {
+        String v = str(md, "destinationPresbytery", null);
         return isBlank(v) ? "" : ", Presbitério de " + v;
     }
 
-    private String motivoOpcional(Map<String, Object> md) {
-        String v = str(md, "motivo", null);
+    private String optionalReason(Map<String, Object> md) {
+        String v = str(md, "reason", null);
         return isBlank(v) ? "" : ", motivo: " + v;
     }
 
-    private String numeroResolucaoOpcional(Map<String, Object> md) {
-        String v = str(md, "numeroResolucao", null);
+    private String optionalResolutionNumber(Map<String, Object> md) {
+        String v = str(md, "resolutionNumber", null);
         return isBlank(v) ? "" : ", resolução nº " + v;
     }
 
-    private String opcional(Map<String, Object> md, String key, String prefix) {
+    private String optional(Map<String, Object> md, String key, String prefix) {
         String v = str(md, key, null);
         return isBlank(v) ? "" : prefix + v;
     }

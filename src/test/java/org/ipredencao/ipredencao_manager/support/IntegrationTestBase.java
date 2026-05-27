@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.support;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ipredencao.ipredencao_manager.config.FirebaseConfig;
 import org.jooq.DSLContext;
@@ -38,16 +39,21 @@ public abstract class IntegrationTestBase {
         @ServiceConnection
         @SuppressWarnings("resource")
         PostgreSQLContainer<?> postgresContainer() {
-            return new PostgreSQLContainer<>("postgres:16-alpine")
+            return new PostgreSQLContainer<>("postgres:17-alpine")
                     .withDatabaseName("ipredencao_test")
                     .withUsername("test")
-                    .withPassword("test");
+                    .withPassword("test")
+                    .withReuse(true);
         }
     }
 
     /** Neutralizes {@code @PostConstruct} that would try to load Firebase credentials. */
     @MockitoBean
     protected FirebaseConfig firebaseConfig;
+
+    /** Prevents {@code S3Config} from trying {@code DefaultAWSCredentialsProviderChain} in CI. */
+    @MockitoBean
+    protected AmazonS3 amazonS3;
 
     @Autowired protected DSLContext dsl;
     @Autowired protected MockMvc mockMvc;

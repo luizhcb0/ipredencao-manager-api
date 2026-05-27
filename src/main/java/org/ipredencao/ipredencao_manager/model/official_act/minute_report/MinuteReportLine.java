@@ -6,15 +6,15 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public class MinuteReportLine {
     private Long actId;
     private Long personId;
-    private Long numeroOrdemAdmissao;
+    private Long admissionOrderNumber;
     private String text;
 
     public MinuteReportLine() {}
 
-    public MinuteReportLine(Long actId, Long personId, Long numeroOrdemAdmissao, String text) {
+    public MinuteReportLine(Long actId, Long personId, Long admissionOrderNumber, String text) {
         this.actId = actId;
         this.personId = personId;
-        this.numeroOrdemAdmissao = numeroOrdemAdmissao;
+        this.admissionOrderNumber = admissionOrderNumber;
         this.text = text;
     }
 
@@ -22,8 +22,8 @@ public class MinuteReportLine {
     public void setActId(Long actId) { this.actId = actId; }
     public Long getPersonId() { return personId; }
     public void setPersonId(Long personId) { this.personId = personId; }
-    public Long getNumeroOrdemAdmissao() { return numeroOrdemAdmissao; }
-    public void setNumeroOrdemAdmissao(Long numeroOrdemAdmissao) { this.numeroOrdemAdmissao = numeroOrdemAdmissao; }
+    public Long getAdmissionOrderNumber() { return admissionOrderNumber; }
+    public void setAdmissionOrderNumber(Long admissionOrderNumber) { this.admissionOrderNumber = admissionOrderNumber; }
     public String getText() { return text; }
     public void setText(String text) { this.text = text; }
 }

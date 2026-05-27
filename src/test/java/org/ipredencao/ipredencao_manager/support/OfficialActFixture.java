@@ -41,24 +41,24 @@ public final class OfficialActFixture {
     }
 
     public static final class Builder {
-        private final OfficialActCreateForm dto = new OfficialActCreateForm();
+        private final OfficialActCreateForm createForm = new OfficialActCreateForm();
         private final OfficialActFormEnum form;
         private boolean metadataSet = false;
 
         private Builder(OfficialActFormEnum form) {
             this.form = form;
-            dto.setOfficialActFormId(form.getId());
+            createForm.setOfficialActFormId(form.getId());
         }
 
-        public Builder actDate(DateTime actDate) { dto.setActDate(actDate); return this; }
-        public Builder minuteNumber(String minuteNumber) { dto.setMinuteNumber(minuteNumber); return this; }
-        public Builder minuteDate(DateTime minuteDate) { dto.setMinuteDate(minuteDate); return this; }
-        public Builder personIds(List<Long> personIds) { dto.setPersonIds(personIds); return this; }
-        public Builder personId(Long personId) { dto.setPersonIds(List.of(personId)); return this; }
-        public Builder notes(String notes) { dto.setNotes(notes); return this; }
+        public Builder actDate(DateTime actDate) { createForm.setActDate(actDate); return this; }
+        public Builder minuteNumber(String minuteNumber) { createForm.setMinuteNumber(minuteNumber); return this; }
+        public Builder minuteDate(DateTime minuteDate) { createForm.setMinuteDate(minuteDate); return this; }
+        public Builder personIds(List<Long> personIds) { createForm.setPersonIds(personIds); return this; }
+        public Builder personId(Long personId) { createForm.setPersonIds(List.of(personId)); return this; }
+        public Builder notes(String notes) { createForm.setNotes(notes); return this; }
 
         public Builder metadata(Map<String, Object> metadata) {
-            dto.setMetadata(metadata == null ? null : new HashMap<>(metadata));
+            createForm.setMetadata(metadata == null ? null : new HashMap<>(metadata));
             metadataSet = true;
             return this;
         }
@@ -68,15 +68,15 @@ public final class OfficialActFixture {
         }
 
         /** Backfill-only; HTTP controllers force these flags to {@code false}. */
-        public Builder skipEffects(boolean skip) { dto.setSkipEffects(skip); return this; }
+        public Builder skipEffects(boolean skip) { createForm.setSkipEffects(skip); return this; }
 
-        public Builder skipNumeroOrdemAdmissao(boolean skip) { dto.setSkipNumeroOrdemAdmissao(skip); return this; }
+        public Builder skipAdmissionOrderNumber(boolean skip) { createForm.setSkipAdmissionOrderNumber(skip); return this; }
 
         public OfficialActCreateForm build() {
             if (!metadataSet) {
-                dto.setMetadata(OfficialActFixture.metadataMinimo(form));
+                createForm.setMetadata(OfficialActFixture.metadataMinimo(form));
             }
-            return dto;
+            return createForm;
         }
     }
 }

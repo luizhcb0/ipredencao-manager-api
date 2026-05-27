@@ -44,8 +44,8 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
         act.setActDate(actDate);
         act.setMinuteNumber("298");
         act.setMinuteDate(actDate);
-        act.setNumeroOrdemAdmissao(42L);
-        act.setMetadata(Map.of("celebrante", Map.of("name", "Rev. Fulano")));
+        act.setAdmissionOrderNumber(42L);
+        act.setMetadata(Map.of("celebrant", Map.of("name", "Rev. Fulano")));
         act.setNotes("Some notes");
 
         OfficialAct saved = repo.insert(act);
@@ -56,7 +56,7 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
         assertThat(saved.getActDate()).isEqualTo(actDate);
         assertThat(saved.getMinuteNumber()).isEqualTo("298");
         assertThat(saved.getMinuteDate()).isEqualTo(actDate);
-        assertThat(saved.getNumeroOrdemAdmissao()).isEqualTo(42L);
+        assertThat(saved.getAdmissionOrderNumber()).isEqualTo(42L);
         assertThat(saved.getNotes()).isEqualTo("Some notes");
         assertThat(saved.getAddedAt()).isNotNull();
         assertThat(saved.getUpdatedAt()).isNotNull();
@@ -83,18 +83,18 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
         Pessoa pessoa = somePessoa("Metadata Person");
         OfficialAct act = newAct(pessoa, OfficialActFormEnum.ADM_MC_CARTA_TRANSFERENCIA);
         Map<String, Object> metadata = new HashMap<>();
-        metadata.put("igrejaOrigem", "IPB Centro");
-        metadata.put("numeroCarta", "123/2024");
-        metadata.put("anoEmissao", 2024);
+        metadata.put("originChurch", "IPB Centro");
+        metadata.put("letterNumber", "123/2024");
+        metadata.put("yearOfIssue", 2024);
 
         act.setMetadata(metadata);
         OfficialAct saved = repo.insert(act);
         OfficialAct reloaded = repo.findById(saved.getId());
 
         assertThat(reloaded.getMetadata())
-                .containsEntry("igrejaOrigem", "IPB Centro")
-                .containsEntry("numeroCarta", "123/2024")
-                .containsEntry("anoEmissao", 2024);
+                .containsEntry("originChurch", "IPB Centro")
+                .containsEntry("letterNumber", "123/2024")
+                .containsEntry("yearOfIssue", 2024);
     }
 
     @Test
@@ -174,14 +174,14 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
             saved.setMinuteNumber("999");
             saved.setMinuteDate(new DateTime(2025, 3, 1, 0, 0));
             saved.setNotes("changed");
-            saved.setMetadata(Map.of("celebrante", Map.of("name", "Rev. Updated")));
+            saved.setMetadata(Map.of("celebrant", Map.of("name", "Rev. Updated")));
             OfficialAct updated = repo.update(saved);
 
             assertThat(updated.getMinuteNumber()).isEqualTo("999");
             assertThat(updated.getMinuteDate()).isEqualTo(new DateTime(2025, 3, 1, 0, 0));
             assertThat(updated.getNotes()).isEqualTo("changed");
-            assertThat(updated.getMetadata()).containsKey("celebrante");
-            assertThat(((Map<?, ?>) updated.getMetadata().get("celebrante")).get("name"))
+            assertThat(updated.getMetadata()).containsKey("celebrant");
+            assertThat(((Map<?, ?>) updated.getMetadata().get("celebrant")).get("name"))
                     .isEqualTo("Rev. Updated");
             assertThat(updated.getUpdatedAt().isAfter(originalUpdatedAt))
                     .as("updatedAt should be bumped by trigger_official_act_updated_at")
@@ -202,43 +202,43 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
     }
 
     @Test
-    void findLatestNumeroOrdemAdmissao_returnsMostRecentNonNullValue() {
+    void findLatestAdmissionOrderNumber_returnsMostRecentNonNullValue() {
         Pessoa pessoa = somePessoa("Numero Person");
 
         OfficialAct first = newAct(pessoa, OfficialActFormEnum.ADM_MNC_BATISMO_INFANCIA);
         first.setActDate(new DateTime(2010, 5, 1, 0, 0));
-        first.setNumeroOrdemAdmissao(50L);
+        first.setAdmissionOrderNumber(50L);
         repo.insert(first);
 
         OfficialAct second = newAct(pessoa, OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
         second.setActDate(new DateTime(2024, 11, 1, 0, 0));
-        second.setNumeroOrdemAdmissao(50L); // promotion inherits the same number
+        second.setAdmissionOrderNumber(50L); // promotion inherits the same number
         repo.insert(second);
 
-        // Demissão posterior sem numero_ordem_admissao deve ser ignorada pelo query.
+        // Demissão posterior sem admission_order_number deve ser ignorada pelo query.
         OfficialAct ignored = newAct(pessoa, OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO);
         ignored.setActDate(new DateTime(2025, 1, 1, 0, 0));
-        ignored.setNumeroOrdemAdmissao(null);
+        ignored.setAdmissionOrderNumber(null);
         repo.insert(ignored);
 
-        Optional<Long> latest = repo.findLatestNumeroOrdemAdmissao(pessoa.getId());
+        Optional<Long> latest = repo.findLatestAdmissionOrderNumber(pessoa.getId());
 
         assertThat(latest).contains(50L);
     }
 
     @Test
-    void findLatestNumeroOrdemAdmissao_returnsEmptyWhenAllNumerosAreNull() {
+    void findLatestAdmissionOrderNumber_returnsEmptyWhenAllNumerosAreNull() {
         Pessoa pessoa = somePessoa("All Null Person");
         OfficialAct act = newAct(pessoa, OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO);
-        act.setNumeroOrdemAdmissao(null);
+        act.setAdmissionOrderNumber(null);
         repo.insert(act);
 
-        assertThat(repo.findLatestNumeroOrdemAdmissao(pessoa.getId())).isEmpty();
+        assertThat(repo.findLatestAdmissionOrderNumber(pessoa.getId())).isEmpty();
     }
 
     @Test
-    void findLatestNumeroOrdemAdmissao_nullPersonIdReturnsEmpty() {
-        assertThat(repo.findLatestNumeroOrdemAdmissao(null)).isEmpty();
+    void findLatestAdmissionOrderNumber_nullPersonIdReturnsEmpty() {
+        assertThat(repo.findLatestAdmissionOrderNumber(null)).isEmpty();
     }
 
     @Test
@@ -287,10 +287,10 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
      */
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    void nextNumeroOrdemAdmissao_isMonotonicAcrossCalls() {
-        long first = repo.nextNumeroOrdemAdmissao();
-        long second = repo.nextNumeroOrdemAdmissao();
-        long third = repo.nextNumeroOrdemAdmissao();
+    void nextAdmissionOrderNumber_isMonotonicAcrossCalls() {
+        long first = repo.nextAdmissionOrderNumber();
+        long second = repo.nextAdmissionOrderNumber();
+        long third = repo.nextAdmissionOrderNumber();
 
         assertThat(second).isEqualTo(first + 1);
         assertThat(third).isEqualTo(second + 1);

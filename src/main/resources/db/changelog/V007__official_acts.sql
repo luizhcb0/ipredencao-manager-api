@@ -51,7 +51,7 @@ INSERT INTO official_act_form (official_act_type_id, name, article_clause) VALUE
 (4, 'Falecimento',                                        'Art. 24, f');
 
 -- Sequencia global; atribuida pelo service (so para admissoes).
-CREATE SEQUENCE IF NOT EXISTS official_act_numero_ordem_admissao_seq START 1;
+CREATE SEQUENCE IF NOT EXISTS official_act_admission_order_seq START 1;
 
 CREATE TABLE IF NOT EXISTS official_act (
     id BIGSERIAL PRIMARY KEY,
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS official_act (
     act_date DATE NOT NULL,
     minute_number VARCHAR(64),
     minute_date DATE,
-    numero_ordem_admissao BIGINT,
+    admission_order_number BIGINT,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     notes TEXT,
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -78,5 +78,5 @@ CREATE INDEX IF NOT EXISTS idx_official_act_act_date      ON official_act(act_da
 CREATE INDEX IF NOT EXISTS idx_official_act_form          ON official_act(official_act_form_id);
 CREATE INDEX IF NOT EXISTS idx_official_act_minute_number ON official_act(minute_number);
 CREATE INDEX IF NOT EXISTS idx_official_act_person        ON official_act(person_id);
-CREATE INDEX IF NOT EXISTS idx_official_act_numero_ordem  ON official_act(numero_ordem_admissao)
-    WHERE numero_ordem_admissao IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_official_act_admission_order ON official_act(admission_order_number)
+    WHERE admission_order_number IS NOT NULL;
