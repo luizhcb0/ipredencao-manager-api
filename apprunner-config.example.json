@@ -1,0 +1,44 @@
+{
+  "ServiceName": "ipredencao-manager-api",
+  "SourceConfiguration": {
+    "ImageRepository": {
+      "ImageIdentifier": "<ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/ipredencao-manager-api:latest",
+      "ImageRepositoryType": "ECR",
+      "ImageConfiguration": {
+        "Port": "8080",
+        "RuntimeEnvironmentVariables": {
+          "SPRING_PROFILES_ACTIVE": "prod",
+          "SERVER_PORT": "8080",
+          "PORT": "8080",
+          "DB_URL": "jdbc:postgresql://<RDS_HOST>:5432/ipredencao_manager",
+          "DB_USERNAME": "<DB_USER>",
+          "DB_PASSWORD": "<DB_PASSWORD>",
+          "AWS_REGION": "us-east-1",
+          "AWS_ACCESS_KEY_ID": "<AWS_ACCESS_KEY_ID>",
+          "AWS_SECRET_ACCESS_KEY": "<AWS_SECRET_ACCESS_KEY>",
+          "S3_BUCKET_NAME": "<S3_BUCKET>",
+          "JWT_SECRET": "<JWT_SECRET>",
+          "ALLOWED_ORIGINS": "https://example.amplifyapp.com,https://gestao.example.com",
+          "FIREBASE_LAMBDA_NAME": "ipredencao-firebase-proxy",
+          "FIREBASE_SERVICE_ACCOUNT_KEY_CONTENT": "<FIREBASE_SERVICE_ACCOUNT_JSON_MINIFIED>"
+        }
+      }
+    },
+    "AutoDeploymentsEnabled": true,
+    "AuthenticationConfiguration": {
+      "AccessRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/service-role/AppRunnerECRAccessRole"
+    }
+  },
+  "InstanceConfiguration": {
+    "Cpu": "4096",
+    "Memory": "10240"
+  },
+  "HealthCheckConfiguration": {
+    "Protocol": "HTTP",
+    "Path": "/actuator/health",
+    "Interval": 20,
+    "Timeout": 10,
+    "HealthyThreshold": 1,
+    "UnhealthyThreshold": 5
+  }
+}
