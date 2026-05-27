@@ -18,7 +18,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import org.joda.time.DateTime;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.io.IOException;
@@ -185,6 +187,11 @@ public class PessoaService {
      */
     public List<PessoaHistory> findHistoryById(Long id) {
         return pessoaRepository.findHistoryByPersonId(id);
+    }
+
+    /** Retorna a categoria_id em vigor para a pessoa imediatamente antes do timestamp informado. */
+    public Optional<Long> findCategoriaIdBefore(Long pessoaId, DateTime threshold) {
+        return pessoaRepository.findCategoriaIdBefore(pessoaId, threshold);
     }
     
     private void syncRelationships(Long pessoaId, List<Relacionamento> existingRelationships, List<Relacionamento> newRelationships) {

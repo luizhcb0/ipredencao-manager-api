@@ -59,6 +59,11 @@ dependencies {
 	
 	// Testing adicional
 	testImplementation 'org.springframework.security:spring-security-test'
+
+	// Testcontainers (IT com Postgres efêmero) — versões gerenciadas pelo Spring Boot BOM
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:postgresql'
+	testImplementation 'org.testcontainers:junit-jupiter'
 }
 
 tasks.named('test') {

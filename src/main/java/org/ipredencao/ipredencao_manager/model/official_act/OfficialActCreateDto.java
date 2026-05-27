@@ -1,0 +1,49 @@
+package org.ipredencao.ipredencao_manager.model.official_act;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.joda.time.DateTime;
+
+import java.util.List;
+import java.util.Map;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class OfficialActCreateDto {
+    private Long officialActFormId;
+    private DateTime actDate;
+    private String minuteNumber;
+    private DateTime minuteDate;
+    /** Fan-out: o service cria um official_act por pessoa, todos na mesma transação. */
+    private List<Long> personIds;
+    private Map<String, Object> metadata;
+    private String notes;
+
+    /** Reservado para o backfill. Sempre sanitizado para {@code false} no controller público. */
+    @JsonIgnore
+    private boolean skipEffects = false;
+    /** Reservado para o backfill. Sempre sanitizado para {@code false} no controller público. */
+    @JsonIgnore
+    private boolean skipNumeroOrdemAdmissao = false;
+
+    public OfficialActCreateDto() {}
+
+    public Long getOfficialActFormId() { return officialActFormId; }
+    public void setOfficialActFormId(Long officialActFormId) { this.officialActFormId = officialActFormId; }
+    public DateTime getActDate() { return actDate; }
+    public void setActDate(DateTime actDate) { this.actDate = actDate; }
+    public String getMinuteNumber() { return minuteNumber; }
+    public void setMinuteNumber(String minuteNumber) { this.minuteNumber = minuteNumber; }
+    public DateTime getMinuteDate() { return minuteDate; }
+    public void setMinuteDate(DateTime minuteDate) { this.minuteDate = minuteDate; }
+    public List<Long> getPersonIds() { return personIds; }
+    public void setPersonIds(List<Long> personIds) { this.personIds = personIds; }
+    public Map<String, Object> getMetadata() { return metadata; }
+    public void setMetadata(Map<String, Object> metadata) { this.metadata = metadata; }
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
+
+    public boolean isSkipEffects() { return skipEffects; }
+    public void setSkipEffects(boolean skipEffects) { this.skipEffects = skipEffects; }
+    public boolean isSkipNumeroOrdemAdmissao() { return skipNumeroOrdemAdmissao; }
+    public void setSkipNumeroOrdemAdmissao(boolean skipNumeroOrdemAdmissao) { this.skipNumeroOrdemAdmissao = skipNumeroOrdemAdmissao; }
+}
