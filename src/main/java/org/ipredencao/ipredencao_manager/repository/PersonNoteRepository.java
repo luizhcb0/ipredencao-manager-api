@@ -3,15 +3,10 @@ package org.ipredencao.ipredencao_manager.repository;
 import org.ipredencao.ipredencao_manager.model.pessoa.PersonNote;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
 import org.jooq.DSLContext;
-import org.jooq.Field;
 import org.jooq.Record;
-import org.jooq.Table;
-import org.jooq.impl.DSL;
 import static org.ipredencao.ipredencao_manager.jooq.Tables.PERSON_NOTE;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
-
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
