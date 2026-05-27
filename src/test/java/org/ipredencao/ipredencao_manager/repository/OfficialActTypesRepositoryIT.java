@@ -19,15 +19,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ipredencao.ipredencao_manager.jooq.Tables.OFFICIAL_ACT_FORM;
 import static org.ipredencao.ipredencao_manager.jooq.Tables.OFFICIAL_ACT_TYPE;
 
-/** Verifies that the in-memory catalog matches the Liquibase seed and stays in sync with the Java enums. */
-class OfficialActCatalogRepositoryIT extends IntegrationTestBase {
+class OfficialActTypesRepositoryIT extends IntegrationTestBase {
 
     @Autowired
-    private OfficialActCatalogRepository catalog;
+    private OfficialActTypesRepository officialActTypesRepository;
 
     @Test
     void getTypes_returnsAllCanonicalTypesOrderedById() {
-        List<OfficialActType> types = catalog.getTypes();
+        List<OfficialActType> types = officialActTypesRepository.getTypes();
 
         assertThat(types)
                 .hasSize(OfficialActTypeEnum.values().length)
@@ -35,7 +34,7 @@ class OfficialActCatalogRepositoryIT extends IntegrationTestBase {
                 .containsExactly(1L, 2L, 3L, 4L);
 
         for (OfficialActTypeEnum expected : OfficialActTypeEnum.values()) {
-            OfficialActType actual = catalog.getTypeById(expected.getId());
+            OfficialActType actual = officialActTypesRepository.getTypeById(expected.getId());
             assertThat(actual.getCategory())
                     .as("category for type id %d", expected.getId())
                     .isEqualTo(expected.getCategory());
@@ -48,7 +47,7 @@ class OfficialActCatalogRepositoryIT extends IntegrationTestBase {
 
     @Test
     void getTypes_eachTypeContainsItsForms() {
-        for (OfficialActType type : catalog.getTypes()) {
+        for (OfficialActType type : officialActTypesRepository.getTypes()) {
             assertThat(type.getForms())
                     .as("forms for type id %d (%s)", type.getId(), type.getName())
                     .isNotNull()
@@ -60,7 +59,7 @@ class OfficialActCatalogRepositoryIT extends IntegrationTestBase {
 
     @Test
     void getTypes_totalFormsAcrossAllTypesEqualsEnumLength() {
-        long totalForms = catalog.getTypes().stream()
+        long totalForms = officialActTypesRepository.getTypes().stream()
                 .mapToLong(t -> t.getForms().size())
                 .sum();
 
@@ -70,7 +69,7 @@ class OfficialActCatalogRepositoryIT extends IntegrationTestBase {
     @Test
     void getFormById_resolvesEveryEnumIdToMatchingDatabaseRow() {
         for (OfficialActFormEnum expected : OfficialActFormEnum.values()) {
-            OfficialActForm actual = catalog.getFormById(expected.getId());
+            OfficialActForm actual = officialActTypesRepository.getFormById(expected.getId());
 
             assertThat(actual)
                     .as("form for enum %s (id=%d)", expected, expected.getId())
@@ -85,7 +84,7 @@ class OfficialActCatalogRepositoryIT extends IntegrationTestBase {
     @Test
     void getFormById_hydratesMetadataSchemaFromEnum() {
         for (OfficialActFormEnum expected : OfficialActFormEnum.values()) {
-            OfficialActForm form = catalog.getFormById(expected.getId());
+            OfficialActForm form = officialActTypesRepository.getFormById(expected.getId());
 
             assertThat(form.getMetadataSchema())
                     .as("metadataSchema for form %s", expected)
@@ -95,21 +94,21 @@ class OfficialActCatalogRepositoryIT extends IntegrationTestBase {
 
     @Test
     void getFormById_unknownIdThrowsIllegalArgumentException() {
-        assertThatThrownBy(() -> catalog.getFormById(9_999L))
+        assertThatThrownBy(() -> officialActTypesRepository.getFormById(9_999L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("9999");
     }
 
     @Test
     void getTypeById_unknownIdThrowsIllegalArgumentException() {
-        assertThatThrownBy(() -> catalog.getTypeById(9_999L))
+        assertThatThrownBy(() -> officialActTypesRepository.getTypeById(9_999L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("9999");
     }
 
     @Test
     void findFormById_unknownIdReturnsEmptyOptional() {
-        Optional<OfficialActForm> result = catalog.findFormById(9_999L);
+        Optional<OfficialActForm> result = officialActTypesRepository.findFormById(9_999L);
 
         assertThat(result).isEmpty();
     }
@@ -118,13 +117,12 @@ class OfficialActCatalogRepositoryIT extends IntegrationTestBase {
     void findFormById_knownIdReturnsPopulatedOptional() {
         OfficialActFormEnum sample = OfficialActFormEnum.ADM_MC_PROFISSAO_FE;
 
-        Optional<OfficialActForm> result = catalog.findFormById(sample.getId());
+        Optional<OfficialActForm> result = officialActTypesRepository.findFormById(sample.getId());
 
         assertThat(result).isPresent();
         assertThat(result.get().getArticleClause()).isEqualTo(sample.getArticleClause());
     }
 
-    /** Drift sentinel between seed migration and {@link OfficialActTypeEnum}. */
     @Test
     void databaseTypesStaySynchronizedWithEnum() {
         Map<Long, Record> rowsById = dsl.select()
@@ -148,7 +146,6 @@ class OfficialActCatalogRepositoryIT extends IntegrationTestBase {
         }
     }
 
-    /** Drift sentinel between seed migration and {@link OfficialActFormEnum}. */
     @Test
     void databaseFormsStaySynchronizedWithEnum() {
         Map<Long, Record> rowsById = dsl.select()

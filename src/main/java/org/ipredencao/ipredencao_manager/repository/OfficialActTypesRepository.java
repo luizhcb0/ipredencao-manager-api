@@ -21,7 +21,7 @@ import static org.ipredencao.ipredencao_manager.jooq.Tables.OFFICIAL_ACT_TYPE;
 
 /** Cache em memória dos tipos e formas de atos oficiais, carregado uma vez no startup. */
 @Repository
-public class OfficialActCatalogRepository {
+public class OfficialActTypesRepository {
 
     @Autowired
     private DSLContext dsl;

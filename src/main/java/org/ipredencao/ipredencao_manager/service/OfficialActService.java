@@ -14,7 +14,7 @@ import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoBatismo;
-import org.ipredencao.ipredencao_manager.repository.OfficialActCatalogRepository;
+import org.ipredencao.ipredencao_manager.repository.OfficialActTypesRepository;
 import org.ipredencao.ipredencao_manager.repository.OfficialActRepository;
 import org.ipredencao.ipredencao_manager.util.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +34,7 @@ public class OfficialActService {
     @Autowired
     private OfficialActRepository repo;
     @Autowired
-    private OfficialActCatalogRepository catalog;
+    private OfficialActTypesRepository officialActTypesRepository;
     @Autowired
     private PessoaService pessoaService;
     @Autowired
@@ -133,7 +133,7 @@ public class OfficialActService {
         if (form.getOfficialActFormId() == null) {
             throw new IllegalArgumentException("officialActFormId é obrigatório");
         }
-        catalog.getFormById(form.getOfficialActFormId());
+        officialActTypesRepository.getFormById(form.getOfficialActFormId());
         if (form.getActDate() == null) {
             throw new IllegalArgumentException("actDate é obrigatório");
         }
@@ -146,7 +146,7 @@ public class OfficialActService {
     }
 
     void validateMetadata(Long formId, Map<String, Object> metadata) {
-        OfficialActForm form = catalog.getFormById(formId);
+        OfficialActForm form = officialActTypesRepository.getFormById(formId);
         Map<String, Object> safe = metadata != null ? metadata : Map.of();
         for (MetadataFieldSpec spec : form.getMetadataSchema()) {
             if (!spec.required()) continue;

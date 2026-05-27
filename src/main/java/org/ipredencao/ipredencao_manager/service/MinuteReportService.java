@@ -8,7 +8,7 @@ import org.ipredencao.ipredencao_manager.model.official_act.minute_report.Minute
 import org.ipredencao.ipredencao_manager.model.official_act.minute_report.MinuteReportResponse;
 import org.ipredencao.ipredencao_manager.model.official_act.minute_report.TypeGroup;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
-import org.ipredencao.ipredencao_manager.repository.OfficialActCatalogRepository;
+import org.ipredencao.ipredencao_manager.repository.OfficialActTypesRepository;
 import org.ipredencao.ipredencao_manager.repository.OfficialActRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,7 +34,7 @@ public class MinuteReportService {
     @Autowired
     private OfficialActRepository repo;
     @Autowired
-    private OfficialActCatalogRepository catalog;
+    private OfficialActTypesRepository officialActTypesRepository;
     @Autowired
     private PessoaService pessoaService;
     @Autowired
@@ -96,10 +96,10 @@ public class MinuteReportService {
 
             List<TypeGroup> typeGroups = new ArrayList<>();
             for (Map.Entry<Long, Map<Long, List<MinuteReportLine>>> typeEntry : byType.entrySet()) {
-                OfficialActType type = catalog.getTypeById(typeEntry.getKey());
+                OfficialActType type = officialActTypesRepository.getTypeById(typeEntry.getKey());
                 List<FormGroup> formGroups = new ArrayList<>();
                 for (Map.Entry<Long, List<MinuteReportLine>> formEntry : typeEntry.getValue().entrySet()) {
-                    var form = catalog.getFormById(formEntry.getKey());
+                    var form = officialActTypesRepository.getFormById(formEntry.getKey());
                     formGroups.add(new FormGroup(
                             form.getId(),
                             form.getName(),

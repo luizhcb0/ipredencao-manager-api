@@ -7,7 +7,7 @@ import org.ipredencao.ipredencao_manager.model.official_act.OfficialActType;
 import org.ipredencao.ipredencao_manager.controller.form.OfficialActUpdateForm;
 import org.ipredencao.ipredencao_manager.model.official_act.minute_report.MinuteReportResponse;
 import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
-import org.ipredencao.ipredencao_manager.repository.OfficialActCatalogRepository;
+import org.ipredencao.ipredencao_manager.repository.OfficialActTypesRepository;
 import org.ipredencao.ipredencao_manager.service.MinuteReportService;
 import org.ipredencao.ipredencao_manager.service.OfficialActService;
 import org.springframework.http.ResponseEntity;
@@ -24,20 +24,20 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/atos-oficiais")
+@RequestMapping("/api/official-acts")
 @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
 public class OfficialActController {
 
     private final OfficialActService officialActService;
     private final MinuteReportService minuteReportService;
-    private final OfficialActCatalogRepository catalog;
+    private final OfficialActTypesRepository officialActTypesRepository;
 
     public OfficialActController(OfficialActService officialActService,
                                  MinuteReportService minuteReportService,
-                                 OfficialActCatalogRepository catalog) {
+                                 OfficialActTypesRepository officialActTypesRepository) {
         this.officialActService = officialActService;
         this.minuteReportService = minuteReportService;
-        this.catalog = catalog;
+        this.officialActTypesRepository = officialActTypesRepository;
     }
 
     @PostMapping
@@ -70,18 +70,18 @@ public class OfficialActController {
         return ResponseEntity.ok(officialActService.findPaginated(query));
     }
 
-    @GetMapping("/atas/{minuteNumber}")
+    @GetMapping("/minutes/{minuteNumber}")
     public ResponseEntity<List<OfficialAct>> findByMinuteNumber(@PathVariable String minuteNumber) {
         return ResponseEntity.ok(officialActService.findByMinuteNumber(minuteNumber));
     }
 
-    @GetMapping("/atas/{minuteNumber}/relatorio")
+    @GetMapping("/minutes/{minuteNumber}/report")
     public ResponseEntity<MinuteReportResponse> minuteReport(@PathVariable String minuteNumber) {
         return ResponseEntity.ok(minuteReportService.generate(minuteNumber));
     }
 
-    @GetMapping("/catalogo")
-    public ResponseEntity<List<OfficialActType>> catalog() {
-        return ResponseEntity.ok(catalog.getTypes());
+    @GetMapping("/types")
+    public ResponseEntity<List<OfficialActType>> types() {
+        return ResponseEntity.ok(officialActTypesRepository.getTypes());
     }
 }

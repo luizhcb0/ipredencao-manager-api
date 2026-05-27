@@ -157,7 +157,7 @@ class MinuteReportServiceIT extends IntegrationTestBase {
         FormGroup carta = formById(mc, OfficialActFormEnum.ADM_MC_CARTA_TRANSFERENCIA.getId());
         assertThat(carta.getLines()).hasSize(1);
 
-        // Form group carries the catalog metadata.
+        // Form group carries the metadata schema from OfficialActTypesRepository.
         assertThat(profissao.getFormName()).isNotBlank();
         assertThat(profissao.getArticleClause()).isEqualTo(OfficialActFormEnum.ADM_MC_PROFISSAO_FE.getArticleClause());
     }

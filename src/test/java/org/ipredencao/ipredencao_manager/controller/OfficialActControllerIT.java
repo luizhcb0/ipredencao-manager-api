@@ -42,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class OfficialActControllerIT extends IntegrationTestBase {
 
-    private static final String BASE = "/api/atos-oficiais";
+    private static final String BASE = "/api/official-acts";
 
     @Autowired private OfficialActService officialActService;
     @Autowired private PessoaService pessoaService;
@@ -75,16 +75,16 @@ class OfficialActControllerIT extends IntegrationTestBase {
 
     @Test
     @WithMockUser(roles = "PRESBITERO")
-    void catalog_isAccessibleByPresbitero() throws Exception {
-        mockMvc.perform(get(BASE + "/catalogo"))
+    void officialActTypesRepository_isAccessibleByPresbitero() throws Exception {
+        mockMvc.perform(get(BASE + "/types"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(4)));
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void catalog_isAccessibleByAdmin() throws Exception {
-        mockMvc.perform(get(BASE + "/catalogo"))
+    void officialActTypesRepository_isAccessibleByAdmin() throws Exception {
+        mockMvc.perform(get(BASE + "/types"))
                 .andExpect(status().isOk());
     }
 
@@ -239,7 +239,7 @@ class OfficialActControllerIT extends IntegrationTestBase {
                 .andExpect(jsonPath("$.page.total").value(2));
     }
 
-    // ===== GET /atas/{minuteNumber} =====
+    // ===== GET /minutes/{minuteNumber} =====
 
     @Test
     @WithMockUser(roles = "PRESBITERO")
@@ -248,14 +248,14 @@ class OfficialActControllerIT extends IntegrationTestBase {
         Pessoa p = somePessoa("By minute");
         createOneActWithMinute(p, minute);
 
-        mockMvc.perform(get(BASE + "/atas/" + minute))
+        mockMvc.perform(get(BASE + "/minutes/" + minute))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()", greaterThanOrEqualTo(1)))
                 .andExpect(jsonPath("$[0].minuteNumber").value(minute));
     }
 
-    // ===== GET /atas/{minuteNumber}/relatorio =====
+    // ===== GET /minutes/{minuteNumber}/report =====
 
     @Test
     @WithMockUser(roles = "PRESBITERO")
@@ -264,7 +264,7 @@ class OfficialActControllerIT extends IntegrationTestBase {
         Pessoa p = somePessoa("Relatorio");
         createOneActWithMinute(p, minute);
 
-        mockMvc.perform(get(BASE + "/atas/" + minute + "/relatorio"))
+        mockMvc.perform(get(BASE + "/minutes/" + minute + "/report"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.minuteNumber").value(minute))
                 .andExpect(jsonPath("$.sections").isArray())
@@ -275,16 +275,16 @@ class OfficialActControllerIT extends IntegrationTestBase {
     @Test
     @WithMockUser(roles = "PRESBITERO")
     void minuteReport_returns404WhenNoActs() throws Exception {
-        mockMvc.perform(get(BASE + "/atas/no-such-minute-xyz/relatorio"))
+        mockMvc.perform(get(BASE + "/minutes/no-such-minute-xyz/report"))
                 .andExpect(status().isNotFound());
     }
 
-    // ===== GET /catalogo =====
+    // ===== GET /types =====
 
     @Test
     @WithMockUser(roles = "PRESBITERO")
-    void catalog_returnsAllFourTypes() throws Exception {
-        mockMvc.perform(get(BASE + "/catalogo"))
+    void officialActTypesRepository_returnsAllFourTypes() throws Exception {
+        mockMvc.perform(get(BASE + "/types"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(4)))
                 .andExpect(jsonPath("$[0].id").value(1))
