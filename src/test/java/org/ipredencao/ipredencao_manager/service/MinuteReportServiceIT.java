@@ -186,7 +186,7 @@ class MinuteReportServiceIT extends IntegrationTestBase {
         String minute = uniqueMinute("TXT");
         DateTime actDate = new DateTime(2024, 9, 15, 0, 0);
         Pessoa pessoa = somePessoa("João da Silva");
-        createAct(OfficialActFormEnum.ADM_MC_PROFISSAO_FE, pessoa, actDate, minute, actDate);
+        OfficialAct admission = createAct(OfficialActFormEnum.ADM_MC_PROFISSAO_FE, pessoa, actDate, minute, actDate);
 
         MinuteReportResponse report = service.generate(minute);
 
@@ -195,7 +195,7 @@ class MinuteReportServiceIT extends IntegrationTestBase {
         assertThat(text)
                 .contains("15/09/2024")
                 .contains("JOÃO DA SILVA")
-                .contains("(" + pessoa.getId() + ")")
+                .contains("(" + admission.getNumeroOrdemAdmissao() + ")")
                 .contains("profissão de fé");
     }
 

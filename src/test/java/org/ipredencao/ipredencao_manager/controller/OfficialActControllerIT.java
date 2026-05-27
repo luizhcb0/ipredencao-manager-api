@@ -78,7 +78,7 @@ class OfficialActControllerIT extends IntegrationTestBase {
     void catalog_isAccessibleByPresbitero() throws Exception {
         mockMvc.perform(get(BASE + "/catalogo"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(5)));
+                .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(4)));
     }
 
     @Test

@@ -26,13 +26,13 @@ class OfficialActCatalogRepositoryIT extends IntegrationTestBase {
     private OfficialActCatalogRepository catalog;
 
     @Test
-    void getTypes_returnsAllFiveCanonicalTypesOrderedById() {
+    void getTypes_returnsAllCanonicalTypesOrderedById() {
         List<OfficialActType> types = catalog.getTypes();
 
         assertThat(types)
                 .hasSize(OfficialActTypeEnum.values().length)
                 .extracting(OfficialActType::getId)
-                .containsExactly(1L, 2L, 3L, 4L, 5L);
+                .containsExactly(1L, 2L, 3L, 4L);
 
         for (OfficialActTypeEnum expected : OfficialActTypeEnum.values()) {
             OfficialActType actual = catalog.getTypeById(expected.getId());
