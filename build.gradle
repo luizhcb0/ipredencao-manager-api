@@ -122,7 +122,10 @@ tasks.register('composeUp', Exec) {
 }
 
 tasks.named('update') {
-	dependsOn composeUp
+	// Em CI (GHA) o Postgres vem de service container; localmente sobe via compose.
+	if (!System.getenv('CI')) {
+		dependsOn composeUp
+	}
 }
 
 tasks.named('generateJooq') {

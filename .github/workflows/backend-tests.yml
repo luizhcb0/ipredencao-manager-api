@@ -17,6 +17,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    services:
+      # Postgres para Liquibase + codegen JOOQ (generateJooq → update).
+      # Os testes IT usam Testcontainers com Postgres efêmero próprio.
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: ipredencao_manager
+          POSTGRES_PASSWORD: ipredencao_manager
+          POSTGRES_DB: ipredencao_manager
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U ipredencao_manager -d ipredencao_manager"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
