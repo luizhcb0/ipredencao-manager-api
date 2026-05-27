@@ -12,6 +12,7 @@ import org.ipredencao.ipredencao_manager.repository.OfficialActTypesRepository;
 import org.ipredencao.ipredencao_manager.repository.OfficialActRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -40,6 +41,7 @@ public class MinuteReportService {
     @Autowired
     private MinuteReportFormatter formatter;
 
+    @Transactional(readOnly = true)
     public MinuteReportResponse generate(String minuteNumber) {
         if (minuteNumber == null || minuteNumber.isBlank()) {
             throw new IllegalArgumentException("minuteNumber é obrigatório");

@@ -10,6 +10,7 @@ import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.repository.OfficialActTypesRepository;
 import org.ipredencao.ipredencao_manager.service.MinuteReportService;
 import org.ipredencao.ipredencao_manager.service.OfficialActService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,17 +29,12 @@ import java.util.List;
 @PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
 public class OfficialActController {
 
-    private final OfficialActService officialActService;
-    private final MinuteReportService minuteReportService;
-    private final OfficialActTypesRepository officialActTypesRepository;
-
-    public OfficialActController(OfficialActService officialActService,
-                                 MinuteReportService minuteReportService,
-                                 OfficialActTypesRepository officialActTypesRepository) {
-        this.officialActService = officialActService;
-        this.minuteReportService = minuteReportService;
-        this.officialActTypesRepository = officialActTypesRepository;
-    }
+    @Autowired
+    private OfficialActService officialActService;
+    @Autowired
+    private MinuteReportService minuteReportService;
+    @Autowired
+    private OfficialActTypesRepository officialActTypesRepository;
 
     @PostMapping
     public ResponseEntity<List<OfficialAct>> create(@RequestBody OfficialActCreateForm form) {

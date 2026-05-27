@@ -97,6 +97,7 @@ public class OfficialActService {
         repo.delete(id);
     }
 
+    @Transactional(readOnly = true)
     public OfficialAct findById(Long id) {
         OfficialAct act = repo.findById(id);
         if (act == null) {
@@ -105,14 +106,17 @@ public class OfficialActService {
         return act;
     }
 
+    @Transactional(readOnly = true)
     public List<OfficialAct> findByMinuteNumber(String minuteNumber) {
         return repo.findByMinuteNumber(minuteNumber);
     }
 
+    @Transactional(readOnly = true)
     public List<OfficialAct> findByPersonId(Long personId) {
         return repo.findByPersonId(personId);
     }
 
+    @Transactional(readOnly = true)
     public PagedResponse<OfficialAct> findPaginated(OfficialActQuery query) {
         if (query.getPagination() == null) query.setPagination(new PaginationParameters());
         query.getPagination().applyDefaults();
