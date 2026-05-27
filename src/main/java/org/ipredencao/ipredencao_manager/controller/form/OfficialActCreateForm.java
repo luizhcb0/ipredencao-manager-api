@@ -13,7 +13,6 @@ public class OfficialActCreateForm {
     private DateTime actDate;
     private String minuteNumber;
     private DateTime minuteDate;
-    /** Fan-out: o service cria um official_act por pessoa, todos na mesma transação. */
     private List<Long> personIds;
     private Map<String, Object> metadata;
     private String notes;
