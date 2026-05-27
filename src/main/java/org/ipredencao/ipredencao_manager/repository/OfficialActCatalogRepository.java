@@ -19,13 +19,7 @@ import java.util.Optional;
 import static org.ipredencao.ipredencao_manager.jooq.Tables.OFFICIAL_ACT_FORM;
 import static org.ipredencao.ipredencao_manager.jooq.Tables.OFFICIAL_ACT_TYPE;
 
-/**
- * Cache em memória dos tipos e formas canônicos de atos oficiais (Cap. III da CI/IPB).
- * <p>
- * As tabelas {@code official_act_type} e {@code official_act_form} são populadas via migração
- * e raramente mudam. Carregamos uma única vez no startup para evitar lookups em runtime.
- * O schema de metadados é hidratado a partir de {@link OfficialActFormEnum}.
- */
+/** Cache em memória dos tipos e formas de atos oficiais, carregado uma vez no startup. */
 @Repository
 public class OfficialActCatalogRepository {
 

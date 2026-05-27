@@ -5,12 +5,6 @@ import org.joda.time.DateTime;
 
 import java.util.Map;
 
-/**
- * Update parcial: forma, pessoa e {@code actDate} permanecem imutáveis (mudá-los exigiria
- * recriar o ato — afetariam {@code admissionOrderNumber} e efeitos colaterais na categoria
- * da pessoa). {@code metadata} é editável para correção de typos, preenchimento de campos
- * opcionais, etc. — não tem efeito colateral algum no domínio.
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class OfficialActUpdateForm {
     private String minuteNumber;

@@ -15,7 +15,6 @@ public class OfficialAct {
     private DateTime actDate;
     private String minuteNumber;
     private DateTime minuteDate;
-    /** Só preenchido em admissões (Tipo 1/2) e na promoção MNC→MC (Art. 24, d, que herda). */
     private Long admissionOrderNumber;
     private Map<String, Object> metadata;
     private String notes;
@@ -23,14 +22,12 @@ public class OfficialAct {
     private DateTime updatedAt;
     private Long updatedBy;
 
-    // Derivados via JOIN (não persistidos diretamente em official_act)
+    // Derivados via JOIN
     private Long officialActTypeId;
     private String typeName;
     private String formName;
     private String category;
-    /** Artigo do TIPO (granularidade ampla) — ex.: "Art. 16". Vem de {@code official_act_type.reference_article}. */
     private String referenceArticle;
-    /** Artigo+alínea da FORMA (granularidade fina) — ex.: "Art. 16, b". Vem de {@code official_act_form.article_clause}. */
     private String articleClause;
     private String personName;
     private Long currentCategoryId;

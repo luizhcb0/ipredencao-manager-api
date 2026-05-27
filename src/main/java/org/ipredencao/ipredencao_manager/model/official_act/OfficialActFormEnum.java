@@ -148,7 +148,6 @@ public enum OfficialActFormEnum {
         return "ADMISSAO".equals(type.getCategory());
     }
 
-    /** Art. 24, d — promove MNC para MC e herda o admission_order_number da admissão anterior. */
     public boolean isPromotionFromMnc() {
         return this == DEM_MNC_PROFISSAO_FE;
     }

@@ -17,10 +17,8 @@ public class OfficialActCreateForm {
     private Map<String, Object> metadata;
     private String notes;
 
-    /** Reservado para o backfill. Sempre sanitizado para {@code false} no controller público. */
     @JsonIgnore
     private boolean skipEffects = false;
-    /** Reservado para o backfill. Sempre sanitizado para {@code false} no controller público. */
     @JsonIgnore
     private boolean skipAdmissionOrderNumber = false;
 

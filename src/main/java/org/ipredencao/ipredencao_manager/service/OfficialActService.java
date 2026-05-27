@@ -40,8 +40,6 @@ public class OfficialActService {
     @Autowired
     private SecurityUtils securityUtils;
 
-    // ===== CREATE =====
-
     @Transactional
     public List<OfficialAct> create(OfficialActCreateForm form) {
         validateCreateForm(form);
@@ -64,16 +62,12 @@ public class OfficialActService {
         return created;
     }
 
-    // ===== UPDATE (restritivo) =====
-
     @Transactional
     public OfficialAct update(Long id, OfficialActUpdateForm form) {
         OfficialAct existing = repo.findById(id);
         if (existing == null) {
             throw new NoSuchElementException("Ato oficial " + id + " não encontrado");
         }
-        // Metadata segue o mesmo contrato do create: campos required precisam estar
-        // preenchidos. Validar antes de persistir para impedir downgrades acidentais.
         if (form.getMetadata() != null) {
             validateMetadata(existing.getOfficialActFormId(), form.getMetadata());
             existing.setMetadata(form.getMetadata());
@@ -84,8 +78,6 @@ public class OfficialActService {
         existing.setUpdatedBy(securityUtils.getCurrentUserId());
         return repo.update(existing);
     }
-
-    // ===== DELETE (reverte categoria via histórico) =====
 
     @Transactional
     public void delete(Long id) {
@@ -104,8 +96,6 @@ public class OfficialActService {
 
         repo.delete(id);
     }
-
-    // ===== READS =====
 
     public OfficialAct findById(Long id) {
         OfficialAct act = repo.findById(id);
@@ -135,8 +125,6 @@ public class OfficialActService {
                 total);
         return new PagedResponse<>(acts, page);
     }
-
-    // ===== VALIDAÇÃO =====
 
     private void validateCreateForm(OfficialActCreateForm form) {
         if (form == null) {
@@ -168,9 +156,6 @@ public class OfficialActService {
                         "Campo obrigatório ausente em metadata: " + spec.key()
                                 + " (" + spec.helperText() + ")");
             }
-            // PERSON_REF é armazenado como objeto {id?, name}; exige pelo menos `name` preenchido.
-            // Se `id` estiver presente, precisa ser numérico.
-            // Demais tipos exigem string não-vazia (DATE também chega como ISO string).
             if (spec.type() == FieldType.PERSON_REF) {
                 if (!(value instanceof Map<?, ?> m)) {
                     throw new IllegalArgumentException(
@@ -196,8 +181,6 @@ public class OfficialActService {
         return v != null ? v.toString() : null;
     }
 
-    // ===== NÚMERO DE ORDEM DE ADMISSÃO =====
-
     void assignAdmissionOrderNumber(OfficialAct act, OfficialActCreateForm form) {
         if (form.isSkipAdmissionOrderNumber()) return;
         OfficialActFormEnum formEnum = OfficialActFormEnum.fromId(act.getOfficialActFormId());
@@ -206,20 +189,15 @@ public class OfficialActService {
         } else if (formEnum.isPromotionFromMnc()) {
             repo.findLatestAdmissionOrderNumber(act.getPersonId())
                     .ifPresent(act::setAdmissionOrderNumber);
-            // Se a pessoa não tinha admissão anterior (backfill incompleto), fica null.
         }
     }
 
-    // ===== EFEITOS NA PESSOA (regras de domínio) =====
-
-    /** Carrega a pessoa, aplica as mudanças do ato em memória e persiste. */
     private void persistCreateEffects(OfficialAct act) {
         Pessoa pessoa = pessoaService.findById(act.getPersonId());
         applyCreateEffects(act, pessoa);
         pessoaService.update(pessoa);
     }
 
-    /** Muta {@code pessoa} aplicando categoria/datas implicadas pela forma do ato. */
     private void applyCreateEffects(OfficialAct act, Pessoa pessoa) {
         OfficialActFormEnum form = OfficialActFormEnum.fromId(act.getOfficialActFormId());
         switch (form) {
@@ -273,10 +251,7 @@ public class OfficialActService {
         }
     }
 
-    /**
-     * Reverte apenas {@code categoria} para o valor anterior ao ato. Datas (batismo,
-     * profissão, falecimento) NÃO são revertidas — têm valor histórico independente.
-     */
+    // Reverte categoria; datas (batismo, profissão, falecimento) não são revertidas.
     private void applyDeleteEffects(OfficialAct act, Pessoa pessoa, Long previousCategoriaId) {
         if (previousCategoriaId == null) return;
         pessoa.setCategoria(CategoriaEnum.fromId(previousCategoriaId));

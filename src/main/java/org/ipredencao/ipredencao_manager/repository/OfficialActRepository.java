@@ -136,10 +136,6 @@ public class OfficialActRepository {
         return dsl.fetchValue(DSL.field("nextval('" + ADMISSION_ORDER_SEQ + "')", Long.class));
     }
 
-    /**
-     * Retorna o número de ordem de admissão da admissão (ou promoção MNC→MC) mais recente da pessoa.
-     * Usado pela promoção {@code DEM_MNC_PROFISSAO_FE} (Art. 24, d), que herda o número.
-     */
     public Optional<Long> findLatestAdmissionOrderNumber(Long personId) {
         if (personId == null) return Optional.empty();
         Long value = dsl.select(OFFICIAL_ACT.ADMISSION_ORDER_NUMBER)

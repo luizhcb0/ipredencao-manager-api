@@ -22,10 +22,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Monta o relatório de uma ata em hierarquia categoria → tipo → forma → linhas.
- * O texto de cada linha é gerado pelo {@link MinuteReportFormatter}.
- */
 @Service
 public class MinuteReportService {
 
@@ -53,7 +49,6 @@ public class MinuteReportService {
             throw new NoSuchElementException("Nenhum ato encontrado para a ata " + minuteNumber);
         }
 
-        // Batch: uma única query IN (?) carrega todas as pessoas de uma vez.
         Set<Long> personIds = acts.stream()
                 .map(OfficialAct::getPersonId)
                 .collect(Collectors.toSet());
@@ -65,8 +60,6 @@ public class MinuteReportService {
 
         return new MinuteReportResponse(minuteNumber, acts.get(0).getMinuteDate(), sections);
     }
-
-    // ===== Agrupamento =====
 
     private Map<String, Map<Long, Map<Long, List<MinuteReportLine>>>> buildHierarchy(
             List<OfficialAct> acts, Map<Long, Pessoa> peopleById) {

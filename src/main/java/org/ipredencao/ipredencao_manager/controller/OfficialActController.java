@@ -42,7 +42,6 @@ public class OfficialActController {
 
     @PostMapping
     public ResponseEntity<List<OfficialAct>> create(@RequestBody OfficialActCreateForm form) {
-        // Defesa: as flags de backfill nunca devem ser definidas por callers HTTP.
         if (form != null) {
             form.setSkipEffects(false);
             form.setSkipAdmissionOrderNumber(false);

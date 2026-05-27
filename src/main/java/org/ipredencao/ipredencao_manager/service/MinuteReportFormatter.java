@@ -15,13 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
-/**
- * Gera o texto de uma linha do relatório de ata para um {@link OfficialAct}.
- * <p>
- * Cada forma do Cap. III da CI/IPB tem um template específico que combina dados da
- * pessoa, do ato e da metadata. Campos ausentes recebem placeholders entre colchetes
- * (ex.: {@code [endereço não cadastrado]}) para que o redator perceba e complete.
- */
+/** Gera o texto de cada linha do relatório de ata. Campos ausentes recebem placeholders entre colchetes. */
 @Component
 public class MinuteReportFormatter {
 
@@ -103,17 +97,6 @@ public class MinuteReportFormatter {
         };
     }
 
-    // ===== Builders por categoria =====
-
-    /**
-     * Linha de admissão de membro comungante. Inclui data de nascimento, estado civil
-     * e endereço (quando cadastrados). Pais e a palavra "comungante" não são emitidos
-     * conforme requisito de produto (e o regulamento Art. 12, §2º, II não os exige).
-     *
-     * @param provenance trecho opcional "proveniente da X, Presbitério de Y" para formas
-     *                   com {@code originChurch}; {@code null} para as demais.
-     * @param causa trecho final "por <modo de recepção>".
-     */
     private String buildAdmissaoMc(OfficialAct act, Pessoa pessoa, String provenance, String causa) {
         StringBuilder sb = new StringBuilder();
         sb.append("em ").append(formatDate(act.getActDate())).append(", ")
@@ -164,24 +147,12 @@ public class MinuteReportFormatter {
                 + celebrant(md) + ".";
     }
 
-    // ===== Helpers de campos =====
-
-    /**
-     * Nome em maiúsculas seguido do número de ordem de admissão entre parênteses
-     * ("à margem interna" no regulamento Art. 12, §2º, III). Quando o ato não carrega
-     * o número (demissões, falecimentos, etc.), os parênteses são omitidos.
-     */
     private String personHeader(OfficialAct act, Pessoa pessoa) {
         String nome = pessoa.getNome() != null ? pessoa.getNome().toUpperCase() : "[NOME NÃO CADASTRADO]";
         Long numero = act.getAdmissionOrderNumber();
         return numero != null ? nome + " (" + numero + ")" : nome;
     }
 
-    /**
-     * Retorna "filho(a) de Pai e Mãe" quando ambos cadastrados, "filho(a) de Pai"
-     * ou "filha de Mãe" quando só um existir, ou {@code null} quando nenhum estiver
-     * cadastrado (chamador omite o bloco completamente).
-     */
     private String parents(Pessoa pessoa) {
         if (pessoa.getRelacionamentos() == null || pessoa.getRelacionamentos().isEmpty()) {
             return null;
@@ -246,13 +217,6 @@ public class MinuteReportFormatter {
         return sb.toString();
     }
 
-    // ===== Helpers de metadata =====
-
-    /**
-     * Lê o nome do celebrante a partir de {@code metadata.celebrant}, que é armazenado
-     * como objeto {@code {id?, name}} (PERSON_REF). Quando o campo está ausente ou sem
-     * {@code name}, retorna placeholder para o redator perceber e completar.
-     */
     private String celebrant(Map<String, Object> md) {
         Object v = md.get("celebrant");
         String nome = null;
@@ -269,11 +233,6 @@ public class MinuteReportFormatter {
         return str(md, "originChurch", "[igreja de origem não informada]");
     }
 
-    /**
-     * Trecho "proveniente da {@code originChurch}[, Presbitério de X]" para inserção
-     * antes da causa em admissões MC. Mantém o placeholder de igreja quando ausente,
-     * já que essas formas exigem {@code originChurch} no schema.
-     */
     private String provenance(Map<String, Object> md) {
         return "proveniente da " + originChurch(md) + originPresbytery(md);
     }
@@ -306,8 +265,6 @@ public class MinuteReportFormatter {
         String v = str(md, key, null);
         return isBlank(v) ? "" : prefix + v;
     }
-
-    // ===== Conversão segura =====
 
     private static String str(Map<String, Object> md, String key, String fallback) {
         Object v = md.get(key);

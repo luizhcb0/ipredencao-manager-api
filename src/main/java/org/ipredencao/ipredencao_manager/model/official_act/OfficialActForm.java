@@ -10,7 +10,6 @@ public class OfficialActForm {
     private Long officialActTypeId;
     private String name;
     private String articleClause;
-    /** Schema hidratado pelo catálogo a partir do {@link OfficialActFormEnum}. */
     private List<MetadataFieldSpec> metadataSchema;
 
     public OfficialActForm() {}
