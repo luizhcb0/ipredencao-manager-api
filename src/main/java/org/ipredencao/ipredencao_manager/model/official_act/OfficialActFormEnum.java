@@ -105,7 +105,7 @@ public enum OfficialActFormEnum {
             req("celebrant", FieldType.PERSON_REF, "Celebrante")
     )),
     DEM_MNC_SOLIC_PAIS_OUTRA(22L, DEMISSAO_MEMBRO_NAO_COMUNGANTE, "Art. 24, e", List.of(
-            req("destinationChurch",      FieldType.STRING, "Comunidade destino"),
+            opt("destinationChurch",      FieldType.STRING, "Igreja ou comunidade destino (se houver)"),
             opt("destinationPresbytery",  FieldType.STRING, "Presbitério destino"),
             opt("reason",                 FieldType.TEXT,   "Motivo")
     )),

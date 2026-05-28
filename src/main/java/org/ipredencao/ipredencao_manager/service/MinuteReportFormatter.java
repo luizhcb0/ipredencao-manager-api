@@ -90,9 +90,7 @@ public class MinuteReportFormatter {
             case DEM_MNC_PROFISSAO_FE ->                              // Art. 24, d — promoção
                 buildPromocaoArt24d(act, pessoa, md);
             case DEM_MNC_SOLIC_PAIS_OUTRA ->
-                buildDemissaoSimples(act, pessoa,
-                        "por solicitação dos pais (aderiram a outra comunidade), destinada à "
-                        + destinationChurch(md) + destinationPresbytery(md) + optionalReason(md));
+                buildDemissaoSimples(act, pessoa, demissaoPorPedidoPais(md) + optionalReason(md));
             case DEM_MNC_FALECIMENTO ->
                 buildFalecimento(act, pessoa, md);
         };
@@ -250,6 +248,15 @@ public class MinuteReportFormatter {
     private String destinationPresbytery(Map<String, Object> md) {
         String v = str(md, "destinationPresbytery", null);
         return isBlank(v) ? "" : ", Presbitério de " + v;
+    }
+
+    /** Art. 24, e — com destino explícito ou exclusão genérica a pedido dos pais. */
+    private String demissaoPorPedidoPais(Map<String, Object> md) {
+        String dest = str(md, "destinationChurch", null);
+        if (!isBlank(dest) && !"Não informado".equalsIgnoreCase(dest.trim())) {
+            return "por solicitação dos pais, destinada à " + dest + destinationPresbytery(md);
+        }
+        return "por solicitação dos pais";
     }
 
     private String optionalReason(Map<String, Object> md) {

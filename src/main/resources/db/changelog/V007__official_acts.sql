@@ -47,7 +47,7 @@ INSERT INTO official_act_form (official_act_type_id, name, article_clause) VALUE
 (4, 'Carta de transferência (do próprio menor)',          'Art. 24, b'),
 (4, 'Atingimento da maioridade (18 anos)',                'Art. 24, c'),
 (4, 'Profissão de fé',                                    'Art. 24, d'),
-(4, 'Solicitação dos pais (aderiram a outra comunidade)', 'Art. 24, e'),
+(4, 'Solicitação dos pais',                               'Art. 24, e'),
 (4, 'Falecimento',                                        'Art. 24, f');
 
 -- Sequencia global; atribuida pelo service (so para admissoes).
