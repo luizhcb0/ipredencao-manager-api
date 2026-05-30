@@ -31,6 +31,8 @@ import org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil;
 import org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.jooq.Condition;
+import org.joda.time.DateTime;
+
 @Repository
 public class PessoaRepository {
 
@@ -63,6 +65,26 @@ public class PessoaRepository {
             .execute();
 
         return pessoa;
+    }
+
+    /**
+     * Retorna a categoria_id em vigor para a pessoa imediatamente antes do timestamp informado.
+     * <p>
+     * O trigger {@code trigger_pessoa_history} grava NEW (estado após cada INSERT/UPDATE em pessoa)
+     * em pessoa_history. Portanto, para descobrir o estado vigente antes de um ato oficial,
+     * procuramos a entrada de histórico mais recente com {@code added_at} estritamente anterior
+     * ao timestamp do ato. Usado para reverter pessoa.categoria_id ao deletar um ato.
+     */
+    public Optional<Long> findCategoriaIdBefore(Long pessoaId, DateTime threshold) {
+        if (pessoaId == null || threshold == null) return Optional.empty();
+        Long categoriaId = dsl.select(PESSOA_HISTORY.CATEGORIA_ID)
+                .from(PESSOA_HISTORY)
+                .where(PESSOA_HISTORY.PESSOA_ID.eq(pessoaId))
+                .and(PESSOA_HISTORY.ADDED_AT.lessThan(DateTimeHelper.toDb(threshold)))
+                .orderBy(PESSOA_HISTORY.ADDED_AT.desc(), PESSOA_HISTORY.HISTORY_ID.desc())
+                .limit(1)
+                .fetchOne(PESSOA_HISTORY.CATEGORIA_ID);
+        return Optional.ofNullable(categoriaId);
     }
 
     public void deleteRelationship(Long pessoaId, Long pessoaRelacionadaId, TipoRelacionamento tipoRelacionamento) {

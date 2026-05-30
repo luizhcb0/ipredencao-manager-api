@@ -11,14 +11,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
+import org.ipredencao.ipredencao_manager.model.pessoa.PessoaInclude;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.util.SecurityUtils;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import org.joda.time.DateTime;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.io.IOException;
@@ -114,6 +118,19 @@ public class PessoaService {
         }
     }
 
+    /**
+     * Busca várias pessoas por IDs em uma única query ({@code WHERE pessoa_id IN (?)}).
+     * Inclui endereço e relacionamentos — suficiente para o {@code MinuteReportFormatter}.
+     */
+    public List<Pessoa> findByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        return pessoaRepository.find(
+                PessoaQuery.builder()
+                        .ids(List.copyOf(ids))
+                        .includes(PessoaInclude.ENDERECO, PessoaInclude.RELACIONAMENTOS)
+                        .build());
+    }
+
     public List<Pessoa> find(PessoaQuery query) {
         return pessoaRepository.find(query);
     }
@@ -185,6 +202,11 @@ public class PessoaService {
      */
     public List<PessoaHistory> findHistoryById(Long id) {
         return pessoaRepository.findHistoryByPersonId(id);
+    }
+
+    /** Retorna a categoria_id em vigor para a pessoa imediatamente antes do timestamp informado. */
+    public Optional<Long> findCategoriaIdBefore(Long pessoaId, DateTime threshold) {
+        return pessoaRepository.findCategoriaIdBefore(pessoaId, threshold);
     }
     
     private void syncRelationships(Long pessoaId, List<Relacionamento> existingRelationships, List<Relacionamento> newRelationships) {

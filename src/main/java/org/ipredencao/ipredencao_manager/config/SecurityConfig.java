@@ -62,6 +62,9 @@ public class SecurityConfig {
                 // Pessoas (apenas autenticados)
                 .requestMatchers(HttpMethod.GET, "/api/pessoas/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
                 .requestMatchers("/api/pessoas/**").hasAnyRole("DIACONO", "PRESBITERO", "ADMIN")
+
+                // Atos oficiais (CI/IPB Cap. III) — apenas presbíteros e admins
+                .requestMatchers("/api/official-acts/**").hasAnyRole("PRESBITERO", "ADMIN")
                 
                 // Relatórios (apenas autenticados)
                 .requestMatchers("/api/reports/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")

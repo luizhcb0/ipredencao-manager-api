@@ -1,0 +1,62 @@
+name: backend-tests
+
+on:
+  pull_request:
+    branches: [development]
+  push:
+    branches: [development]
+
+# Cancela runs antigos do mesmo PR/branch quando há novo push.
+concurrency:
+  group: backend-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Gradle test (Testcontainers + Postgres)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      # Postgres só para Liquibase + JOOQ codegen (generateJooq → update).
+      # Os testes IT usam Testcontainers com Postgres efêmero próprio.
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: ipredencao_manager
+          POSTGRES_PASSWORD: ipredencao_manager
+          POSTGRES_DB: ipredencao_manager
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U ipredencao_manager -d ipredencao_manager"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle (with cache)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon --stacktrace
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            build/reports/tests/test
+            build/test-results/test
+          retention-days: 14
+          if-no-files-found: warn

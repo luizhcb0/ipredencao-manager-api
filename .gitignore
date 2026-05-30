@@ -30,6 +30,15 @@ Thumbs.db
 # Arquivos de configuração locais
 application-local.properties
 
+# Segredos — nunca commitar; copie dos .example e preencha localmente
+/apprunner-config.json
+src/main/resources/ipredencao-manager-api-firebase-adminsdk.json
+**/*firebase-adminsdk*.json
+!**/*firebase-adminsdk*.json.example
+.env
+.env.*
+!.env*.example
+
 # JOOQ
 /generated/
 /target/generated-sources/
