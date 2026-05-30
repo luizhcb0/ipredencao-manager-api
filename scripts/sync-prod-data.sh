@@ -121,7 +121,7 @@ check_pg_prerequisites() {
         exit 1
     fi
 
-    echo "Using: $PG_DUMP ($($PG_DUMP --version | head -1))"
+    echo "Using: $PG_DUMP ($("$PG_DUMP" --version | head -1))"
 }
 
 load_prod_credentials() {
@@ -248,9 +248,18 @@ do_s3_sync() {
     aws s3 sync "s3://$PROD_S3_BUCKET" "$S3_LOCAL_DIR" --region us-east-1
 
     echo "Ensuring local bucket exists..."
-    aws s3 mb "s3://$LOCAL_S3_BUCKET" \
+    aws s3api create-bucket \
+        --bucket "$LOCAL_S3_BUCKET" \
         --endpoint-url "$LOCALSTACK_ENDPOINT" \
-        --no-sign-request 2>/dev/null || true
+        --no-sign-request \
+        --region us-east-1 2>/dev/null || true
+    if ! aws s3api head-bucket \
+            --bucket "$LOCAL_S3_BUCKET" \
+            --endpoint-url "$LOCALSTACK_ENDPOINT" \
+            --no-sign-request 2>/dev/null; then
+        echo "ERROR: Failed to create local bucket '$LOCAL_S3_BUCKET' in LocalStack."
+        exit 1
+    fi
 
     echo "Uploading to local LocalStack ($LOCAL_S3_BUCKET)..."
     aws s3 sync "$S3_LOCAL_DIR" "s3://$LOCAL_S3_BUCKET" \

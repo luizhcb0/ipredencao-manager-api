@@ -43,24 +43,24 @@ dependencies {
 	// Test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	
+
 	// Novas dependências para autenticação
 	implementation 'com.google.firebase:firebase-admin:9.2.0'
-	
+
 	// JWT
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
-	
+
 	// Security & Validation
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	
+
 	// Monitoring & Documentation
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'io.micrometer:micrometer-registry-prometheus'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
-	
+
 	// Testing adicional
 	testImplementation 'org.springframework.security:spring-security-test'
 
@@ -129,8 +129,13 @@ liquibase {
 }
 
 tasks.register('composeUp', Exec) {
-	// Coloquei /usr/local/bin/docker pois docker não estava acessível no PATH após mudar nome de usuário 
-	commandLine '/usr/local/bin/docker', 'compose', 'up', '-d', '--wait', 'postgres', 'localstack'
+	def isWindows = System.properties['os.name'].toLowerCase().contains('windows')
+	if (isWindows) {
+		commandLine 'docker', 'compose', 'up', '-d', '--wait', 'postgres', 'localstack'
+	} else {
+		// macOS: docker may not be on PATH after username change
+		commandLine '/usr/local/bin/docker', 'compose', 'up', '-d', '--wait', 'postgres', 'localstack'
+	}
 }
 
 tasks.named('update') {
