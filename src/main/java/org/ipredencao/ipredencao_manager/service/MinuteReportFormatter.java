@@ -28,9 +28,9 @@ public class MinuteReportFormatter {
         return switch (form) {
             // ===== Admissão de membro comungante (Art. 16) =====
             case ADM_MC_PROFISSAO_FE ->
-                buildAdmissaoMc(act, pessoa, null, "por profissão de fé, " + celebrant(md));
+                buildAdmissaoMc(act, pessoa, null, "por profissão de fé, " + celebratedBy(md));
             case ADM_MC_PROFISSAO_FE_E_BATISMO ->
-                buildAdmissaoMc(act, pessoa, null, "por profissão de fé e batismo, " + celebrant(md));
+                buildAdmissaoMc(act, pessoa, null, "por profissão de fé e batismo, " + celebratedBy(md));
             case ADM_MC_CARTA_TRANSFERENCIA ->
                 buildAdmissaoMc(act, pessoa, provenance(md), "por carta de transferência");
             case ADM_MC_JURISDICAO_A_PEDIDO ->
@@ -46,7 +46,7 @@ public class MinuteReportFormatter {
 
             // ===== Admissão de membro não comungante (Art. 17) =====
             case ADM_MNC_BATISMO_INFANCIA ->
-                buildAdmissaoMnc(act, pessoa, "por batismo, " + celebrant(md));
+                buildAdmissaoMnc(act, pessoa, "por batismo, " + celebratedBy(md));
             case ADM_MNC_TRANSFERENCIA_PAIS ->
                 buildAdmissaoMnc(act, pessoa, "por transferência dos pais ou responsáveis, vindos da "
                         + originChurch(md) + originPresbytery(md));
@@ -65,8 +65,7 @@ public class MinuteReportFormatter {
             case DEM_MC_EXCLUSAO_AUSENCIA ->
                 buildDemissaoSimples(act, pessoa, "por exclusão por ausência" + optionalReason(md));
             case DEM_MC_CARTA_TRANSFERENCIA ->
-                buildDemissaoSimples(act, pessoa, "por carta de transferência, destinada à "
-                        + destinationChurch(md) + destinationPresbytery(md));
+                buildDemissaoSimples(act, pessoa, "por carta de transferência" + optionalDestinationPhrase(md));
             case DEM_MC_JURISDICAO_OUTRA_IGREJA ->
                 buildDemissaoSimples(act, pessoa, "por jurisdição assumida por outra igreja, a "
                         + destinationChurch(md) + destinationPresbytery(md));
@@ -79,11 +78,10 @@ public class MinuteReportFormatter {
 
             // ===== Demissão de membro não comungante (Art. 24) =====
             case DEM_MNC_TRANSF_PAIS ->
-                buildDemissaoSimples(act, pessoa, "por carta de transferência dos pais ou responsáveis, destinada à "
-                        + destinationChurch(md) + destinationPresbytery(md));
+                buildDemissaoSimples(act, pessoa, "por carta de transferência dos pais ou responsáveis"
+                        + optionalDestinationPhrase(md));
             case DEM_MNC_TRANSF_PROPRIA ->
-                buildDemissaoSimples(act, pessoa, "por carta de transferência, destinada à "
-                        + destinationChurch(md) + destinationPresbytery(md));
+                buildDemissaoSimples(act, pessoa, "por carta de transferência" + optionalDestinationPhrase(md));
             case DEM_MNC_MAIORIDADE ->
                 buildDemissaoSimples(act, pessoa, "por atingimento da maioridade (18 anos)"
                         + optionalReason(md));
@@ -143,7 +141,7 @@ public class MinuteReportFormatter {
     private String buildPromocaoArt24d(OfficialAct act, Pessoa pessoa, Map<String, Object> md) {
         return "em " + formatDate(act.getActDate()) + ", " + personHeader(act, pessoa)
                 + ", admitido(a) à comunhão plena por profissão de fé (Art. 24, d), "
-                + celebrant(md) + ".";
+                + celebratedBy(md) + ".";
     }
 
     private String personHeader(OfficialAct act, Pessoa pessoa) {
@@ -216,16 +214,29 @@ public class MinuteReportFormatter {
         return sb.toString();
     }
 
-    private String celebrant(Map<String, Object> md) {
+    private String celebratedBy(Map<String, Object> md) {
+        String nome = celebrantName(md);
+        return isPlaceholder(nome) ? "celebrado por [celebrante]" : "celebrado por " + nome;
+    }
+
+    private String celebrantName(Map<String, Object> md) {
         Object v = md.get("celebrant");
-        String nome = null;
         if (v instanceof Map<?, ?> m) {
             Object n = m.get("name");
-            nome = n != null ? n.toString() : null;
-        } else if (v instanceof String s) {
-            nome = s;
+            return n != null ? n.toString() : null;
         }
-        return isBlank(nome) ? "por [celebrante]" : "por " + nome;
+        if (v instanceof String s) {
+            return s;
+        }
+        return null;
+    }
+
+    private String optionalDestinationPhrase(Map<String, Object> md) {
+        String dest = str(md, "destinationChurch", null);
+        if (isPlaceholder(dest)) {
+            return "";
+        }
+        return ", destinada à " + dest + destinationPresbytery(md);
     }
 
     private String originChurch(Map<String, Object> md) {
@@ -253,7 +264,7 @@ public class MinuteReportFormatter {
     /** Art. 24, e — com destino explícito ou exclusão genérica a pedido dos pais. */
     private String demissaoPorPedidoPais(Map<String, Object> md) {
         String dest = str(md, "destinationChurch", null);
-        if (!isBlank(dest) && !"Não informado".equalsIgnoreCase(dest.trim())) {
+        if (!isPlaceholder(dest)) {
             return "por solicitação dos pais, destinada à " + dest + destinationPresbytery(md);
         }
         return "por solicitação dos pais";
@@ -309,6 +320,11 @@ public class MinuteReportFormatter {
 
     private static boolean isBlank(String s) {
         return s == null || s.isBlank();
+    }
+
+    /** Placeholder de backfill/UI — omitir do texto quando não houver dado real. */
+    private static boolean isPlaceholder(String s) {
+        return isBlank(s) || "Não informado".equalsIgnoreCase(s.trim());
     }
 
     private static void appendIfNotBlank(StringBuilder sb, String prefix, String value) {
