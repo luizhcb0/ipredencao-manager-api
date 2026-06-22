@@ -7,5 +7,7 @@ public record FirebaseUser(
     String uid,
     String email,
     String displayName,
-    boolean emailVerified
+    boolean emailVerified,
+    String photoUrl,
+    Boolean disabled
 ) {}

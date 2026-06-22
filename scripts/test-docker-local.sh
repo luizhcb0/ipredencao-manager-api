@@ -26,13 +26,9 @@ if [ ! -f "$FIREBASE_PATH" ]; then
     exit 1
 fi
 
-if command -v jq &> /dev/null; then
-    FIREBASE_JSON=$(jq -c < "$FIREBASE_PATH")
-else
-    FIREBASE_JSON=$(tr -d '\n ' < "$FIREBASE_PATH")
-fi
+FIREBASE_MOUNT="/run/secrets/firebase-adminsdk.json"
 
-echo "Firebase JSON carregado"
+echo "Firebase JSON: $FIREBASE_PATH (montado em $FIREBASE_MOUNT)"
 
 # DB local (compose.yaml)
 DB_HOST="host.docker.internal"
@@ -53,13 +49,15 @@ echo "  Porta: 8080"
 echo ""
 
 docker run --rm -p 8080:8080 \
+  -v "$FIREBASE_PATH:$FIREBASE_MOUNT:ro" \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e SERVER_PORT=8080 \
   -e LIQUIBASE_ENABLED=true \
   -e DB_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}" \
   -e DB_USERNAME="${DB_USER}" \
   -e DB_PASSWORD="${DB_PASSWORD}" \
-  -e FIREBASE_SERVICE_ACCOUNT_KEY_CONTENT="${FIREBASE_JSON}" \
+  -e FIREBASE_SERVICE_ACCOUNT_KEY_PATH="$FIREBASE_MOUNT" \
+  -e FIREBASE_SERVICE_ACCOUNT_KEY_CONTENT="" \
   -e FIREBASE_LAMBDA_NAME="" \
   -e JWT_SECRET="test-secret-key-for-local-development-must-be-256-bits" \
   -e S3_BUCKET_NAME="ipredencao-storage" \
@@ -69,4 +67,3 @@ docker run --rm -p 8080:8080 \
   -e AWS_SECRET_ACCESS_KEY="localstack" \
   -e ALLOWED_ORIGINS="http://localhost:3000,http://localhost:3001" \
   ${IMAGE_NAME}
-

@@ -8,15 +8,14 @@ public record FirebaseLambdaResponse(
     ResponseData data,
     String error
 ) {
-    /**
-     * Dados do response - campos preenchidos conforme a operacao
-     */
     public record ResponseData(
         String uid,
         String email,
         String name,
         String displayName,
         Boolean emailVerified,
-        String token
+        String token,
+        String photoUrl,
+        Boolean disabled
     ) {}
 }

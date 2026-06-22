@@ -73,6 +73,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/categorias/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
 
                 .requestMatchers("/api/enderecos/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
+
+                // Usuários (admin) e perfil próprio
+                .requestMatchers("/api/users/**").hasRole("ADMIN")
+                .requestMatchers("/api/me/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
                 
                 .anyRequest().authenticated()
             )
