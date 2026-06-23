@@ -558,4 +558,9 @@ public class PessoaRepository {
         record.setInicioRelacionamento(DateTimeHelper.toDb(relacionamento.getInicioRelacionamento()));
         return record;
     }
+
+    public void deletePregnancy(Long pessoaId) {
+        dsl.deleteFrom(PESSOA_HISTORY).where(PESSOA_HISTORY.PESSOA_ID.eq(pessoaId)).execute();
+        dsl.deleteFrom(PESSOA).where(PESSOA.PESSOA_ID.eq(pessoaId)).execute();
+    }
 } 
