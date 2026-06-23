@@ -212,7 +212,6 @@ public class PessoaService {
     public void syncRelationships(Long pessoaId, List<Relacionamento> existingRelationships, List<Relacionamento> newRelationships) {
         // Criar mapas para facilitar a comparação
         Map<String, Relacionamento> existingMap = existingRelationships.stream()
-
             .collect(Collectors.toMap(
                 rel -> rel.getPessoaRelacionadaId() + "_" + rel.getTipoRelacionamento().name(),
                 rel -> rel
