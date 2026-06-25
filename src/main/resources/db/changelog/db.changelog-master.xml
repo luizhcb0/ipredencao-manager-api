@@ -12,5 +12,6 @@
     <include file="V005__drop_informacoes_adicionais.sql" relativeToChangelogFile="true"/>
     <include file="V006__update_relationship_type.sql" relativeToChangelogFile="true"/>
     <include file="V007__official_acts.sql" relativeToChangelogFile="true"/>
+    <include file="V008__usuario_updated_by_fks.sql" relativeToChangelogFile="true"/>
 
 </databaseChangeLog> 

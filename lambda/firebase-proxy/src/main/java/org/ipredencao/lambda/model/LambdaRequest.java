@@ -9,6 +9,8 @@ public record LambdaRequest(
         String email,
         String password,
         String displayName,
-        String uid
+        String uid,
+        String photoUrl,
+        Boolean disabled
     ) {}
 }

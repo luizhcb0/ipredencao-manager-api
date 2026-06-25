@@ -7,7 +7,6 @@ import org.ipredencao.ipredencao_manager.model.auth.dto.LoginGoogleRequest;
 import org.ipredencao.ipredencao_manager.model.auth.dto.LoginResponse;
 import org.ipredencao.ipredencao_manager.model.auth.dto.LogoutRequest;
 import org.ipredencao.ipredencao_manager.model.auth.dto.RefreshTokenRequest;
-import org.ipredencao.ipredencao_manager.model.auth.dto.RegisterRequest;
 import org.ipredencao.ipredencao_manager.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -45,11 +44,6 @@ public class AuthController {
     @PostMapping("/login/email")
     public ResponseEntity<LoginResponse> loginWithEmail(@RequestBody LoginEmailRequest request, HttpServletRequest httpRequest) {
         return ResponseEntity.ok(authService.loginWithEmail(request.getIdToken(), httpRequest));
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<LoginResponse> register(@RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
-        return ResponseEntity.ok(authService.register(request, httpRequest));
     }
 
     @PostMapping("/refresh")

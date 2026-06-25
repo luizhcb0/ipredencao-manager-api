@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import java.util.ArrayList;
 import java.util.List;
+
 import static org.ipredencao.ipredencao_manager.jooq.tables.Usuario.USUARIO;
 
 @Repository
@@ -69,16 +70,32 @@ public class UsuarioRepository {
     
     public List<Usuario> find(UsuarioQuery query) {
         List<Condition> conditions = buildConditions(query);
-        
+
         Condition finalCondition = conditions.stream()
             .reduce(DSL.noCondition(), Condition::and);
-        
+
         return dsl.selectFrom(USUARIO)
                 .where(finalCondition)
+                .orderBy(USUARIO.NAME.asc())
                 .fetch()
                 .stream()
                 .map(UsuarioRepository::fromRepository)
                 .toList();
+    }
+
+    public long countActiveByProfile(PerfilAcesso profile) {
+        return dsl.fetchCount(
+            USUARIO,
+            USUARIO.ACCESS_PROFILE.eq(
+                org.ipredencao.ipredencao_manager.jooq.enums.PerfilAcesso.valueOf(profile.name())
+            ).and(USUARIO.ACTIVE.eq(true))
+        );
+    }
+
+    public void deleteById(Long id) {
+        dsl.deleteFrom(USUARIO)
+            .where(USUARIO.ID.eq(id))
+            .execute();
     }
     
     private List<Condition> buildConditions(UsuarioQuery query) {

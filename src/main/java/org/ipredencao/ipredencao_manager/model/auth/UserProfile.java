@@ -7,18 +7,9 @@ public class UserProfile {
     private String nome;
     private String fotoUrl;
     private String perfilAcesso;
-    private String provider;
     private String dataUltimoLogin;
     
     public UserProfile() {}
-    
-    public UserProfile(Long id, String email, String nome, String perfilAcesso, String provider) {
-        this.id = id;
-        this.email = email;
-        this.nome = nome;
-        this.perfilAcesso = perfilAcesso;
-        this.provider = provider;
-    }
     
     public Long getId() {
         return id;
@@ -58,14 +49,6 @@ public class UserProfile {
     
     public void setPerfilAcesso(String perfilAcesso) {
         this.perfilAcesso = perfilAcesso;
-    }
-    
-    public String getProvider() {
-        return provider;
-    }
-    
-    public void setProvider(String provider) {
-        this.provider = provider;
     }
     
     public String getDataUltimoLogin() {

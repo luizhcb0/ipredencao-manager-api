@@ -11,13 +11,15 @@ public record LambdaResponse(
         String name,
         String displayName,
         Boolean emailVerified,
-        String token
+        String token,
+        String photoUrl,
+        Boolean disabled
     ) {}
-    
+
     public static LambdaResponse success(ResponseData data) {
         return new LambdaResponse(true, data, null);
     }
-    
+
     public static LambdaResponse error(String msg) {
         return new LambdaResponse(false, null, msg);
     }
