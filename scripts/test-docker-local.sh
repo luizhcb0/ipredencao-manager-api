@@ -48,7 +48,7 @@ echo "  DB: $DB_HOST:$DB_PORT (local)"
 echo "  Porta: 8080"
 echo ""
 
-docker run --rm -p 8080:8080 \
+MSYS_NO_PATHCONV=1 docker run --rm -p 8080:8080 \
   -v "$FIREBASE_PATH:$FIREBASE_MOUNT:ro" \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e SERVER_PORT=8080 \
