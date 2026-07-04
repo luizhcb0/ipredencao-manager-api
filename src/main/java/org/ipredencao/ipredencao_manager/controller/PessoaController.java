@@ -7,7 +7,10 @@ import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistory;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistoryResponse;
 import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
+import org.ipredencao.ipredencao_manager.controller.form.PregnancyCreateForm;
+import org.ipredencao.ipredencao_manager.controller.form.PregnancyUpdateForm;
 import org.ipredencao.ipredencao_manager.repository.PersonNoteRepository;
+import org.ipredencao.ipredencao_manager.service.PregnancyService;
 import org.ipredencao.ipredencao_manager.service.PessoaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,11 +26,32 @@ import java.util.NoSuchElementException;
 public class PessoaController {
 
     private final PessoaService pessoaService;
+    private final PregnancyService pregnancyService;
     private final PersonNoteRepository personNoteRepository;
 
-    public PessoaController(PessoaService pessoaService, PersonNoteRepository personNoteRepository) {
+    public PessoaController(PessoaService pessoaService, PregnancyService pregnancyService, PersonNoteRepository personNoteRepository) {
         this.pessoaService = pessoaService;
+        this.pregnancyService = pregnancyService;
         this.personNoteRepository = personNoteRepository;
+    }
+
+    @PostMapping("/pregnancy")
+    @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
+    public ResponseEntity<Pessoa> createPregnancy(@RequestBody PregnancyCreateForm form) {
+        return ResponseEntity.ok(pregnancyService.create(form));
+    }
+
+    @PutMapping("/{id}/pregnancy")
+    @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
+    public ResponseEntity<Pessoa> updatePregnancy(@PathVariable Long id, @RequestBody PregnancyUpdateForm form) {
+        return ResponseEntity.ok(pregnancyService.update(id, form));
+    }
+
+    @DeleteMapping("/{id}/pregnancy")
+    @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
+    public ResponseEntity<Void> closePregnancy(@PathVariable Long id) {
+        pregnancyService.close(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping

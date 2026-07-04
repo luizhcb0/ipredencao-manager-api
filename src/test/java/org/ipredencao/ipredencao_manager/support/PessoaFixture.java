@@ -53,6 +53,8 @@ public final class PessoaFixture {
         public Builder dataNascimento(DateTime dataNascimento) { pessoa.setDataNascimento(dataNascimento); return this; }
         public Builder estadoCivil(EstadoCivil estadoCivil) { pessoa.setEstadoCivil(estadoCivil); return this; }
         public Builder categoria(CategoriaEnum categoria) { pessoa.setCategoria(categoria); return this; }
+        public Builder campus(String campus) { pessoa.setCampus(campus); return this; }
+        public Builder chefeDeFamiliaId(Long chefeDeFamiliaId) { pessoa.setChefeDeFamiliaId(chefeDeFamiliaId); return this; }
         public Builder endereco(Endereco endereco) { pessoa.setEndereco(endereco); return this; }
         public Builder dataBatismo(DateTime dataBatismo) { pessoa.setDataBatismo(dataBatismo); return this; }
         public Builder dataProfissaoDeFe(DateTime dataProfissaoDeFe) { pessoa.setDataProfissaoDeFe(dataProfissaoDeFe); return this; }

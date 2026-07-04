@@ -209,7 +209,7 @@ public class PessoaService {
         return pessoaRepository.findCategoriaIdBefore(pessoaId, threshold);
     }
     
-    private void syncRelationships(Long pessoaId, List<Relacionamento> existingRelationships, List<Relacionamento> newRelationships) {
+    public void syncRelationships(Long pessoaId, List<Relacionamento> existingRelationships, List<Relacionamento> newRelationships) {
         // Criar mapas para facilitar a comparação
         Map<String, Relacionamento> existingMap = existingRelationships.stream()
             .collect(Collectors.toMap(

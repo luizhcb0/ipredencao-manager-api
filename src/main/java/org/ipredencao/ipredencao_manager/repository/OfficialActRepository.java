@@ -100,6 +100,15 @@ public class OfficialActRepository {
                 .fetch(this::fromRecord);
     }
 
+    public boolean existsByPersonId(Long personId) {
+        if (personId == null) return false;
+        Integer count = dsl.selectCount()
+                .from(OFFICIAL_ACT)
+                .where(OFFICIAL_ACT.PERSON_ID.eq(personId))
+                .fetchOne(0, Integer.class);
+        return count != null && count > 0;
+    }
+
     public List<OfficialAct> findByQuery(OfficialActQuery query) {
         List<Condition> conditions = buildConditions(query);
         Condition where = conditions.isEmpty() ? DSL.noCondition() : DSL.and(conditions);
