@@ -18,13 +18,13 @@ import java.io.ByteArrayInputStream;
  * Handler para invocacao direta via AWS SDK (sem API Gateway)
  */
 public class FirebaseProxyHandler implements RequestHandler<LambdaRequest, LambdaResponse> {
-    
+
     private static boolean initialized = false;
-    
+
     public FirebaseProxyHandler() {
         initializeFirebase();
     }
-    
+
     private synchronized void initializeFirebase() {
         if (initialized) return;
         try {
@@ -41,7 +41,7 @@ public class FirebaseProxyHandler implements RequestHandler<LambdaRequest, Lambd
             throw new RuntimeException("Firebase init failed", e);
         }
     }
-    
+
     @Override
     public LambdaResponse handleRequest(LambdaRequest input, Context ctx) {
         try {
@@ -52,7 +52,7 @@ public class FirebaseProxyHandler implements RequestHandler<LambdaRequest, Lambd
             return LambdaResponse.error(e.getMessage());
         }
     }
-    
+
     private LambdaResponse processRequest(String op, LambdaRequest.RequestData data, Context ctx) {
         try {
             return switch (op) {
@@ -70,52 +70,62 @@ public class FirebaseProxyHandler implements RequestHandler<LambdaRequest, Lambd
             return LambdaResponse.error(e.getMessage());
         }
     }
-    
+
     private LambdaResponse verifyIdToken(String token) throws Exception {
         FirebaseToken t = FirebaseAuth.getInstance().verifyIdToken(token);
         return LambdaResponse.success(new ResponseData(
-            t.getUid(), t.getEmail(), t.getName(), null, t.isEmailVerified(), null));
+            t.getUid(), t.getEmail(), t.getName(), null, t.isEmailVerified(), null, t.getPicture(), null));
     }
-    
+
     private LambdaResponse createUser(LambdaRequest.RequestData data) throws Exception {
-        UserRecord user = FirebaseAuth.getInstance().createUser(
-            new UserRecord.CreateRequest()
-                .setEmail(data.email())
-                .setPassword(data.password())
-                .setDisplayName(data.displayName())
-                .setEmailVerified(false));
-        return LambdaResponse.success(new ResponseData(
-            user.getUid(), user.getEmail(), null, user.getDisplayName(), false, null));
+        UserRecord.CreateRequest request = new UserRecord.CreateRequest()
+            .setEmail(data.email())
+            .setDisplayName(data.displayName())
+            .setEmailVerified(false);
+        if (data.password() != null && !data.password().isBlank()) {
+            request.setPassword(data.password());
+        }
+        UserRecord user = FirebaseAuth.getInstance().createUser(request);
+        return LambdaResponse.success(userToResponse(user));
     }
-    
+
     private LambdaResponse getUserByEmail(String email) throws Exception {
         UserRecord u = FirebaseAuth.getInstance().getUserByEmail(email);
         return LambdaResponse.success(userToResponse(u));
     }
-    
+
     private LambdaResponse getUserByUid(String uid) throws Exception {
         UserRecord u = FirebaseAuth.getInstance().getUser(uid);
         return LambdaResponse.success(userToResponse(u));
     }
-    
+
     private LambdaResponse updateUser(LambdaRequest.RequestData data) throws Exception {
-        FirebaseAuth.getInstance().updateUser(
-            new UserRecord.UpdateRequest(data.uid()).setDisplayName(data.displayName()));
-        return LambdaResponse.success(new ResponseData(data.uid(), null, null, null, null, null));
+        UserRecord.UpdateRequest request = new UserRecord.UpdateRequest(data.uid());
+        if (data.displayName() != null) {
+            request.setDisplayName(data.displayName());
+        }
+        if (data.photoUrl() != null) {
+            request.setPhotoUrl(data.photoUrl());
+        }
+        if (data.disabled() != null) {
+            request.setDisabled(data.disabled());
+        }
+        FirebaseAuth.getInstance().updateUser(request);
+        return LambdaResponse.success(new ResponseData(data.uid(), null, null, null, null, null, null, null));
     }
-    
+
     private LambdaResponse deleteUser(String uid) throws Exception {
         FirebaseAuth.getInstance().deleteUser(uid);
-        return LambdaResponse.success(new ResponseData(uid, null, null, null, null, null));
+        return LambdaResponse.success(new ResponseData(uid, null, null, null, null, null, null, null));
     }
-    
+
     private LambdaResponse createCustomToken(String uid) throws Exception {
         String token = FirebaseAuth.getInstance().createCustomToken(uid);
-        return LambdaResponse.success(new ResponseData(null, null, null, null, null, token));
+        return LambdaResponse.success(new ResponseData(null, null, null, null, null, token, null, null));
     }
-    
+
     private ResponseData userToResponse(UserRecord u) {
         return new ResponseData(
-            u.getUid(), u.getEmail(), null, u.getDisplayName(), u.isEmailVerified(), null);
+            u.getUid(), u.getEmail(), null, u.getDisplayName(), u.isEmailVerified(), null, u.getPhotoUrl(), u.isDisabled());
     }
 }
