@@ -143,35 +143,21 @@ public class EnderecoService {
     }
     
     /**
-     * Busca endereço por ID (incluindo pessoaIds)
+     * Busca endereço por ID (incluindo pessoaIds, populado pelo repository)
      */
     public Endereco findById(Long id) {
         if (id == null) {
             return null;
         }
         
-        Endereco endereco = enderecoRepository.findById(id);
-        if (endereco != null) {
-            // Carregar pessoas vinculadas
-            List<Long> pessoaIds = pessoaRepository.find(PessoaQuery.builder().enderecoId(endereco.getId()).includes().build()).stream().map(Pessoa::getId).toList();
-            endereco.setPessoaIds(pessoaIds);
-        }
-        return endereco;
+        return enderecoRepository.findById(id);
     }
     
     /**
      * Busca endereços com filtros
      */
     public List<Endereco> find(EnderecoQuery query) {
-        List<Endereco> enderecos = enderecoRepository.find(query);
-        
-        // Carregar pessoas vinculadas para cada endereço
-        for (Endereco endereco : enderecos) {
-            List<Long> pessoaIds = pessoaRepository.find(PessoaQuery.builder().enderecoId(endereco.getId()).includes().build()).stream().map(Pessoa::getId).toList();
-            endereco.setPessoaIds(pessoaIds);
-        }
-        
-        return enderecos;
+        return enderecoRepository.find(query);
     }
     
     /**
@@ -182,11 +168,6 @@ public class EnderecoService {
         query.getPagination().applyDefaults();
         
         List<Endereco> enderecos = enderecoRepository.find(query);
-        
-        for (Endereco endereco : enderecos) {
-            List<Long> pessoaIds = pessoaRepository.find(PessoaQuery.builder().enderecoId(endereco.getId()).includes().build()).stream().map(Pessoa::getId).toList();
-            endereco.setPessoaIds(pessoaIds);
-        }
         
         long total = enderecoRepository.count(query);
         

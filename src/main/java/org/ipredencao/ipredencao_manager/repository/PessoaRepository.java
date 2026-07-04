@@ -44,7 +44,9 @@ public class PessoaRepository {
 
     @Autowired
     private DSLContext dsl;
-    
+
+    @Autowired
+    private EnderecoRepository enderecoRepository;
     
     public Pessoa insert(Pessoa pessoa) {
         PessoaRecord pessoaRecord = toRepository(pessoa);
@@ -123,7 +125,7 @@ public class PessoaRepository {
             extraFields.addAll(List.of(
                 END.ID, END.CEP, END.LOGRADOURO, END.NUMERO,
                 END.COMPLEMENTO, END.BAIRRO, END.CIDADE, END.ESTADO,
-                END.COORDENADAS));
+                END.COORDENADAS, END.ADDED_AT, END.UPDATED_AT, END.UPDATED_BY));
         }
 
         var step = dsl.select(extraFields).select(PESSOA.asterisk()).from(PESSOA);
@@ -144,6 +146,14 @@ public class PessoaRepository {
         List<Pessoa> people = records.stream()
                 .map(r -> fromRepository(r, includes))
                 .toList();
+
+        if (includeEndereco) {
+            List<Endereco> addresses = people.stream()
+                .map(Pessoa::getEndereco)
+                .filter(Objects::nonNull)
+                .toList();
+            enderecoRepository.getPersonIdsFromAddresses(addresses);
+        }
 
         if (includes.contains(PessoaInclude.RELACIONAMENTOS)) {
             loadRelationshipsForPeople(people);
@@ -480,6 +490,9 @@ public class PessoaRepository {
         e.setCidade(record.get(END.CIDADE));
         e.setEstado(record.get(END.ESTADO));
         e.setCoordenadas(record.get(END.COORDENADAS));
+        e.setAddedAt(DateTimeHelper.fromDb(record.get(END.ADDED_AT)));
+        e.setUpdatedAt(DateTimeHelper.fromDb(record.get(END.UPDATED_AT)));
+        e.setUpdatedByUserId(record.get(END.UPDATED_BY));
         return e;
     }
 
