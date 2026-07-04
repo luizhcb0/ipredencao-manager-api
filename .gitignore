@@ -1,6 +1,7 @@
 # Compilação Java
 /target/
 /build/
+/bin/
 
 # Gradle
 .gradle/
