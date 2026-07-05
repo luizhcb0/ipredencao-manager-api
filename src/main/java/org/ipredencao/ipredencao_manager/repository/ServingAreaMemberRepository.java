@@ -75,11 +75,12 @@ public class ServingAreaMemberRepository {
         return dsl.fetchExists(dsl.selectOne().from(SERVING_AREA_MEMBER).where(cond));
     }
 
-    // Pessoas candidatas ao relatório (filtro de categoria/falecimento), sem vínculos.
-    public List<ParticipationReportRow> findReportPeople(List<Long> categoryIds, boolean includeDeceased) {
+    // Pessoas candidatas ao relatório (filtro de categoria/campus), sem vínculos.
+    public List<ParticipationReportRow> findReportPeople(List<Long> categoryIds, String campus) {
         List<Condition> conditions = new ArrayList<>();
         if (categoryIds != null && !categoryIds.isEmpty()) conditions.add(PESSOA.CATEGORIA_ID.in(categoryIds));
-        if (!includeDeceased) conditions.add(PESSOA.DATA_FALECIMENTO.isNull());
+        QueryConditions.addEqIfNotBlank(conditions, PESSOA.CAMPUS, campus);
+
         return dsl.select(PESSOA.PESSOA_ID, PESSOA.NOME, PESSOA.CATEGORIA_ID, CATEGORIA.NOME.as("categoria_nome"))
                 .from(PESSOA)
                 .leftJoin(CATEGORIA).on(CATEGORIA.ID.eq(PESSOA.CATEGORIA_ID))
@@ -104,7 +105,8 @@ public class ServingAreaMemberRepository {
         if (q.teamId() != null) conditions.add(SERVING_AREA_MEMBER.TEAM_ID.eq(q.teamId()));
         if (q.kind() != null) conditions.add(SERVING_AREA_POSITION.KIND.eq(ServingAreaPositionKind.valueOf(q.kind().name())));
         if (q.categoryIds() != null && !q.categoryIds().isEmpty()) conditions.add(PESSOA.CATEGORIA_ID.in(q.categoryIds()));
-        if (Boolean.FALSE.equals(q.includeDeceased())) conditions.add(PESSOA.DATA_FALECIMENTO.isNull());
+        QueryConditions.addEqIfNotBlank(conditions, PESSOA.CAMPUS, q.campus());
+        
         return conditions;
     }
 

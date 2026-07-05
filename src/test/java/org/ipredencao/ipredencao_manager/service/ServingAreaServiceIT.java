@@ -6,6 +6,8 @@ import org.ipredencao.ipredencao_manager.controller.form.ServingAreaPositionForm
 import org.ipredencao.ipredencao_manager.controller.form.ServingAreaTeamForm;
 import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
+import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
+import org.ipredencao.ipredencao_manager.model.pessoa.EstadoCivil;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
 import org.ipredencao.ipredencao_manager.model.serving_area.ParticipationReportQuery;
@@ -43,6 +45,17 @@ class ServingAreaServiceIT extends IntegrationTestBase {
 
     private Pessoa person(String nome) {
         return PessoaFixture.membroComungante(pessoaService, nome, Sexo.MASCULINO);
+    }
+
+    private Pessoa personAt(String nome, CategoriaEnum categoria, String campus) {
+        return PessoaFixture.builder(pessoaService)
+                .nome(nome)
+                .sexo(Sexo.MASCULINO)
+                .dataNascimento(new DateTime(1985, 1, 1, 0, 0))
+                .estadoCivil(EstadoCivil.SOLTEIRO_SEM_RELACIONAMENTO)
+                .categoria(categoria)
+                .campus(campus)
+                .build();
     }
 
     @Test
@@ -359,36 +372,29 @@ class ServingAreaServiceIT extends IntegrationTestBase {
     }
 
     @Test
-    void participationReport_serving_notServing_all_excludesDeceased_aggregates() {
-        ServingArea m1 = ServingAreaFixture.area(service, "Serviço 1");
-        ServingArea m2 = ServingAreaFixture.area(service, "Serviço 2");
-        Long pos1 = ServingAreaFixture.positionId(m1, ServingAreaPositionKindEnum.MEMBERSHIP);
-        Long pos2 = ServingAreaFixture.positionId(m2, ServingAreaPositionKindEnum.MEMBERSHIP);
+    void participationReport_filtersByCampusAndCategory() {
+        ServingArea area = ServingAreaFixture.area(service, "Filtro relatório");
+        Long pos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.MEMBERSHIP);
 
-        Pessoa serving = person("Serve em dois");
-        ServingAreaFixture.addMember(service, m1.id(), serving.getId(), pos1, null, null);
-        ServingAreaFixture.addMember(service, m2.id(), serving.getId(), pos2, null, null);
-        Pessoa idle = person("Nao serve");
-        Pessoa dead = person("Falecido");
-        dead.setDataFalecimento(new DateTime(2020, 1, 1, 0, 0));
-        pessoaService.update(dead);
+        Pessoa sede = personAt("Sede comungante", CategoriaEnum.MEMBRO_COMUNGANTE, "SEDE");
+        Pessoa videira = personAt("Videira comungante", CategoriaEnum.MEMBRO_COMUNGANTE, "VIDEIRA");
+        Pessoa sedeVisitante = personAt("Sede em trânsito", CategoriaEnum.MEMBRO_EM_TRANSITO, "SEDE");
+        ServingAreaFixture.addMember(service, area.id(), sede.getId(), pos, null, null);
+        ServingAreaFixture.addMember(service, area.id(), videira.getId(), pos, null, null);
 
-        List<ParticipationReportRow> servingRows = service.participationReport(
-                new ParticipationReportQuery(null, null, null, null, ParticipationReportQuery.Status.SERVING, null));
-        ParticipationReportRow servingRow = servingRows.stream()
-                .filter(r -> r.personId().equals(serving.getId())).findFirst().orElseThrow();
-        assertThat(servingRow.memberships()).hasSize(2);
-        assertThat(servingRows).noneMatch(r -> r.personId().equals(idle.getId()));
+        // Servindo, filtrando por campus SEDE + categoria comungante: só a pessoa SEDE.
+        List<ParticipationReportRow> serving = service.participationReport(new ParticipationReportQuery(
+                List.of(CategoriaEnum.MEMBRO_COMUNGANTE.getId()), "SEDE", null, null, null,
+                ParticipationReportQuery.Status.SERVING));
+        assertThat(serving).anyMatch(r -> r.personId().equals(sede.getId()));
+        assertThat(serving).noneMatch(r -> r.personId().equals(videira.getId()));
 
-        List<ParticipationReportRow> notServing = service.participationReport(
-                new ParticipationReportQuery(null, null, null, null, ParticipationReportQuery.Status.NOT_SERVING, null));
-        assertThat(notServing).anyMatch(r -> r.personId().equals(idle.getId()));
-        assertThat(notServing).noneMatch(r -> r.personId().equals(serving.getId()));
-        assertThat(notServing).noneMatch(r -> r.personId().equals(dead.getId()));
-
-        List<ParticipationReportRow> all = service.participationReport(
-                new ParticipationReportQuery(null, null, null, null, ParticipationReportQuery.Status.ALL, null));
-        assertThat(all).anyMatch(r -> r.personId().equals(serving.getId()));
-        assertThat(all).anyMatch(r -> r.personId().equals(idle.getId()));
+        // Não servindo, mesmo filtro: exclui a visitante (categoria fora) e a de Videira (campus fora).
+        List<ParticipationReportRow> notServing = service.participationReport(new ParticipationReportQuery(
+                List.of(CategoriaEnum.MEMBRO_COMUNGANTE.getId()), "SEDE", null, null, null,
+                ParticipationReportQuery.Status.NOT_SERVING));
+        assertThat(notServing).noneMatch(r -> r.personId().equals(sedeVisitante.getId()));
+        assertThat(notServing).noneMatch(r -> r.personId().equals(videira.getId()));
+        assertThat(notServing).noneMatch(r -> r.personId().equals(sede.getId()));
     }
 }

@@ -17,7 +17,7 @@ public record ServingAreaMemberQuery(
         Long teamId,
         ServingAreaPositionKindEnum kind,
         List<Long> categoryIds,
-        Boolean includeDeceased
+        String campus
 ) {
     public static Builder builder() { return new Builder(); }
 
@@ -29,7 +29,7 @@ public record ServingAreaMemberQuery(
         private Long teamId;
         private ServingAreaPositionKindEnum kind;
         private List<Long> categoryIds;
-        private Boolean includeDeceased;
+        private String campus;
 
         public Builder id(Long v) { this.id = v; return this; }
         public Builder servingAreaId(Long v) { this.servingAreaId = v; return this; }
@@ -38,11 +38,11 @@ public record ServingAreaMemberQuery(
         public Builder teamId(Long v) { this.teamId = v; return this; }
         public Builder kind(ServingAreaPositionKindEnum v) { this.kind = v; return this; }
         public Builder categoryIds(List<Long> v) { this.categoryIds = v; return this; }
-        public Builder includeDeceased(Boolean v) { this.includeDeceased = v; return this; }
+        public Builder campus(String v) { this.campus = v; return this; }
 
         public ServingAreaMemberQuery build() {
             return new ServingAreaMemberQuery(id, servingAreaId, personId, positionId, teamId, kind,
-                    categoryIds, includeDeceased);
+                    categoryIds, campus);
         }
     }
 }

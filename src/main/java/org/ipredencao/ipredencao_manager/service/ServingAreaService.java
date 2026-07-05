@@ -267,15 +267,13 @@ public class ServingAreaService {
     public List<ParticipationReportRow> participationReport(ParticipationReportQuery query) {
         ParticipationReportQuery.Status status = query.status() != null
                 ? query.status() : ParticipationReportQuery.Status.SERVING;
-        boolean includeDeceased = query.includeDeceased() != null && query.includeDeceased();
 
         List<ServingAreaMember> currentMembers = memberRepo.find(ServingAreaMemberQuery.builder()
-
                 .servingAreaId(query.servingAreaId())
                 .positionId(query.positionId())
                 .kind(query.kind())
                 .categoryIds(query.categoryIds())
-                .includeDeceased(includeDeceased)
+                .campus(query.campus())
                 .build());
 
         Map<Long, ParticipationReportRow> byPerson = new LinkedHashMap<>();
@@ -291,7 +289,7 @@ public class ServingAreaService {
             return serving;
         }
 
-        List<ParticipationReportRow> people = memberRepo.findReportPeople(query.categoryIds(), includeDeceased);
+        List<ParticipationReportRow> people = memberRepo.findReportPeople(query.categoryIds(), query.campus());
         List<ParticipationReportRow> notServing = people.stream()
                 .filter(p -> !byPerson.containsKey(p.personId()))
                 .toList();

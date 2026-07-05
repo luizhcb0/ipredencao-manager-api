@@ -34,6 +34,7 @@
   - **Duplicate guard**: identical vínculos (same area+person+cargo+team) can't coexist (service-layer check; unique index `uq_serving_area_member` is the backstop).
   - **Seeds**: four fixed areas (Conselho, Junta Diaconal, Presbítero/Diácono em disponibilidade) created as ordinary areas, each with one MEMBERSHIP cargo. No special protection; operational rule is not to rename them.
   - **PG-native enum** `serving_area_position_kind` → plain string on the wire (`.name()` at the JOOQ boundary), not a seed-table enum.
+  - **Report/member queries are generic filters** — `ParticipationReportQuery` and `ServingAreaMemberQuery` accept optional `categoryIds` + `campus` (equality) and the service passes them through as-is; the caller (FE) decides eligibility (serviços usam categorias 1-8 + campus SEDE). Não há regra de elegibilidade hardcoded no backend.
   - **Repositories** follow the `PessoaRepository.find(query)` shape: one generic `find(<Query>)` per repo (id is just a filter); writes return via `RETURNING` where there are no derived JOIN fields, otherwise the service re-fetches through `find`. Wire query objects are records (member query has a builder to avoid positional null-soup).
 
 ## Transactions / concurrency
