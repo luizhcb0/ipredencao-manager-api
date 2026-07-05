@@ -53,8 +53,18 @@ public class ServingAreaService {
     public PagedResponse<ServingArea> findPaginated(ServingAreaQuery query) {
         PaginationParameters pagination = query.pagination() != null ? query.pagination() : new PaginationParameters();
         pagination.applyDefaults();
-        List<ServingArea> areas = areaRepo.find(query);
-        long total = areaRepo.count(query);
+        // ServingAreaQuery é imutável: reanexa a paginação resolvida para que o
+        // repositório aplique limit/offset mesmo quando o body vem sem paginação.
+        ServingAreaQuery effectiveQuery = ServingAreaQuery.builder()
+                .id(query.id())
+                .name(query.name())
+                .active(query.active())
+                .supervisorPersonId(query.supervisorPersonId())
+                .personId(query.personId())
+                .pagination(pagination)
+                .build();
+        List<ServingArea> areas = areaRepo.find(effectiveQuery);
+        long total = areaRepo.count(effectiveQuery);
         return new PagedResponse<>(areas, new PageInfo(pagination.getLimit(), pagination.getOffset(), total));
     }
 
@@ -132,6 +142,7 @@ public class ServingAreaService {
         if (form.kind() == null) {
             throw new IllegalArgumentException("Tipo do cargo (kind) é obrigatório");
         }
+        checkPositionNameUnique(areaId, form.name(), null);
         Long userId = securityUtils.getCurrentUserId();
         int sortOrder = form.sortOrder() != null ? form.sortOrder()
                 : positionRepo.find(ServingAreaPositionQuery.builder().servingAreaId(areaId).build()).size();
@@ -149,6 +160,7 @@ public class ServingAreaService {
         if (kind != existing.kind() && positionRepo.hasMembers(positionId)) {
             throw new IllegalStateException("Não é possível mudar o tipo de um cargo que já possui vínculos");
         }
+        checkPositionNameUnique(areaId, form.name(), positionId);
         Long userId = securityUtils.getCurrentUserId();
         int sortOrder = form.sortOrder() != null ? form.sortOrder() : existing.sortOrder();
         boolean active = form.active() != null ? form.active() : existing.active();
@@ -173,6 +185,7 @@ public class ServingAreaService {
             throw new IllegalArgumentException("Nome da equipe é obrigatório");
         }
         validateWhatsapp(form.whatsappUrl());
+        checkTeamNameUnique(areaId, form.name(), null);
         Long userId = securityUtils.getCurrentUserId();
         boolean active = form.active() == null || form.active();
         return teamRepo.insert(areaId, form.name(), form.description(), form.whatsappUrl(), active, userId);
@@ -185,6 +198,7 @@ public class ServingAreaService {
             throw new IllegalArgumentException("Nome da equipe é obrigatório");
         }
         validateWhatsapp(form.whatsappUrl());
+        checkTeamNameUnique(areaId, form.name(), teamId);
         Long userId = securityUtils.getCurrentUserId();
         boolean active = form.active() != null ? form.active() : existing.active();
         return teamRepo.update(teamId, areaId, form.name(), form.description(), form.whatsappUrl(), active, userId);
@@ -204,7 +218,11 @@ public class ServingAreaService {
     @Transactional
     public ServingAreaMember addMember(Long areaId, ServingAreaMemberForm form) {
         requireArea(areaId);
+        if (form.personId() == null) {
+            throw new IllegalArgumentException("Pessoa (personId) é obrigatória");
+        }
         ServingAreaPosition position = validatePositionForMember(areaId, form.positionId(), true);
+        validateSupervisionScope(position, form.teamId());
         validateTeamForMember(areaId, form.teamId(), true);
         validateMembershipTeamRequirement(areaId, position, form.teamId());
         if (memberRepo.existsDuplicate(areaId, form.personId(), form.positionId(), form.teamId(), null)) {
@@ -220,7 +238,11 @@ public class ServingAreaService {
     @Transactional
     public ServingAreaMember updateMember(Long areaId, Long memberId, ServingAreaMemberForm form) {
         requireMember(areaId, memberId);
+        if (form.personId() == null) {
+            throw new IllegalArgumentException("Pessoa (personId) é obrigatória");
+        }
         ServingAreaPosition position = validatePositionForMember(areaId, form.positionId(), false);
+        validateSupervisionScope(position, form.teamId());
         validateTeamForMember(areaId, form.teamId(), false);
         validateMembershipTeamRequirement(areaId, position, form.teamId());
         if (memberRepo.existsDuplicate(areaId, form.personId(), form.positionId(), form.teamId(), memberId)) {
@@ -329,12 +351,22 @@ public class ServingAreaService {
         }
     }
 
+    // A supervisão é sempre do serviço inteiro; nunca fica vinculada a uma equipe.
+    private void validateSupervisionScope(ServingAreaPosition position, Long teamId) {
+        if (position.kind() == ServingAreaPositionKindEnum.SUPERVISION && teamId != null) {
+            throw new IllegalArgumentException("A supervisão é do serviço inteiro e não pode ser vinculada a uma equipe");
+        }
+    }
+
     // Com equipes cadastradas, vínculo de membresia exige teamId (supervisão/coordenação
     // podem permanecer no escopo geral ou de equipe).
     private void validateMembershipTeamRequirement(Long areaId, ServingAreaPosition position, Long teamId) {
         if (position.kind() != ServingAreaPositionKindEnum.MEMBERSHIP) return;
-        boolean hasTeams = !teamRepo.find(ServingAreaTeamQuery.builder().servingAreaId(areaId).build()).isEmpty();
-        if (hasTeams && teamId == null) {
+        // Só equipes ativas contam: se todas estiverem inativas, o escopo geral é
+        // permitido (senão a membresia ficaria impossível de cadastrar).
+        boolean hasActiveTeams = !teamRepo.find(
+                ServingAreaTeamQuery.builder().servingAreaId(areaId).active(true).build()).isEmpty();
+        if (hasActiveTeams && teamId == null) {
             throw new IllegalArgumentException("Selecione uma equipe para o vínculo de membresia");
         }
     }
@@ -350,6 +382,24 @@ public class ServingAreaService {
                 .anyMatch(m -> excludeMemberId == null || !m.id().equals(excludeMemberId));
         if (otherSupervisor) {
             throw new IllegalStateException("Já existe um supervisor neste serviço; remova-o antes de definir outro");
+        }
+    }
+
+    // Espelha a UNIQUE(serving_area_id, name) do banco para devolver 400 em PT em
+    // vez de deixar a violação de constraint virar 500 genérico.
+    private void checkPositionNameUnique(Long areaId, String name, Long excludeId) {
+        boolean duplicate = positionRepo.find(ServingAreaPositionQuery.builder().servingAreaId(areaId).build()).stream()
+                .anyMatch(p -> p.name().equals(name) && !p.id().equals(excludeId));
+        if (duplicate) {
+            throw new IllegalArgumentException("Já existe um cargo com o nome \"" + name + "\" neste serviço");
+        }
+    }
+
+    private void checkTeamNameUnique(Long areaId, String name, Long excludeId) {
+        boolean duplicate = teamRepo.find(ServingAreaTeamQuery.builder().servingAreaId(areaId).build()).stream()
+                .anyMatch(t -> t.name().equals(name) && !t.id().equals(excludeId));
+        if (duplicate) {
+            throw new IllegalArgumentException("Já existe uma equipe com o nome \"" + name + "\" neste serviço");
         }
     }
 
