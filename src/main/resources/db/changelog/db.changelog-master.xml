@@ -13,5 +13,6 @@
     <include file="V006__update_relationship_type.sql" relativeToChangelogFile="true"/>
     <include file="V007__official_acts.sql" relativeToChangelogFile="true"/>
     <include file="V008__usuario_updated_by_fks.sql" relativeToChangelogFile="true"/>
+    <include file="V009__serving_areas.sql" relativeToChangelogFile="true"/>
 
 </databaseChangeLog> 
