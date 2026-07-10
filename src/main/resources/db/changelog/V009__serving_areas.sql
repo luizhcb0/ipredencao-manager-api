@@ -35,8 +35,6 @@ CREATE TABLE IF NOT EXISTS serving_area_position (
     serving_area_id BIGINT NOT NULL REFERENCES serving_area(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     kind serving_area_position_kind NOT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    active BOOLEAN NOT NULL DEFAULT TRUE,
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_by BIGINT REFERENCES usuario(id) ON DELETE RESTRICT,
@@ -51,7 +49,6 @@ CREATE TABLE IF NOT EXISTS serving_area_team (
     description TEXT,
     -- Grupo de WhatsApp da equipe; opcional.
     whatsapp_url VARCHAR(512),
-    active BOOLEAN NOT NULL DEFAULT TRUE,
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_by BIGINT REFERENCES usuario(id) ON DELETE RESTRICT,
@@ -214,14 +211,14 @@ INSERT INTO serving_area (name, description) VALUES
 ('Presbítero em disponibilidade',  'Presbíteros em disponibilidade'),
 ('Diácono em disponibilidade',     'Diáconos em disponibilidade');
 
-INSERT INTO serving_area_position (serving_area_id, name, kind, sort_order)
-SELECT id, 'Presbítero', 'MEMBERSHIP', 0 FROM serving_area WHERE name = 'Conselho';
+INSERT INTO serving_area_position (serving_area_id, name, kind)
+SELECT id, 'Presbítero', 'MEMBERSHIP' FROM serving_area WHERE name = 'Conselho';
 
-INSERT INTO serving_area_position (serving_area_id, name, kind, sort_order)
-SELECT id, 'Diácono', 'MEMBERSHIP', 0 FROM serving_area WHERE name = 'Junta Diaconal';
+INSERT INTO serving_area_position (serving_area_id, name, kind)
+SELECT id, 'Diácono', 'MEMBERSHIP' FROM serving_area WHERE name = 'Junta Diaconal';
 
-INSERT INTO serving_area_position (serving_area_id, name, kind, sort_order)
-SELECT id, 'Presbítero em disponibilidade', 'MEMBERSHIP', 0 FROM serving_area WHERE name = 'Presbítero em disponibilidade';
+INSERT INTO serving_area_position (serving_area_id, name, kind)
+SELECT id, 'Presbítero em disponibilidade', 'MEMBERSHIP' FROM serving_area WHERE name = 'Presbítero em disponibilidade';
 
-INSERT INTO serving_area_position (serving_area_id, name, kind, sort_order)
-SELECT id, 'Diácono em disponibilidade', 'MEMBERSHIP', 0 FROM serving_area WHERE name = 'Diácono em disponibilidade';
+INSERT INTO serving_area_position (serving_area_id, name, kind)
+SELECT id, 'Diácono em disponibilidade', 'MEMBERSHIP' FROM serving_area WHERE name = 'Diácono em disponibilidade';

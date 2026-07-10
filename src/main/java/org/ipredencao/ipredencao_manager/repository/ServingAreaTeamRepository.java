@@ -25,18 +25,18 @@ public class ServingAreaTeamRepository {
     private DSLContext dsl;
 
     public ServingAreaTeam insert(Long servingAreaId, String name, String description,
-                                  String whatsappUrl, boolean active, Long updatedBy) {
+                                  String whatsappUrl, Long updatedBy) {
         Record rec = dsl.insertInto(SERVING_AREA_TEAM)
-                .set(writableColumns(servingAreaId, name, description, whatsappUrl, active, updatedBy))
+                .set(writableColumns(servingAreaId, name, description, whatsappUrl, updatedBy))
                 .returning()
                 .fetchOne();
         return fromRecord(rec);
     }
 
     public ServingAreaTeam update(Long id, Long servingAreaId, String name, String description,
-                                  String whatsappUrl, boolean active, Long updatedBy) {
+                                  String whatsappUrl, Long updatedBy) {
         Record rec = dsl.update(SERVING_AREA_TEAM)
-                .set(writableColumns(servingAreaId, name, description, whatsappUrl, active, updatedBy))
+                .set(writableColumns(servingAreaId, name, description, whatsappUrl, updatedBy))
                 .where(SERVING_AREA_TEAM.ID.eq(id))
                 .returning()
                 .fetchOne();
@@ -66,18 +66,16 @@ public class ServingAreaTeamRepository {
         if (q == null) return conditions;
         if (q.id() != null) conditions.add(SERVING_AREA_TEAM.ID.eq(q.id()));
         if (q.servingAreaId() != null) conditions.add(SERVING_AREA_TEAM.SERVING_AREA_ID.eq(q.servingAreaId()));
-        if (q.active() != null) conditions.add(SERVING_AREA_TEAM.ACTIVE.eq(q.active()));
         return conditions;
     }
 
     private Map<Field<?>, Object> writableColumns(Long servingAreaId, String name, String description,
-                                                  String whatsappUrl, boolean active, Long updatedBy) {
+                                                  String whatsappUrl, Long updatedBy) {
         Map<Field<?>, Object> columns = new LinkedHashMap<>();
         columns.put(SERVING_AREA_TEAM.SERVING_AREA_ID, servingAreaId);
         columns.put(SERVING_AREA_TEAM.NAME, name);
         columns.put(SERVING_AREA_TEAM.DESCRIPTION, description);
         columns.put(SERVING_AREA_TEAM.WHATSAPP_URL, whatsappUrl);
-        columns.put(SERVING_AREA_TEAM.ACTIVE, active);
         columns.put(SERVING_AREA_TEAM.UPDATED_BY, updatedBy);
         return columns;
     }
@@ -89,7 +87,6 @@ public class ServingAreaTeamRepository {
                 r.get(SERVING_AREA_TEAM.NAME),
                 r.get(SERVING_AREA_TEAM.DESCRIPTION),
                 r.get(SERVING_AREA_TEAM.WHATSAPP_URL),
-                r.get(SERVING_AREA_TEAM.ACTIVE),
                 DateTimeHelper.fromDb(r.get(SERVING_AREA_TEAM.ADDED_AT)),
                 DateTimeHelper.fromDb(r.get(SERVING_AREA_TEAM.UPDATED_AT)),
                 r.get(SERVING_AREA_TEAM.UPDATED_BY));

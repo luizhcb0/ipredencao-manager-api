@@ -19,6 +19,7 @@ import java.util.Map;
 
 import static org.ipredencao.ipredencao_manager.jooq.Tables.SERVING_AREA_MEMBER;
 import static org.ipredencao.ipredencao_manager.jooq.Tables.SERVING_AREA_POSITION;
+import static org.jooq.impl.DSL.case_;
 
 @Repository
 public class ServingAreaPositionRepository {
@@ -28,18 +29,18 @@ public class ServingAreaPositionRepository {
 
     // Sem campos derivados: insert e update retornam a própria linha (RETURNING).
     public ServingAreaPosition insert(Long servingAreaId, String name, ServingAreaPositionKindEnum kind,
-                                      Integer sortOrder, boolean active, Long updatedBy) {
+                                      Long updatedBy) {
         Record rec = dsl.insertInto(SERVING_AREA_POSITION)
-                .set(writableColumns(servingAreaId, name, kind, sortOrder, active, updatedBy))
+                .set(writableColumns(servingAreaId, name, kind, updatedBy))
                 .returning()
                 .fetchOne();
         return fromRecord(rec);
     }
 
     public ServingAreaPosition update(Long id, Long servingAreaId, String name, ServingAreaPositionKindEnum kind,
-                                     Integer sortOrder, boolean active, Long updatedBy) {
+                                     Long updatedBy) {
         Record rec = dsl.update(SERVING_AREA_POSITION)
-                .set(writableColumns(servingAreaId, name, kind, sortOrder, active, updatedBy))
+                .set(writableColumns(servingAreaId, name, kind, updatedBy))
                 .where(SERVING_AREA_POSITION.ID.eq(id))
                 .returning()
                 .fetchOne();
@@ -51,9 +52,13 @@ public class ServingAreaPositionRepository {
     }
 
     public List<ServingAreaPosition> find(ServingAreaPositionQuery query) {
+        Field<Integer> kindOrder = case_(SERVING_AREA_POSITION.KIND)
+                .when(ServingAreaPositionKind.SUPERVISION, 0)
+                .when(ServingAreaPositionKind.COORDINATION, 1)
+                .otherwise(2);
         return dsl.selectFrom(SERVING_AREA_POSITION)
                 .where(QueryConditions.reduceToAnd(buildConditions(query)))
-                .orderBy(SERVING_AREA_POSITION.SORT_ORDER.asc(), SERVING_AREA_POSITION.ID.asc())
+                .orderBy(kindOrder.asc(), SERVING_AREA_POSITION.NAME.asc(), SERVING_AREA_POSITION.ID.asc())
                 .fetch(this::fromRecord);
     }
 
@@ -69,18 +74,15 @@ public class ServingAreaPositionRepository {
         if (q == null) return conditions;
         if (q.id() != null) conditions.add(SERVING_AREA_POSITION.ID.eq(q.id()));
         if (q.servingAreaId() != null) conditions.add(SERVING_AREA_POSITION.SERVING_AREA_ID.eq(q.servingAreaId()));
-        if (q.active() != null) conditions.add(SERVING_AREA_POSITION.ACTIVE.eq(q.active()));
         return conditions;
     }
 
     private Map<Field<?>, Object> writableColumns(Long servingAreaId, String name, ServingAreaPositionKindEnum kind,
-                                                  Integer sortOrder, boolean active, Long updatedBy) {
+                                                  Long updatedBy) {
         Map<Field<?>, Object> columns = new LinkedHashMap<>();
         columns.put(SERVING_AREA_POSITION.SERVING_AREA_ID, servingAreaId);
         columns.put(SERVING_AREA_POSITION.NAME, name);
         columns.put(SERVING_AREA_POSITION.KIND, ServingAreaPositionKind.valueOf(kind.name()));
-        columns.put(SERVING_AREA_POSITION.SORT_ORDER, sortOrder);
-        columns.put(SERVING_AREA_POSITION.ACTIVE, active);
         columns.put(SERVING_AREA_POSITION.UPDATED_BY, updatedBy);
         return columns;
     }
@@ -92,8 +94,6 @@ public class ServingAreaPositionRepository {
                 r.get(SERVING_AREA_POSITION.SERVING_AREA_ID),
                 r.get(SERVING_AREA_POSITION.NAME),
                 kind != null ? ServingAreaPositionKindEnum.valueOf(kind.name()) : null,
-                r.get(SERVING_AREA_POSITION.SORT_ORDER),
-                r.get(SERVING_AREA_POSITION.ACTIVE),
                 DateTimeHelper.fromDb(r.get(SERVING_AREA_POSITION.ADDED_AT)),
                 DateTimeHelper.fromDb(r.get(SERVING_AREA_POSITION.UPDATED_AT)),
                 r.get(SERVING_AREA_POSITION.UPDATED_BY));

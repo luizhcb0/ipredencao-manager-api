@@ -11,7 +11,6 @@ import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.SelectJoinStep;
-import org.jooq.impl.DSL;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -27,6 +26,7 @@ import static org.ipredencao.ipredencao_manager.jooq.Tables.SERVING_AREA;
 import static org.ipredencao.ipredencao_manager.jooq.Tables.SERVING_AREA_MEMBER;
 import static org.ipredencao.ipredencao_manager.jooq.Tables.SERVING_AREA_POSITION;
 import static org.ipredencao.ipredencao_manager.jooq.Tables.SERVING_AREA_TEAM;
+import static org.jooq.impl.DSL.case_;
 
 @Repository
 public class ServingAreaMemberRepository {
@@ -58,9 +58,13 @@ public class ServingAreaMemberRepository {
     // Consulta genérica: cobre um vínculo por id, membros da área, vínculos da
     // pessoa, supervisores e a base do relatório.
     public List<ServingAreaMember> find(ServingAreaMemberQuery query) {
+        Field<Integer> kindOrder = case_(SERVING_AREA_POSITION.KIND)
+                .when(ServingAreaPositionKind.SUPERVISION, 0)
+                .when(ServingAreaPositionKind.COORDINATION, 1)
+                .otherwise(2);
         return baseSelect()
                 .where(QueryConditions.reduceToAnd(buildConditions(query)))
-                .orderBy(SERVING_AREA.NAME.asc(), SERVING_AREA_POSITION.SORT_ORDER.asc(),
+                .orderBy(SERVING_AREA.NAME.asc(), kindOrder.asc(), SERVING_AREA_POSITION.NAME.asc(),
                         PESSOA.NOME.asc(), SERVING_AREA_MEMBER.ID.asc())
                 .fetch(this::fromRecord);
     }

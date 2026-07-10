@@ -1,6 +1,5 @@
 package org.ipredencao.ipredencao_manager.service;
 
-import org.ipredencao.ipredencao_manager.controller.form.ServingAreaForm;
 import org.ipredencao.ipredencao_manager.controller.form.ServingAreaMemberForm;
 import org.ipredencao.ipredencao_manager.controller.form.ServingAreaPositionForm;
 import org.ipredencao.ipredencao_manager.controller.form.ServingAreaTeamForm;
@@ -18,7 +17,6 @@ import org.ipredencao.ipredencao_manager.model.serving_area.ServingAreaPosition;
 import org.ipredencao.ipredencao_manager.model.serving_area.ServingAreaPositionKindEnum;
 import org.ipredencao.ipredencao_manager.model.serving_area.ServingAreaQuery;
 import org.ipredencao.ipredencao_manager.model.serving_area.ServingAreaTeam;
-import org.ipredencao.ipredencao_manager.service.PessoaService;
 import org.ipredencao.ipredencao_manager.support.IntegrationTestBase;
 import org.ipredencao.ipredencao_manager.support.PessoaFixture;
 import org.ipredencao.ipredencao_manager.support.ServingAreaFixture;
@@ -77,7 +75,7 @@ class ServingAreaServiceIT extends IntegrationTestBase {
     }
 
     @Test
-    void secondActiveSupervisor_rejected_thenAllowedAfterRemoval() {
+    void secondSupervisor_rejected_thenAllowedAfterRemoval() {
         ServingArea area = ServingAreaFixture.area(service, "Louvor");
         Long supervisorPos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.SUPERVISION);
         Pessoa a = person("Presb A");
@@ -98,7 +96,7 @@ class ServingAreaServiceIT extends IntegrationTestBase {
     void supervisorWithTeam_rejected() {
         ServingArea area = ServingAreaFixture.area(service, "Supervisão com equipe");
         Long supervisorPos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.SUPERVISION);
-        ServingAreaTeam team = service.addTeam(area.id(), new ServingAreaTeamForm("Equipe A", null, null, true));
+        ServingAreaTeam team = service.addTeam(area.id(), new ServingAreaTeamForm("Equipe A", null, null));
         Pessoa p = person("Supervisor Equipe");
 
         // A supervisão é do serviço inteiro; nunca fica vinculada a uma equipe.
@@ -111,7 +109,7 @@ class ServingAreaServiceIT extends IntegrationTestBase {
     void supervisorWithoutTeam_succeeds() {
         ServingArea area = ServingAreaFixture.area(service, "Supervisão geral");
         Long supervisorPos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.SUPERVISION);
-        service.addTeam(area.id(), new ServingAreaTeamForm("Equipe A", null, null, true));
+        service.addTeam(area.id(), new ServingAreaTeamForm("Equipe A", null, null));
         Pessoa p = person("Supervisor Geral");
 
         ServingAreaMember member = ServingAreaFixture.addMember(service, area.id(), p.getId(), supervisorPos, null, null);
@@ -126,7 +124,7 @@ class ServingAreaServiceIT extends IntegrationTestBase {
     void coordinatorGeneral_andCoordinatorTeam_succeeds() {
         ServingArea area = ServingAreaFixture.area(service, "Coordenação mista");
         Long coordPos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.COORDINATION);
-        ServingAreaTeam team = service.addTeam(area.id(), new ServingAreaTeamForm("Equipe B", null, null, true));
+        ServingAreaTeam team = service.addTeam(area.id(), new ServingAreaTeamForm("Equipe B", null, null));
         Pessoa general = person("Coord Geral");
         Pessoa teamCoord = person("Coord Equipe");
 
@@ -153,8 +151,8 @@ class ServingAreaServiceIT extends IntegrationTestBase {
     void samePersonDifferentTeams_allowed() {
         ServingArea area = ServingAreaFixture.area(service, "Duas equipes");
         Long pos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.MEMBERSHIP);
-        ServingAreaTeam t1 = service.addTeam(area.id(), new ServingAreaTeamForm("T1", null, null, true));
-        ServingAreaTeam t2 = service.addTeam(area.id(), new ServingAreaTeamForm("T2", null, null, true));
+        ServingAreaTeam t1 = service.addTeam(area.id(), new ServingAreaTeamForm("T1", null, null));
+        ServingAreaTeam t2 = service.addTeam(area.id(), new ServingAreaTeamForm("T2", null, null));
         Pessoa p = person("Membro Duplo");
 
         ServingAreaFixture.addMember(service, area.id(), p.getId(), pos, t1.id(), null);
@@ -176,7 +174,7 @@ class ServingAreaServiceIT extends IntegrationTestBase {
     void membershipWithoutTeam_whenTeamsExist_rejected() {
         ServingArea area = ServingAreaFixture.area(service, "Com equipes");
         Long pos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.MEMBERSHIP);
-        service.addTeam(area.id(), new ServingAreaTeamForm("Equipe", null, null, true));
+        service.addTeam(area.id(), new ServingAreaTeamForm("Equipe", null, null));
         Pessoa p = person("Sem equipe");
 
         assertThatThrownBy(() -> ServingAreaFixture.addMember(service, area.id(), p.getId(), pos, null, null))
@@ -188,7 +186,7 @@ class ServingAreaServiceIT extends IntegrationTestBase {
     void membershipWithTeam_whenTeamsExist_succeeds() {
         ServingArea area = ServingAreaFixture.area(service, "Membro em equipe");
         Long pos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.MEMBERSHIP);
-        ServingAreaTeam team = service.addTeam(area.id(), new ServingAreaTeamForm("Equipe", null, null, true));
+        ServingAreaTeam team = service.addTeam(area.id(), new ServingAreaTeamForm("Equipe", null, null));
         Pessoa p = person("Membro Equipe");
 
         ServingAreaMember member = ServingAreaFixture.addMember(service, area.id(), p.getId(), pos, team.id(), null);
@@ -199,7 +197,7 @@ class ServingAreaServiceIT extends IntegrationTestBase {
     void updateMembership_clearTeam_whenTeamsExist_rejected() {
         ServingArea area = ServingAreaFixture.area(service, "Update sem equipe");
         Long pos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.MEMBERSHIP);
-        ServingAreaTeam team = service.addTeam(area.id(), new ServingAreaTeamForm("Equipe", null, null, true));
+        ServingAreaTeam team = service.addTeam(area.id(), new ServingAreaTeamForm("Equipe", null, null));
         Pessoa p = person("Membro");
         ServingAreaMember member = ServingAreaFixture.addMember(service, area.id(), p.getId(), pos, team.id(), null);
 
@@ -215,7 +213,7 @@ class ServingAreaServiceIT extends IntegrationTestBase {
         Long pos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.MEMBERSHIP);
         ServingAreaFixture.addMember(service, area.id(), person("Recepcionista").getId(), pos, null, null);
         assertThatThrownBy(() -> service.updatePosition(area.id(), pos,
-                new ServingAreaPositionForm("Membro", ServingAreaPositionKindEnum.SUPERVISION, null, null)))
+                new ServingAreaPositionForm("Membro", ServingAreaPositionKindEnum.SUPERVISION)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("tipo");
     }
@@ -227,28 +225,7 @@ class ServingAreaServiceIT extends IntegrationTestBase {
         ServingAreaFixture.addMember(service, area.id(), person("Tia").getId(), pos, null, null);
         assertThatThrownBy(() -> service.deletePosition(area.id(), pos))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("desative");
-    }
-
-    @Test
-    void inactiveTeam_rejectedForNewMember() {
-        ServingArea area = ServingAreaFixture.area(service, "Música com equipes");
-        Long pos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.MEMBERSHIP);
-        ServingAreaTeam team = service.addTeam(area.id(), new ServingAreaTeamForm("Violões", null, null, false));
-        assertThatThrownBy(() -> ServingAreaFixture.addMember(service, area.id(), person("Violonista").getId(), pos, team.id(), null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("inativa");
-    }
-
-    @Test
-    void inactivePosition_rejectedForNewMember() {
-        ServingArea area = ServingAreaFixture.area(service, "Cargo inativo");
-        Long pos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.MEMBERSHIP);
-        service.updatePosition(area.id(), pos,
-                new ServingAreaPositionForm("Membro", ServingAreaPositionKindEnum.MEMBERSHIP, null, false));
-        assertThatThrownBy(() -> ServingAreaFixture.addMember(service, area.id(), person("X").getId(), pos, null, null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("inativo");
+                .hasMessageContaining("vínculos");
     }
 
     @Test
@@ -256,7 +233,7 @@ class ServingAreaServiceIT extends IntegrationTestBase {
         ServingArea area = ServingAreaFixture.area(service, "Contagens");
         Long coordPos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.COORDINATION);
         Long memberPos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.MEMBERSHIP);
-        ServingAreaTeam team = service.addTeam(area.id(), new ServingAreaTeamForm("Equipe", null, null, true));
+        ServingAreaTeam team = service.addTeam(area.id(), new ServingAreaTeamForm("Equipe", null, null));
 
         ServingAreaFixture.addMember(service, area.id(), person("Coord Geral").getId(), coordPos, null, null);
         ServingAreaFixture.addMember(service, area.id(), person("Coord Eq").getId(), coordPos, team.id(), null);
@@ -305,7 +282,7 @@ class ServingAreaServiceIT extends IntegrationTestBase {
     void deleteArea_cascadesPositionsTeamsMembers() {
         ServingArea area = ServingAreaFixture.area(service, "Efêmera");
         Long pos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.MEMBERSHIP);
-        ServingAreaTeam team = service.addTeam(area.id(), new ServingAreaTeamForm("Equipe", null, null, true));
+        ServingAreaTeam team = service.addTeam(area.id(), new ServingAreaTeamForm("Equipe", null, null));
         ServingAreaFixture.addMember(service, area.id(), person("Membro").getId(), pos, team.id(), null);
 
         service.delete(area.id());
@@ -313,18 +290,6 @@ class ServingAreaServiceIT extends IntegrationTestBase {
         assertThat(dsl.fetchCount(SERVING_AREA_MEMBER, SERVING_AREA_MEMBER.SERVING_AREA_ID.eq(area.id()))).isZero();
         assertThat(dsl.fetchCount(SERVING_AREA_POSITION, SERVING_AREA_POSITION.SERVING_AREA_ID.eq(area.id()))).isZero();
         assertThat(dsl.fetchCount(SERVING_AREA_TEAM, SERVING_AREA_TEAM.SERVING_AREA_ID.eq(area.id()))).isZero();
-    }
-
-    @Test
-    void membershipWithoutTeam_whenOnlyInactiveTeams_succeeds() {
-        ServingArea area = ServingAreaFixture.area(service, "Só equipes inativas");
-        Long pos = ServingAreaFixture.positionId(area, ServingAreaPositionKindEnum.MEMBERSHIP);
-        service.addTeam(area.id(), new ServingAreaTeamForm("Antiga", null, null, false));
-        Pessoa p = person("Membro sem equipe ativa");
-
-        // Sem equipes ativas, a membresia pode ficar no escopo geral (não é dead-end).
-        ServingAreaMember member = ServingAreaFixture.addMember(service, area.id(), p.getId(), pos, null, null);
-        assertThat(member.teamId()).isNull();
     }
 
     @Test
@@ -341,7 +306,7 @@ class ServingAreaServiceIT extends IntegrationTestBase {
         ServingArea area = ServingAreaFixture.area(service, "Cargos duplicados");
         // "Membro" já existe (cargo padrão de toda área).
         assertThatThrownBy(() -> service.addPosition(area.id(),
-                new ServingAreaPositionForm("Membro", ServingAreaPositionKindEnum.MEMBERSHIP, null, null)))
+                new ServingAreaPositionForm("Membro", ServingAreaPositionKindEnum.MEMBERSHIP)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("cargo");
     }
@@ -349,8 +314,8 @@ class ServingAreaServiceIT extends IntegrationTestBase {
     @Test
     void duplicateTeamName_rejected() {
         ServingArea area = ServingAreaFixture.area(service, "Equipes duplicadas");
-        service.addTeam(area.id(), new ServingAreaTeamForm("Equipe A", null, null, true));
-        assertThatThrownBy(() -> service.addTeam(area.id(), new ServingAreaTeamForm("Equipe A", null, null, true)))
+        service.addTeam(area.id(), new ServingAreaTeamForm("Equipe A", null, null));
+        assertThatThrownBy(() -> service.addTeam(area.id(), new ServingAreaTeamForm("Equipe A", null, null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("equipe");
     }

@@ -11,8 +11,6 @@ public record ServingAreaPosition(
         Long servingAreaId,
         String name,
         ServingAreaPositionKindEnum kind,
-        Integer sortOrder,
-        Boolean active,
         DateTime addedAt,
         DateTime updatedAt,
         Long updatedBy

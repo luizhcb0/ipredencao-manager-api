@@ -102,9 +102,9 @@ public class ServingAreaService {
                 form.coordinationWhatsappUrl(), active, userId);
 
         // Cargos padrão de toda área criada pela aplicação.
-        positionRepo.insert(area.id(), "Supervisor", ServingAreaPositionKindEnum.SUPERVISION, 0, true, userId);
-        positionRepo.insert(area.id(), "Coordenador", ServingAreaPositionKindEnum.COORDINATION, 1, true, userId);
-        positionRepo.insert(area.id(), "Membro", ServingAreaPositionKindEnum.MEMBERSHIP, 2, true, userId);
+        positionRepo.insert(area.id(), "Supervisor", ServingAreaPositionKindEnum.SUPERVISION, userId);
+        positionRepo.insert(area.id(), "Coordenador", ServingAreaPositionKindEnum.COORDINATION, userId);
+        positionRepo.insert(area.id(), "Membro", ServingAreaPositionKindEnum.MEMBERSHIP, userId);
 
         return findDetail(area.id());
     }
@@ -144,10 +144,7 @@ public class ServingAreaService {
         }
         checkPositionNameUnique(areaId, form.name(), null);
         Long userId = securityUtils.getCurrentUserId();
-        int sortOrder = form.sortOrder() != null ? form.sortOrder()
-                : positionRepo.find(ServingAreaPositionQuery.builder().servingAreaId(areaId).build()).size();
-        boolean active = form.active() == null || form.active();
-        return positionRepo.insert(areaId, form.name(), form.kind(), sortOrder, active, userId);
+        return positionRepo.insert(areaId, form.name(), form.kind(), userId);
     }
 
     @Transactional
@@ -162,16 +159,15 @@ public class ServingAreaService {
         }
         checkPositionNameUnique(areaId, form.name(), positionId);
         Long userId = securityUtils.getCurrentUserId();
-        int sortOrder = form.sortOrder() != null ? form.sortOrder() : existing.sortOrder();
-        boolean active = form.active() != null ? form.active() : existing.active();
-        return positionRepo.update(positionId, areaId, form.name(), kind, sortOrder, active, userId);
+        return positionRepo.update(positionId, areaId, form.name(), kind, userId);
     }
 
     @Transactional
     public void deletePosition(Long areaId, Long positionId) {
         requirePosition(areaId, positionId);
         if (positionRepo.hasMembers(positionId)) {
-            throw new IllegalStateException("Cargo possui vínculos e não pode ser excluído; desative-o em vez de excluir");
+            throw new IllegalStateException(
+                    "Cargo possui vínculos e não pode ser excluído; remova os vínculos antes de excluir o cargo");
         }
         positionRepo.delete(positionId);
     }
@@ -187,28 +183,27 @@ public class ServingAreaService {
         validateWhatsapp(form.whatsappUrl());
         checkTeamNameUnique(areaId, form.name(), null);
         Long userId = securityUtils.getCurrentUserId();
-        boolean active = form.active() == null || form.active();
-        return teamRepo.insert(areaId, form.name(), form.description(), form.whatsappUrl(), active, userId);
+        return teamRepo.insert(areaId, form.name(), form.description(), form.whatsappUrl(), userId);
     }
 
     @Transactional
     public ServingAreaTeam updateTeam(Long areaId, Long teamId, ServingAreaTeamForm form) {
-        ServingAreaTeam existing = requireTeam(areaId, teamId);
+        requireTeam(areaId, teamId);
         if (form.name() == null || form.name().isBlank()) {
             throw new IllegalArgumentException("Nome da equipe é obrigatório");
         }
         validateWhatsapp(form.whatsappUrl());
         checkTeamNameUnique(areaId, form.name(), teamId);
         Long userId = securityUtils.getCurrentUserId();
-        boolean active = form.active() != null ? form.active() : existing.active();
-        return teamRepo.update(teamId, areaId, form.name(), form.description(), form.whatsappUrl(), active, userId);
+        return teamRepo.update(teamId, areaId, form.name(), form.description(), form.whatsappUrl(), userId);
     }
 
     @Transactional
     public void deleteTeam(Long areaId, Long teamId) {
         requireTeam(areaId, teamId);
         if (teamRepo.hasMembers(teamId)) {
-            throw new IllegalStateException("Equipe possui vínculos e não pode ser excluída; desative-a em vez de excluir");
+            throw new IllegalStateException(
+                    "Equipe possui vínculos e não pode ser excluída; remova os vínculos antes de excluir a equipe");
         }
         teamRepo.delete(teamId);
     }
@@ -221,9 +216,11 @@ public class ServingAreaService {
         if (form.personId() == null) {
             throw new IllegalArgumentException("Pessoa (personId) é obrigatória");
         }
-        ServingAreaPosition position = validatePositionForMember(areaId, form.positionId(), true);
+        ServingAreaPosition position = requirePosition(areaId, form.positionId());
         validateSupervisionScope(position, form.teamId());
-        validateTeamForMember(areaId, form.teamId(), true);
+        if (form.teamId() != null) {
+            requireTeam(areaId, form.teamId());
+        }
         validateMembershipTeamRequirement(areaId, position, form.teamId());
         if (memberRepo.existsDuplicate(areaId, form.personId(), form.positionId(), form.teamId(), null)) {
             throw new IllegalArgumentException("Já existe um vínculo idêntico para esta pessoa");
@@ -241,9 +238,11 @@ public class ServingAreaService {
         if (form.personId() == null) {
             throw new IllegalArgumentException("Pessoa (personId) é obrigatória");
         }
-        ServingAreaPosition position = validatePositionForMember(areaId, form.positionId(), false);
+        ServingAreaPosition position = requirePosition(areaId, form.positionId());
         validateSupervisionScope(position, form.teamId());
-        validateTeamForMember(areaId, form.teamId(), false);
+        if (form.teamId() != null) {
+            requireTeam(areaId, form.teamId());
+        }
         validateMembershipTeamRequirement(areaId, position, form.teamId());
         if (memberRepo.existsDuplicate(areaId, form.personId(), form.positionId(), form.teamId(), memberId)) {
             throw new IllegalArgumentException("Já existe um vínculo idêntico para esta pessoa");
@@ -332,23 +331,6 @@ public class ServingAreaService {
                 .orElseThrow(() -> new NoSuchElementException("Vínculo " + memberId + " não encontrado neste serviço"));
     }
 
-    private ServingAreaPosition validatePositionForMember(Long areaId, Long positionId, boolean requireActive) {
-        if (positionId == null) throw new IllegalArgumentException("Cargo (positionId) é obrigatório");
-        ServingAreaPosition position = requirePosition(areaId, positionId);
-        if (requireActive && Boolean.FALSE.equals(position.active())) {
-            throw new IllegalArgumentException("Cargo está inativo e não pode receber novos vínculos");
-        }
-        return position;
-    }
-
-    private void validateTeamForMember(Long areaId, Long teamId, boolean requireActive) {
-        if (teamId == null) return; // escopo geral da área
-        ServingAreaTeam team = requireTeam(areaId, teamId);
-        if (requireActive && Boolean.FALSE.equals(team.active())) {
-            throw new IllegalArgumentException("Equipe está inativa e não pode receber novos vínculos");
-        }
-    }
-
     // A supervisão é sempre do serviço inteiro; nunca fica vinculada a uma equipe.
     private void validateSupervisionScope(ServingAreaPosition position, Long teamId) {
         if (position.kind() == ServingAreaPositionKindEnum.SUPERVISION && teamId != null) {
@@ -360,11 +342,9 @@ public class ServingAreaService {
     // podem permanecer no escopo geral ou de equipe).
     private void validateMembershipTeamRequirement(Long areaId, ServingAreaPosition position, Long teamId) {
         if (position.kind() != ServingAreaPositionKindEnum.MEMBERSHIP) return;
-        // Só equipes ativas contam: se todas estiverem inativas, o escopo geral é
-        // permitido (senão a membresia ficaria impossível de cadastrar).
-        boolean hasActiveTeams = !teamRepo.find(
-                ServingAreaTeamQuery.builder().servingAreaId(areaId).active(true).build()).isEmpty();
-        if (hasActiveTeams && teamId == null) {
+        boolean hasTeams = !teamRepo.find(
+                ServingAreaTeamQuery.builder().servingAreaId(areaId).build()).isEmpty();
+        if (hasTeams && teamId == null) {
             throw new IllegalArgumentException("Selecione uma equipe para o vínculo de membresia");
         }
     }

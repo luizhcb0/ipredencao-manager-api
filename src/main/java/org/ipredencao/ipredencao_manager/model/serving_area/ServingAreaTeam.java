@@ -12,7 +12,6 @@ public record ServingAreaTeam(
         String name,
         String description,
         String whatsappUrl,
-        Boolean active,
         DateTime addedAt,
         DateTime updatedAt,
         Long updatedBy
