@@ -65,7 +65,16 @@ public class SecurityConfig {
 
                 // Atos oficiais (CI/IPB Cap. III) — apenas presbíteros e admins
                 .requestMatchers("/api/official-acts/**").hasAnyRole("PRESBITERO", "ADMIN")
-                
+
+                // Serviços (serving areas): leitura BOLETIM+ (inclui os POST de
+                // busca/relatório), escrita DIACONO+. Matchers de leitura antes do
+                // catch-all de escrita.
+                .requestMatchers(HttpMethod.POST, "/api/serving-areas/search",
+                        "/api/serving-areas/members/search", "/api/serving-areas/participation-report")
+                    .hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/serving-areas/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
+                .requestMatchers("/api/serving-areas/**").hasAnyRole("DIACONO", "PRESBITERO", "ADMIN")
+
                 // Relatórios (apenas autenticados)
                 .requestMatchers("/api/reports/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
                 
