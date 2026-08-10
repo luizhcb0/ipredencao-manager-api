@@ -11,7 +11,10 @@ import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.jooq.Condition;
 import org.jooq.impl.DSL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import org.ipredencao.ipredencao_manager.model.endereco.EnderecoQuery;
 
 @Repository
@@ -27,7 +30,9 @@ public class EnderecoRepository {
                 .returning()
                 .fetchOne();
         
-        return fromRepository(saved);
+        Endereco created = fromRepository(saved);
+        if (created != null) getPersonIdsFromAddresses(List.of(created));
+        return created;
     }
 
     public Endereco update(Endereco endereco) {
@@ -39,7 +44,9 @@ public class EnderecoRepository {
                 .returning()
                 .fetchOne();
         
-        return fromRepository(updated);
+        Endereco result = fromRepository(updated);
+        if (result != null) getPersonIdsFromAddresses(List.of(result));
+        return result;
     }
 
     public Endereco findById(Long id) {
@@ -49,7 +56,9 @@ public class EnderecoRepository {
                 .where(ENDERECO.ID.eq(id))
                 .fetchOne();
         
-        return fromRepository(record);
+        Endereco endereco = fromRepository(record);
+        if (endereco != null) getPersonIdsFromAddresses(List.of(endereco));
+        return endereco;
     }
 
     public List<Endereco> find(EnderecoQuery query) {
@@ -59,11 +68,12 @@ public class EnderecoRepository {
             .reduce(DSL.noCondition(), Condition::and);
 
         // Montar query com ou sem paginação
+        List<Endereco> enderecos;
         if (query.getPagination() != null) {
             int limit = query.getPagination().getLimit() != null ? query.getPagination().getLimit() : Integer.MAX_VALUE;
             int offset = query.getPagination().getOffset() != null ? query.getPagination().getOffset() : 0;
             
-            return dsl.selectFrom(ENDERECO)
+            enderecos = dsl.selectFrom(ENDERECO)
                     .where(finalCondition)
                     .limit(limit)
                     .offset(offset)
@@ -72,13 +82,16 @@ public class EnderecoRepository {
                     .map(this::fromRepository)
                     .toList();
         } else {
-            return dsl.selectFrom(ENDERECO)
+            enderecos = dsl.selectFrom(ENDERECO)
                     .where(finalCondition)
                     .fetch()
                     .stream()
                     .map(this::fromRepository)
                     .toList();
         }
+        
+        getPersonIdsFromAddresses(enderecos);
+        return enderecos;
     }
     
     /**
@@ -126,17 +139,34 @@ public class EnderecoRepository {
         endereco.setUpdatedAt(DateTimeHelper.fromDb(record.getUpdatedAt()));
         endereco.setUpdatedByUserId(record.getUpdatedBy());
         
-        // Buscar IDs das pessoas que usam este endereço
-        if (record.getId() != null) {
-            List<Long> pessoaIds = dsl.select(PESSOA.PESSOA_ID)
-                .from(PESSOA)
-                .where(PESSOA.ENDERECO_ID.eq(record.getId()))
-                .fetch()
-                .map(r -> r.value1());
-            endereco.setPessoaIds(pessoaIds);
-        }
-        
         return endereco;
+    }
+
+    /**
+     * Popula pessoaIds de cada endereço em uma única query (WHERE endereco_id IN ...),
+     * evitando N+1 tanto na listagem de endereços quanto no include de endereço em pessoa.
+     */
+    public void getPersonIdsFromAddresses(Collection<Endereco> addresses) {
+        List<Long> addressIds = addresses.stream()
+            .filter(Objects::nonNull)
+            .map(Endereco::getId)
+            .distinct()
+            .toList();
+        if (addressIds.isEmpty()) return;
+
+        Map<Long, List<Long>> personIdsByAddress = dsl
+            .select(PESSOA.ENDERECO_ID, PESSOA.PESSOA_ID)
+            .from(PESSOA)
+            .where(PESSOA.ENDERECO_ID.in(addressIds))
+            .orderBy(PESSOA.PESSOA_ID.asc())
+            .fetchGroups(PESSOA.ENDERECO_ID, PESSOA.PESSOA_ID);
+
+        for (Endereco address : addresses) {
+            if (address != null) {
+                address.setPessoaIds(
+                    personIdsByAddress.getOrDefault(address.getId(), List.of()));
+            }
+        }
     }
 
     private static EnderecoRecord toRepository(Endereco endereco) {
