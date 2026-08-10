@@ -57,7 +57,13 @@ public enum CategoriaEnum {
     PESSOA_REFERENCIADA(32L, "Pessoa referenciada", 9L),
     
     // Categorias do agregador Ex-membro da igreja (id=10)
-    EX_MEMBRO(33L, "Ex-membro", 10L);
+    EX_MEMBRO(33L, "Ex-membro", 10L),
+
+    // Rol à parte — não comungante
+    MEMBRO_NAO_COMUNGANTE_EM_TRANSITO(34L, "Membro não comungante em trânsito", 4L),
+    MEMBRO_NAO_COMUNGANTE_AUSENTE(35L, "Membro não comungante ausente", 4L),
+    MEMBRO_NAO_COMUNGANTE_A_TRANSFERIR(36L, "Membro não comungante a transferir", 4L),
+    MEMBRO_NAO_COMUNGANTE_NAO_LOCALIZADO(37L, "Membro não comungante não localizado ou pedido de desligamento", 4L);
 
     private final Long id;
     private final String nome;
