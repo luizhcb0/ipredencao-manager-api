@@ -134,6 +134,31 @@ class UserControllerIT extends IntegrationTestBase {
 
     @Test
     @WithMockUser(roles = "ADMIN")
+    void create_linksExistingFirebaseAccountWhenNotInDb() throws Exception {
+        // Caminho Lambda: o erro do Firebase chega embrulhado em RuntimeException
+        when(firebaseAuthService.createUserWithoutPassword(eq("mateus@test.local"), any()))
+            .thenThrow(new RuntimeException(
+                "Firebase Lambda error: The user with the provided email already exists (EMAIL_EXISTS)."));
+        when(firebaseAuthService.getUserByEmail("mateus@test.local"))
+            .thenReturn(new FirebaseUser("existing-firebase-uid", "mateus@test.local", "Mateus", true, null, false));
+
+        mockMvc.perform(post(BASE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "name", "Mateus Souza",
+                    "email", "mateus@test.local",
+                    "profile", "PRESBITERO"
+                ))))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.email").value("mateus@test.local"))
+            .andExpect(jsonPath("$.name").value("Mateus Souza"));
+
+        verify(firebaseAuthService, never()).deleteUser(any());
+        verify(firebaseAuthService).updateUser("existing-firebase-uid", "Mateus Souza");
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     void patch_updatesUserProfile() throws Exception {
         Usuario user = usuarioRepository.insert(UsuarioFixture.builder()
             .email("patch@test.local")

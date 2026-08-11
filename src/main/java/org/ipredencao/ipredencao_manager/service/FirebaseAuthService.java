@@ -5,6 +5,7 @@ import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
 import com.amazonaws.services.lambda.model.InvokeRequest;
 import com.amazonaws.services.lambda.model.InvokeResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.firebase.auth.AuthErrorCode;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
@@ -92,6 +93,24 @@ public class FirebaseAuthService {
 
     public FirebaseUser createUserWithoutPassword(String email, String displayName) throws FirebaseAuthException {
         return createUser(email, null, displayName);
+    }
+
+    /**
+     * O caminho Lambda perde o tipo da exceção do Firebase, restando só a mensagem;
+     * por isso a checagem percorre as causas e aceita tanto o código quanto o texto.
+     */
+    public static boolean isEmailAlreadyExists(Throwable error) {
+        for (Throwable e = error; e != null && e != e.getCause(); e = e.getCause()) {
+            if (e instanceof FirebaseAuthException firebase
+                    && firebase.getAuthErrorCode() == AuthErrorCode.EMAIL_ALREADY_EXISTS) {
+                return true;
+            }
+            String message = e.getMessage() == null ? "" : e.getMessage().toLowerCase().replace('_', ' ');
+            if (message.contains("email exists") || message.contains("email already exists")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public FirebaseUser getUserByEmail(String email) throws FirebaseAuthException {

@@ -76,42 +76,65 @@ public class UserService {
             throw new IllegalArgumentException("Email é obrigatório");
         }
 
-        Usuario existing = usuarioRepository.findByEmail(request.getEmail().trim());
+        String email = request.getEmail().trim();
+        String name = request.getName().trim();
+
+        Usuario existing = usuarioRepository.findByEmail(email);
         if (existing != null) {
             throw new IllegalStateException("Usuário já existe com este email");
         }
 
         FirebaseUser firebaseUser;
+        boolean createdInFirebase = true;
         try {
-            firebaseUser = firebaseAuthService.createUserWithoutPassword(
-                request.getEmail().trim(),
-                request.getName().trim()
-            );
-        } catch (FirebaseAuthException e) {
-            log.error("Erro ao criar usuário no Firebase: {}", e.getMessage());
-            throw new IllegalArgumentException("Erro ao criar usuário: " + e.getMessage(), e);
+            firebaseUser = firebaseAuthService.createUserWithoutPassword(email, name);
+        } catch (FirebaseAuthException | RuntimeException e) {
+            if (!FirebaseAuthService.isEmailAlreadyExists(e)) {
+                throw firebaseInviteFailure(e);
+            }
+            log.info("Convite vinculado a conta Firebase já existente: {}", email);
+            firebaseUser = fetchFirebaseUserByEmail(email);
+            createdInFirebase = false;
+        }
+
+        Usuario usuario = new Usuario();
+        usuario.setFirebaseUid(firebaseUser.uid());
+        usuario.setEmail(email);
+        usuario.setName(name);
+        usuario.setProvider(ProviderAutenticacao.EMAIL);
+        usuario.setAddedAt(DateTime.now());
+        usuario.setActive(true);
+        usuario.setAccessProfile(request.getProfile());
+
+        if (!createdInFirebase) {
+            syncFirebaseDisplayName(usuario);
         }
 
         try {
-            Usuario usuario = new Usuario();
-            usuario.setFirebaseUid(firebaseUser.uid());
-            usuario.setEmail(request.getEmail().trim());
-            usuario.setName(request.getName().trim());
-            usuario.setProvider(ProviderAutenticacao.EMAIL);
-            usuario.setAddedAt(DateTime.now());
-            usuario.setActive(true);
-            usuario.setAccessProfile(request.getProfile());
-
-            usuario = usuarioRepository.insert(usuario);
-            return UserSummaryResponse.from(usuario);
+            return UserSummaryResponse.from(usuarioRepository.insert(usuario));
         } catch (Exception e) {
-            try {
-                firebaseAuthService.deleteUser(firebaseUser.uid());
-            } catch (FirebaseAuthException ex) {
-                log.error("Falha ao compensar usuário Firebase {}: {}", firebaseUser.uid(), ex.getMessage());
+            if (createdInFirebase) {
+                try {
+                    firebaseAuthService.deleteUser(firebaseUser.uid());
+                } catch (FirebaseAuthException ex) {
+                    log.error("Falha ao compensar usuário Firebase {}: {}", firebaseUser.uid(), ex.getMessage());
+                }
             }
             throw e;
         }
+    }
+
+    private FirebaseUser fetchFirebaseUserByEmail(String email) {
+        try {
+            return firebaseAuthService.getUserByEmail(email);
+        } catch (FirebaseAuthException e) {
+            throw firebaseInviteFailure(e);
+        }
+    }
+
+    private IllegalArgumentException firebaseInviteFailure(Throwable e) {
+        log.error("Erro ao criar usuário no Firebase: {}", e.getMessage());
+        return new IllegalArgumentException("Erro ao criar usuário: " + e.getMessage(), e);
     }
 
     public UserSummaryResponse updateUser(Long id, UpdateUserRequest request, Long currentUserId) {
