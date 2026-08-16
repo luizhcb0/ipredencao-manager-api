@@ -2,7 +2,13 @@
 set -e
 
 # Deploy rápido do Lambda firebase-proxy (só código, sem CloudFormation).
-# Para mudanças de infra (template/env), use ./deploy.sh (SAM).
+#
+# ⚠️  NÃO USE MAIS PARA PRODUÇÃO.
+# O App Runner invoca o alias `:live`, e `update-function-code` só mexe em
+# $LATEST: não publica versão nem move o alias. Usar este script deixa a
+# produção silenciosamente rodando o código antigo (e sem SnapStart).
+# Use ./deploy.sh (SAM), que publica versão e move o alias.
+#
 # Uso: ./quick-deploy.sh
 
 cd "$(dirname "$0")"

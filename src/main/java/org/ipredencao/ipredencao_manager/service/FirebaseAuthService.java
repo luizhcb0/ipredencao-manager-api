@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.service;
 
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.services.lambda.AWSLambda;
 import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
 import com.amazonaws.services.lambda.model.InvokeRequest;
@@ -41,7 +42,18 @@ public class FirebaseAuthService {
     @PostConstruct
     public void init() {
         if (useLambda()) {
-            lambdaClient = AWSLambdaClientBuilder.defaultClient();
+            // Sem isso valem os defaults do SDK (socket ~50s + retries), que estouram
+            // o timeout do frontend e transformam lentidao em "erro de rede" generico.
+            // clientExecutionTimeout e o teto total, incluindo retries.
+            ClientConfiguration config = new ClientConfiguration()
+                .withConnectionTimeout(3_000)
+                .withSocketTimeout(10_000)
+                .withClientExecutionTimeout(12_000)
+                .withMaxErrorRetry(1);
+
+            lambdaClient = AWSLambdaClientBuilder.standard()
+                .withClientConfiguration(config)
+                .build();
             log.info("Firebase Lambda client inicializado: {}", lambdaName);
         }
     }

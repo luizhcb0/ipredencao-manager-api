@@ -1,6 +1,8 @@
 package org.ipredencao.lambda;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
+import com.amazonaws.services.lambda.runtime.LambdaRuntime;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
@@ -19,6 +21,8 @@ import java.io.ByteArrayInputStream;
  */
 public class FirebaseProxyHandler implements RequestHandler<LambdaRequest, LambdaResponse> {
 
+    private static final LambdaLogger log = LambdaRuntime.getLogger();
+
     private static boolean initialized = false;
 
     public FirebaseProxyHandler() {
@@ -31,6 +35,16 @@ public class FirebaseProxyHandler implements RequestHandler<LambdaRequest, Lambd
             String json = System.getenv("FIREBASE_SERVICE_ACCOUNT_KEY_CONTENT");
             GoogleCredentials credentials = GoogleCredentials.fromStream(
                 new ByteArrayInputStream(json.getBytes()));
+
+            // O token so seria buscado na primeira invocacao, dentro do handler.
+            // Buscando aqui, na fase de init, o SnapStart captura o resultado no
+            // snapshot. Falha nao e fatal: o SDK refaz sob demanda.
+            try {
+                credentials.refreshIfExpired();
+            } catch (Exception e) {
+                log.log("Priming de credenciais falhou, seguindo sem: " + e.getMessage());
+            }
+
             FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(credentials).build();
             if (FirebaseApp.getApps().isEmpty()) {
@@ -45,15 +59,15 @@ public class FirebaseProxyHandler implements RequestHandler<LambdaRequest, Lambd
     @Override
     public LambdaResponse handleRequest(LambdaRequest input, Context ctx) {
         try {
-            ctx.getLogger().log("Processing: " + input.operation());
-            return processRequest(input.operation(), input.data(), ctx);
+            log.log("Processing: " + input.operation());
+            return processRequest(input.operation(), input.data());
         } catch (Exception e) {
-            ctx.getLogger().log("Error: " + e.getMessage());
+            log.log("Error: " + e.getMessage());
             return LambdaResponse.error(e.getMessage());
         }
     }
 
-    private LambdaResponse processRequest(String op, LambdaRequest.RequestData data, Context ctx) {
+    private LambdaResponse processRequest(String op, LambdaRequest.RequestData data) {
         try {
             return switch (op) {
                 case "verifyIdToken" -> verifyIdToken(data.token());
@@ -66,7 +80,7 @@ public class FirebaseProxyHandler implements RequestHandler<LambdaRequest, Lambd
                 default -> LambdaResponse.error("Unknown operation: " + op);
             };
         } catch (Exception e) {
-            ctx.getLogger().log("Error in " + op + ": " + e.getMessage());
+            log.log("Error in " + op + ": " + e.getMessage());
             return LambdaResponse.error(e.getMessage());
         }
     }
