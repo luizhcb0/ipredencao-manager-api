@@ -48,7 +48,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/formulario-pessoa/*/foto").permitAll()
                 
                 // Actuator endpoints
-                .requestMatchers("/actuator/health").permitAll()
+                // O liveness e o alvo do health check do App Runner, que chama sem
+                // credencial: sem esta regra ele cai no /actuator/** abaixo, responde
+                // 401 e a instancia e substituida em loop. Expoe apenas "ping".
+                .requestMatchers("/actuator/health", "/actuator/health/liveness").permitAll()
                 .requestMatchers("/actuator/**").hasRole("ADMIN")
                 
                 // Swagger/OpenAPI
