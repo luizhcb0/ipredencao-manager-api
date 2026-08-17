@@ -91,7 +91,7 @@ build:
 	docker build -t ipredencao-manager-api .
 
 deploy:
-	./scripts/deploy-apprunner.sh
+	./scripts/quick-rebuild.sh --yes
 
 test-docker:
 	docker run -p 8080:8080 \

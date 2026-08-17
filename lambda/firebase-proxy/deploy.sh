@@ -3,8 +3,7 @@ set -e
 
 cd "$(dirname "$0")"
 
-# Mesma convencao do quick-deploy.sh: sem isso o deploy usa o profile default,
-# que costuma estar com token expirado.
+# Sem isso o deploy usa o profile default, que costuma estar com token expirado.
 export AWS_PROFILE="${AWS_PROFILE:-personal}"
 
 # Regiao fixa, NAO herdada do ambiente. Toda a stack (App Runner, RDS, ECR) vive

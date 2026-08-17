@@ -1,51 +1,119 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-# Script para rebuild rápido da imagem
-# Uso: ./quick-rebuild.sh
+# Build da imagem da API, teste local opcional e publicacao para producao.
+#
+# Uso:
+#   ./quick-rebuild.sh         constroi e pergunta se publica
+#   ./quick-rebuild.sh --yes   constroi e publica sem perguntar (usado pelo make deploy)
+#
+# A imagem sai em linux/amd64, porque o App Runner roda x86_64, e e carregada no
+# daemon local (--load). E isso que permite testar com ./test-docker-local.sh
+# exatamente o mesmo artefato que vai para producao. Em maquina arm64 esse teste
+# local roda emulado e sobe mais devagar que nativo.
+#
+# O App Runner esta com AutoDeployments observando a tag :latest, ou seja, o push
+# e o gatilho do deploy - nao existe comando de deploy separado. Junto de :latest
+# sobe a tag do commit, que e o caminho de rollback: para voltar atras, aponte o
+# servico para a tag anterior.
 
-echo "🔨 Fazendo rebuild da imagem..."
-cd "$(dirname "$0")/.."
-
-# Configurações
 AWS_REGION="us-east-1"
 AWS_ACCOUNT_ID="045935420308"
 ECR_REPOSITORY="ipredencao-manager-api"
-IMAGE_TAG="latest"
-AWS_PROFILE="personal"
+AWS_PROFILE="${AWS_PROFILE:-personal}"
+SERVICE_NAME="ipredencao-manager-api"
 
-IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}"
+REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+IMAGE_URI="${REGISTRY}/${ECR_REPOSITORY}"
 
-echo "🔄 Generating JOOQ code..."
+ASSUME_YES=false
+[ "${1:-}" = "--yes" ] && ASSUME_YES=true
+
+cd "$(dirname "$0")/.."
+
+GIT_SHA="$(git rev-parse --short HEAD)"
+if [ -n "$(git status --porcelain -- src build.gradle Dockerfile)" ]; then
+    GIT_SHA="${GIT_SHA}-dirty"
+fi
+
+echo "🔨 Rebuild da imagem"
+echo "   Tags: latest, ${GIT_SHA}"
+echo "   Plataforma: linux/amd64"
+echo ""
+
+echo "🔄 Gerando codigo do JOOQ..."
 ./gradlew generateJooq -x composeUp
 
-echo "📦 Building Docker image..."
-docker buildx build --platform linux/amd64 -t ${IMAGE_URI} .
+echo "📦 Build da imagem..."
+docker buildx build --platform linux/amd64 --load \
+    -t "${IMAGE_URI}:latest" \
+    -t "${IMAGE_URI}:${GIT_SHA}" \
+    .
 
-echo "🧹 Cleaning up dangling images..."
+echo "🧹 Limpando imagens orfas..."
 docker image prune -f
 
-echo "✅ Build concluído!"
 echo ""
-echo "🚀 Deseja fazer push para ECR? (y/n)"
-read -r response
+echo "✅ Build concluido. Para testar este mesmo artefato localmente:"
+echo "   ./scripts/test-docker-local.sh"
+echo ""
 
-if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-    echo "🔐 Login no ECR..."
-    aws ecr get-login-password --region ${AWS_REGION} --profile ${AWS_PROFILE} | \
-        docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-    
-    echo "☁️  Pushing to ECR..."
-    docker push ${IMAGE_URI}
-    
-    echo ""
-    echo "✅ Push concluído!"
-    echo "🌐 Imagem: ${IMAGE_URI}"
-else
-    echo "⏭️  Push cancelado"
+if [ "$ASSUME_YES" = false ]; then
+    echo "🚀 Publicar para producao? Isso dispara o deploy no App Runner. (y/n)"
+    read -r response
+    if [[ ! "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        echo "⏭️  Push cancelado. A imagem ficou disponivel localmente."
+        exit 0
+    fi
+fi
+
+echo "🔐 Login no ECR..."
+aws ecr get-login-password --region "${AWS_REGION}" --profile "${AWS_PROFILE}" \
+    | docker login --username AWS --password-stdin "${REGISTRY}"
+
+echo "☁️  Publicando..."
+docker push "${IMAGE_URI}:latest"
+docker push "${IMAGE_URI}:${GIT_SHA}"
+
+SERVICE_ARN="$(aws apprunner list-services --region "${AWS_REGION}" --profile "${AWS_PROFILE}" \
+    --query "ServiceSummaryList[?ServiceName=='${SERVICE_NAME}'].ServiceArn" --output text)"
+
+if [ -z "$SERVICE_ARN" ]; then
+    echo "⚠️  Servico ${SERVICE_NAME} nao encontrado, nada a acompanhar."
+    exit 0
 fi
 
 echo ""
-echo "🧪 Para testar localmente:"
-echo "   ./scripts/test-docker-local.sh"
+echo "⏳ AutoDeployments dispara o deploy sozinho. Aguardando (ate 15 min)..."
+STATUS="UNKNOWN"
+for _ in $(seq 1 90); do
+    STATUS="$(aws apprunner describe-service --service-arn "$SERVICE_ARN" \
+        --region "${AWS_REGION}" --profile "${AWS_PROFILE}" \
+        --query 'Service.Status' --output text)"
+    [ "$STATUS" != "OPERATION_IN_PROGRESS" ] && break
+    printf '.'
+    sleep 10
+done
+echo ""
 
+aws apprunner list-operations --service-arn "$SERVICE_ARN" --region "${AWS_REGION}" \
+    --profile "${AWS_PROFILE}" --output table \
+    --query 'OperationSummaryList[:1].{Type:Type,Status:Status,Ended:EndedAt}'
+
+SERVICE_URL="$(aws apprunner describe-service --service-arn "$SERVICE_ARN" \
+    --region "${AWS_REGION}" --profile "${AWS_PROFILE}" \
+    --query 'Service.ServiceUrl' --output text)"
+
+echo "🩺 Checando a aplicacao..."
+curl -fsS --max-time 30 "https://${SERVICE_URL}/actuator/health" && echo ""
+
+if [ "$STATUS" != "RUNNING" ]; then
+    echo "❌ Servico terminou em ${STATUS}. Logs:"
+    echo "   aws logs tail /aws/apprunner/${SERVICE_NAME}/*/application --follow --region ${AWS_REGION}"
+    exit 1
+fi
+
+echo ""
+echo "✅ Deploy concluido (${GIT_SHA})."
+echo "   Rollback: aws apprunner update-service --service-arn ${SERVICE_ARN} \\"
+echo "     --source-configuration '{\"ImageRepository\":{\"ImageIdentifier\":\"${IMAGE_URI}:<tag-anterior>\",\"ImageRepositoryType\":\"ECR\"}}'"
