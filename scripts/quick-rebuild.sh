@@ -4,8 +4,9 @@ set -euo pipefail
 # Build da imagem da API, teste local opcional e publicacao para producao.
 #
 # Uso:
-#   ./quick-rebuild.sh         constroi e pergunta se publica
-#   ./quick-rebuild.sh --yes   constroi e publica sem perguntar (usado pelo make deploy)
+#   ./quick-rebuild.sh            constroi e pergunta se publica
+#   ./quick-rebuild.sh --yes      constroi e publica sem perguntar (make deploy)
+#   ./quick-rebuild.sh --no-push  so constroi, sem perguntar nada (make build)
 #
 # A imagem sai em linux/amd64, porque o App Runner roda x86_64, e e carregada no
 # daemon local (--load). E isso que permite testar com ./test-docker-local.sh
@@ -27,7 +28,13 @@ REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 IMAGE_URI="${REGISTRY}/${ECR_REPOSITORY}"
 
 ASSUME_YES=false
-[ "${1:-}" = "--yes" ] && ASSUME_YES=true
+PUSH=true
+case "${1:-}" in
+    --yes)     ASSUME_YES=true ;;
+    --no-push) PUSH=false ;;
+    "")        ;;
+    *)         echo "Uso: $(basename "$0") [--yes|--no-push]" >&2; exit 1 ;;
+esac
 
 cd "$(dirname "$0")/.."
 
@@ -58,6 +65,11 @@ echo "✅ Build concluido. Para testar este mesmo artefato localmente:"
 echo "   ./scripts/test-docker-local.sh"
 echo ""
 
+if [ "$PUSH" = false ]; then
+    echo "⏭️  Somente build, nada publicado."
+    exit 0
+fi
+
 if [ "$ASSUME_YES" = false ]; then
     echo "🚀 Publicar para producao? Isso dispara o deploy no App Runner. (y/n)"
     read -r response
@@ -77,43 +89,26 @@ docker push "${IMAGE_URI}:${GIT_SHA}"
 
 SERVICE_ARN="$(aws apprunner list-services --region "${AWS_REGION}" --profile "${AWS_PROFILE}" \
     --query "ServiceSummaryList[?ServiceName=='${SERVICE_NAME}'].ServiceArn" --output text)"
+: "${SERVICE_ARN:=<arn-do-servico-${SERVICE_NAME}>}"
 
-if [ -z "$SERVICE_ARN" ]; then
-    echo "⚠️  Servico ${SERVICE_NAME} nao encontrado, nada a acompanhar."
-    exit 0
-fi
-
+# O script nao espera o deploy de proposito: o AutoDeployments ja foi disparado
+# pelo push da tag :latest e leva ~4 min. Como ele roda sozinho no App Runner,
+# fechar o terminal aqui nao interrompe nada.
 echo ""
-echo "⏳ AutoDeployments dispara o deploy sozinho. Aguardando (ate 15 min)..."
-STATUS="UNKNOWN"
-for _ in $(seq 1 90); do
-    STATUS="$(aws apprunner describe-service --service-arn "$SERVICE_ARN" \
-        --region "${AWS_REGION}" --profile "${AWS_PROFILE}" \
-        --query 'Service.Status' --output text)"
-    [ "$STATUS" != "OPERATION_IN_PROGRESS" ] && break
-    printf '.'
-    sleep 10
-done
+echo "✅ Publicado como ${GIT_SHA}. O App Runner ja esta deployando (leva ~4 min)."
 echo ""
-
-aws apprunner list-operations --service-arn "$SERVICE_ARN" --region "${AWS_REGION}" \
-    --profile "${AWS_PROFILE}" --output table \
-    --query 'OperationSummaryList[:1].{Type:Type,Status:Status,Ended:EndedAt}'
-
-SERVICE_URL="$(aws apprunner describe-service --service-arn "$SERVICE_ARN" \
-    --region "${AWS_REGION}" --profile "${AWS_PROFILE}" \
-    --query 'Service.ServiceUrl' --output text)"
-
-echo "🩺 Checando a aplicacao..."
-curl -fsS --max-time 30 "https://${SERVICE_URL}/actuator/health" && echo ""
-
-if [ "$STATUS" != "RUNNING" ]; then
-    echo "❌ Servico terminou em ${STATUS}. Logs:"
-    echo "   aws logs tail /aws/apprunner/${SERVICE_NAME}/*/application --follow --region ${AWS_REGION}"
-    exit 1
-fi
-
+echo "Acompanhar:"
+echo "   aws apprunner list-operations --service-arn ${SERVICE_ARN} \\"
+echo "     --region ${AWS_REGION} --profile ${AWS_PROFILE} --output table \\"
+echo "     --query 'OperationSummaryList[:1].{Type:Type,Status:Status,Ended:EndedAt}'"
 echo ""
-echo "✅ Deploy concluido (${GIT_SHA})."
-echo "   Rollback: aws apprunner update-service --service-arn ${SERVICE_ARN} \\"
+echo "Conferir a aplicacao:"
+echo "   curl https://api.gestao.ipredencao.com/actuator/health"
+echo ""
+echo "Logs:"
+echo "   aws logs tail /aws/apprunner/${SERVICE_NAME}/*/application --follow --region ${AWS_REGION}"
+echo ""
+echo "Rollback (aponta o servico para a tag anterior, sem rebuild):"
+echo "   aws apprunner update-service --service-arn ${SERVICE_ARN} \\"
+echo "     --region ${AWS_REGION} --profile ${AWS_PROFILE} \\"
 echo "     --source-configuration '{\"ImageRepository\":{\"ImageIdentifier\":\"${IMAGE_URI}:<tag-anterior>\",\"ImageRepositoryType\":\"ECR\"}}'"

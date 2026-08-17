@@ -1,4 +1,8 @@
-.PHONY: help
+# Todos os alvos sao comandos, nao arquivos. Sem isto, "make build" nao roda nada,
+# porque o Gradle cria o diretorio build/ e o make o considera ja atualizado.
+.PHONY: help db-up migrate jooq jooq-only run run-prod restart clean \
+	win-run win-restart unix-run unix-restart build deploy test-docker \
+	aws-login create-ecr
 help: ## Mostrar ajuda
 	@echo "Comandos disponíveis:"
 	@echo ""
@@ -86,20 +90,17 @@ unix-restart:
 	./gradlew update
 
 # Docker commands
+# Um caminho unico para a imagem: o script constroi em linux/amd64, que e o que o
+# App Runner roda, e carrega no daemon local. Assim build, teste local e publicacao
+# usam o mesmo artefato.
 build:
-	$(GRADLEW) generateJooq
-	docker build -t ipredencao-manager-api .
+	./scripts/quick-rebuild.sh --no-push
 
 deploy:
 	./scripts/quick-rebuild.sh --yes
 
 test-docker:
-	docker run -p 8080:8080 \
-		-e SPRING_PROFILES_ACTIVE=local \
-		-e DATABASE_URL=jdbc:postgresql://host.docker.internal:54329/ipredencao_manager \
-		-e DATABASE_USERNAME=ipredencao_manager \
-		-e DATABASE_PASSWORD=ipredencao_manager \
-		ipredencao-manager-api
+	./scripts/test-docker-local.sh
 
 # AWS commands
 aws-login:
