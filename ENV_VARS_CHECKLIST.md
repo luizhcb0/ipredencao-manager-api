@@ -212,5 +212,5 @@ aws logs tail /aws/apprunner/ipredencao-manager-api --follow --profile personal
 
 - [Documentação - App Runner Environment Variables](docs/APPRUNNER_ENV_VARS.md)
 - [Script - Setup RDS](scripts/setup-rds.sh)
-- [Script - Setup App Runner](scripts/deploy-apprunner.sh)
+- [Script - Build e deploy do App Runner](scripts/quick-rebuild.sh)
 - [Configuração - application-prod.properties](src/main/resources/application-prod.properties)

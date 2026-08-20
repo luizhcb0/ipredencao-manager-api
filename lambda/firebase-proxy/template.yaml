@@ -15,8 +15,13 @@ Resources:
       CodeUri: target/firebase-proxy-lambda-1.0.0.jar
       Handler: org.ipredencao.lambda.FirebaseProxyHandler::handleRequest
       Runtime: java17
-      MemorySize: 512
-      Timeout: 30
+      MemorySize: 1024
+      Timeout: 15
+      # SnapStart so se aplica a versao publicada, por isso o alias.
+      # Consequencia: deploy tem que ser via deploy.sh (SAM), nunca quick-deploy.sh.
+      AutoPublishAlias: live
+      SnapStart:
+        ApplyOn: PublishedVersions
       Environment:
         Variables:
           FIREBASE_SERVICE_ACCOUNT_KEY_CONTENT: !Ref FirebaseServiceAccountKey
@@ -27,3 +32,6 @@ Outputs:
     Value: !GetAtt FirebaseProxyFunction.Arn
   FunctionName:
     Value: !Ref FirebaseProxyFunction
+  QualifiedFunctionName:
+    Description: Valor que FIREBASE_LAMBDA_NAME deve ter no App Runner
+    Value: !Sub "${FirebaseProxyFunction}:live"
