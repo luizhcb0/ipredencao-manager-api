@@ -55,49 +55,49 @@ public class SecurityConfig {
                 // credencial: sem esta regra ele cai no /actuator/** abaixo, responde
                 // 401 e a instancia e substituida em loop. Expoe apenas "ping".
                 .requestMatchers("/actuator/health", "/actuator/health/liveness").permitAll()
-                .requestMatchers("/actuator/**").hasAnyRole(Roles.ADMIN_ONLY)
+                .requestMatchers("/actuator/**").hasAnyRole(Roles.adminNames())
                 
                 // Swagger/OpenAPI
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 
                 // Formulários: DIACONO+. A captação pública fica acima.
                 .requestMatchers(HttpMethod.POST, "/api/formulario-pessoa/search",
-                        "/api/formulario-pessoa/processar").hasAnyRole(Roles.STAFF)
-                .requestMatchers(HttpMethod.GET, "/api/formulario-pessoa/**").hasAnyRole(Roles.STAFF)
-                .requestMatchers(HttpMethod.PUT, "/api/formulario-pessoa/**").hasAnyRole(Roles.STAFF)
-                .requestMatchers(HttpMethod.DELETE, "/api/formulario-pessoa/**").hasAnyRole(Roles.ADMIN_ONLY)
+                        "/api/formulario-pessoa/processar").hasAnyRole(Roles.staffNames())
+                .requestMatchers(HttpMethod.GET, "/api/formulario-pessoa/**").hasAnyRole(Roles.staffNames())
+                .requestMatchers(HttpMethod.PUT, "/api/formulario-pessoa/**").hasAnyRole(Roles.staffNames())
+                .requestMatchers(HttpMethod.DELETE, "/api/formulario-pessoa/**").hasAnyRole(Roles.adminNames())
                 
                 // Pessoas: leitura BOLETIM+, escrita DIACONO+. A busca é POST e precisa da
                 // própria linha — o matcher decide antes do @PreAuthorize do controller.
-                .requestMatchers(HttpMethod.POST, "/api/pessoas/search").hasAnyRole(Roles.ANY_ROLE)
+                .requestMatchers(HttpMethod.POST, "/api/pessoas/search").hasAnyRole(Roles.anyNames())
                 .requestMatchers(HttpMethod.GET, "/api/pessoas/*/history", "/api/pessoas/*/notes")
-                    .hasAnyRole(Roles.STAFF)
-                .requestMatchers(HttpMethod.GET, "/api/pessoas/**").hasAnyRole(Roles.ANY_ROLE)
-                .requestMatchers("/api/pessoas/**").hasAnyRole(Roles.STAFF)
+                    .hasAnyRole(Roles.staffNames())
+                .requestMatchers(HttpMethod.GET, "/api/pessoas/**").hasAnyRole(Roles.anyNames())
+                .requestMatchers("/api/pessoas/**").hasAnyRole(Roles.staffNames())
 
                 // Atos oficiais (CI/IPB Cap. III) — apenas presbíteros e admins
-                .requestMatchers("/api/official-acts/**").hasAnyRole(Roles.ELDER)
+                .requestMatchers("/api/official-acts/**").hasAnyRole(Roles.elderNames())
 
                 // Serviços (serving areas): leitura BOLETIM+ (inclui os POST de
                 // busca/relatório), escrita DIACONO+. Matchers de leitura antes do
                 // catch-all de escrita.
                 .requestMatchers(HttpMethod.POST, "/api/serving-areas/search",
                         "/api/serving-areas/members/search", "/api/serving-areas/participation-report")
-                    .hasAnyRole(Roles.ANY_ROLE)
-                .requestMatchers(HttpMethod.GET, "/api/serving-areas/**").hasAnyRole(Roles.ANY_ROLE)
-                .requestMatchers("/api/serving-areas/**").hasAnyRole(Roles.STAFF)
+                    .hasAnyRole(Roles.anyNames())
+                .requestMatchers(HttpMethod.GET, "/api/serving-areas/**").hasAnyRole(Roles.anyNames())
+                .requestMatchers("/api/serving-areas/**").hasAnyRole(Roles.staffNames())
 
                 // Relatórios (apenas autenticados)
-                .requestMatchers("/api/reports/**").hasAnyRole(Roles.ANY_ROLE)
+                .requestMatchers("/api/reports/**").hasAnyRole(Roles.anyNames())
                 
                 // Dados do sistema (apenas autenticados com roles específicos)
-                .requestMatchers("/api/categorias/**").hasAnyRole(Roles.ANY_ROLE)
+                .requestMatchers("/api/categorias/**").hasAnyRole(Roles.anyNames())
 
-                .requestMatchers("/api/enderecos/**").hasAnyRole(Roles.ANY_ROLE)
+                .requestMatchers("/api/enderecos/**").hasAnyRole(Roles.anyNames())
 
                 // Usuários (admin) e perfil próprio
-                .requestMatchers("/api/users/**").hasAnyRole(Roles.ADMIN_ONLY)
-                .requestMatchers("/api/me/**").hasAnyRole(Roles.ANY_ROLE)
+                .requestMatchers("/api/users/**").hasAnyRole(Roles.adminNames())
+                .requestMatchers("/api/me/**").hasAnyRole(Roles.anyNames())
                 
                 .anyRequest().authenticated()
             )

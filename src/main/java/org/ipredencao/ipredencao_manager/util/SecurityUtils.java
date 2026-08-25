@@ -15,6 +15,10 @@ public class SecurityUtils {
      */
     public static boolean hasAnyRole(String... roles) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return hasAnyRole(authentication, roles);
+    }
+
+    public static boolean hasAnyRole(Authentication authentication, String... roles) {
         if (authentication == null || roles == null || roles.length == 0) return false;
         for (GrantedAuthority granted : authentication.getAuthorities()) {
             String authority = granted.getAuthority();

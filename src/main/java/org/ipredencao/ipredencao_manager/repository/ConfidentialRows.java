@@ -19,7 +19,7 @@ public final class ConfidentialRows {
     private ConfidentialRows() {}
 
     public static boolean canSee(ConfidentialAccess access) {
-        return access == ConfidentialAccess.INTERNAL || SecurityUtils.hasAnyRole(Roles.ELDER);
+        return access == ConfidentialAccess.INTERNAL || SecurityUtils.hasAnyRole(Roles.elderNames());
     }
 
     public static boolean isConfidential(Long categoriaId) {

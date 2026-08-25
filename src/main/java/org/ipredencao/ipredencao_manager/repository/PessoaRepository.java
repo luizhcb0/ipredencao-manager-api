@@ -438,7 +438,7 @@ public class PessoaRepository {
         }
         if (query.getEnderecoId() != null) conditions.add(PESSOA.ENDERECO_ID.eq(query.getEnderecoId()));
         // Pedir bookmark no corpo não muda nada abaixo de diácono.
-        if (query.getBookmark() != null && SecurityUtils.hasAnyRole(Roles.STAFF)) {
+        if (query.getBookmark() != null && SecurityUtils.hasAnyRole(Roles.staffNames())) {
             conditions.add(PESSOA.BOOKMARK.eq(query.getBookmark()));
         }
         return conditions;

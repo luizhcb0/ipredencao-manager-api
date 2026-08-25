@@ -1,37 +1,68 @@
 package org.ipredencao.ipredencao_manager.config;
 
+import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
+import org.ipredencao.ipredencao_manager.util.SecurityUtils;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+
 /**
- * Grupos de perfis nas duas formas que a autorização consome: {@code String[]} para os
- * matchers e SpEL para {@code @PreAuthorize}, que exige constante de compilação.
+ * Grupos de acesso derivados de {@link PerfilAcesso}. O bean expõe os mesmos grupos ao SpEL.
  */
+@Component("roles")
 public final class Roles {
 
-    public static final String BOLETIM = "BOLETIM";
-    public static final String DIACONO = "DIACONO";
-    public static final String PRESBITERO = "PRESBITERO";
-    public static final String ADMIN = "ADMIN";
+    private static final PerfilAcesso[] STAFF = {
+        PerfilAcesso.DIACONO, PerfilAcesso.PRESBITERO, PerfilAcesso.ADMIN
+    };
+    private static final PerfilAcesso[] ELDER = {
+        PerfilAcesso.PRESBITERO, PerfilAcesso.ADMIN
+    };
+    private static final PerfilAcesso[] ADMIN_ONLY = { PerfilAcesso.ADMIN };
 
     /** Todos os perfis: leitura de pessoas, categorias, endereços, relatórios e serviços. */
-    public static final String[] ANY_ROLE = { BOLETIM, DIACONO, PRESBITERO, ADMIN };
+    public static String[] anyNames() {
+        return names(PerfilAcesso.values());
+    }
 
     /** DIACONO+: escrita de pessoa/endereço/serviço, filtro de pendência e leitura de formulários. */
-    public static final String[] STAFF = { DIACONO, PRESBITERO, ADMIN };
+    public static String[] staffNames() {
+        return names(STAFF);
+    }
 
     /** PRESBITERO+: atos oficiais e gestação em sigilo. */
-    public static final String[] ELDER = { PRESBITERO, ADMIN };
+    public static String[] elderNames() {
+        return names(ELDER);
+    }
 
     /** ADMIN: usuários, actuator e exclusão de endereço. */
-    public static final String[] ADMIN_ONLY = { ADMIN };
+    public static String[] adminNames() {
+        return names(ADMIN_ONLY);
+    }
 
-    public static final String ANY_ROLE_EXPR =
-            "hasAnyRole('" + BOLETIM + "','" + DIACONO + "','" + PRESBITERO + "','" + ADMIN + "')";
-    public static final String STAFF_EXPR =
-            "hasAnyRole('" + DIACONO + "','" + PRESBITERO + "','" + ADMIN + "')";
-    public static final String ELDER_EXPR =
-            "hasAnyRole('" + PRESBITERO + "','" + ADMIN + "')";
-    public static final String ADMIN_EXPR =
-            "hasRole('" + ADMIN + "')";
+    public static final String ANY_ROLE_EXPR = "@roles.any(authentication)";
+    public static final String STAFF_EXPR = "@roles.staff(authentication)";
+    public static final String ELDER_EXPR = "@roles.elder(authentication)";
+    public static final String ADMIN_EXPR = "@roles.admin(authentication)";
 
-    private Roles() {
+    public boolean any(Authentication authentication) {
+        return SecurityUtils.hasAnyRole(authentication, anyNames());
+    }
+
+    public boolean staff(Authentication authentication) {
+        return SecurityUtils.hasAnyRole(authentication, staffNames());
+    }
+
+    public boolean elder(Authentication authentication) {
+        return SecurityUtils.hasAnyRole(authentication, elderNames());
+    }
+
+    public boolean admin(Authentication authentication) {
+        return SecurityUtils.hasAnyRole(authentication, adminNames());
+    }
+
+    private static String[] names(PerfilAcesso[] profiles) {
+        return Arrays.stream(profiles).map(profile -> profile.name()).toArray(String[]::new);
     }
 }

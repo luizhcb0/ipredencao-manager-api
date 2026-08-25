@@ -202,7 +202,7 @@ public class PregnancyService {
     }
 
     private static void requireConfidentialAccess() {
-        if (!SecurityUtils.hasAnyRole(Roles.ELDER)) {
+        if (!SecurityUtils.hasAnyRole(Roles.elderNames())) {
             throw new AccessDeniedException("Apenas presbíteros e administradores gerenciam gestação em sigilo.");
         }
     }
