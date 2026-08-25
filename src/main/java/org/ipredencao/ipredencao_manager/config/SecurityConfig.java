@@ -23,7 +23,10 @@ import org.springframework.web.cors.CorsConfigurationSource;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    
+
+    static final String UNAUTHORIZED_MESSAGE = "Sessão expirada ou inválida. Faça login novamente.";
+    static final String FORBIDDEN_MESSAGE = "Você não tem permissão para acessar este recurso.";
+
     @Autowired
     private CorsConfigurationSource corsConfigurationSource;
     
@@ -52,43 +55,49 @@ public class SecurityConfig {
                 // credencial: sem esta regra ele cai no /actuator/** abaixo, responde
                 // 401 e a instancia e substituida em loop. Expoe apenas "ping".
                 .requestMatchers("/actuator/health", "/actuator/health/liveness").permitAll()
-                .requestMatchers("/actuator/**").hasRole("ADMIN")
+                .requestMatchers("/actuator/**").hasAnyRole(Roles.ADMIN_ONLY)
                 
                 // Swagger/OpenAPI
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 
-                // Formulários (autenticados)
-                .requestMatchers(HttpMethod.GET, "/api/formulario-pessoa/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/formulario-pessoa/**").hasAnyRole("DIACONO", "PRESBITERO", "ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/formulario-pessoa/**").hasRole("ADMIN")
+                // Formulários: DIACONO+. A captação pública fica acima.
+                .requestMatchers(HttpMethod.POST, "/api/formulario-pessoa/search",
+                        "/api/formulario-pessoa/processar").hasAnyRole(Roles.STAFF)
+                .requestMatchers(HttpMethod.GET, "/api/formulario-pessoa/**").hasAnyRole(Roles.STAFF)
+                .requestMatchers(HttpMethod.PUT, "/api/formulario-pessoa/**").hasAnyRole(Roles.STAFF)
+                .requestMatchers(HttpMethod.DELETE, "/api/formulario-pessoa/**").hasAnyRole(Roles.ADMIN_ONLY)
                 
-                // Pessoas (apenas autenticados)
-                .requestMatchers(HttpMethod.GET, "/api/pessoas/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
-                .requestMatchers("/api/pessoas/**").hasAnyRole("DIACONO", "PRESBITERO", "ADMIN")
+                // Pessoas: leitura BOLETIM+, escrita DIACONO+. A busca é POST e precisa da
+                // própria linha — o matcher decide antes do @PreAuthorize do controller.
+                .requestMatchers(HttpMethod.POST, "/api/pessoas/search").hasAnyRole(Roles.ANY_ROLE)
+                .requestMatchers(HttpMethod.GET, "/api/pessoas/*/history", "/api/pessoas/*/notes")
+                    .hasAnyRole(Roles.STAFF)
+                .requestMatchers(HttpMethod.GET, "/api/pessoas/**").hasAnyRole(Roles.ANY_ROLE)
+                .requestMatchers("/api/pessoas/**").hasAnyRole(Roles.STAFF)
 
                 // Atos oficiais (CI/IPB Cap. III) — apenas presbíteros e admins
-                .requestMatchers("/api/official-acts/**").hasAnyRole("PRESBITERO", "ADMIN")
+                .requestMatchers("/api/official-acts/**").hasAnyRole(Roles.ELDER)
 
                 // Serviços (serving areas): leitura BOLETIM+ (inclui os POST de
                 // busca/relatório), escrita DIACONO+. Matchers de leitura antes do
                 // catch-all de escrita.
                 .requestMatchers(HttpMethod.POST, "/api/serving-areas/search",
                         "/api/serving-areas/members/search", "/api/serving-areas/participation-report")
-                    .hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
-                .requestMatchers(HttpMethod.GET, "/api/serving-areas/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
-                .requestMatchers("/api/serving-areas/**").hasAnyRole("DIACONO", "PRESBITERO", "ADMIN")
+                    .hasAnyRole(Roles.ANY_ROLE)
+                .requestMatchers(HttpMethod.GET, "/api/serving-areas/**").hasAnyRole(Roles.ANY_ROLE)
+                .requestMatchers("/api/serving-areas/**").hasAnyRole(Roles.STAFF)
 
                 // Relatórios (apenas autenticados)
-                .requestMatchers("/api/reports/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
+                .requestMatchers("/api/reports/**").hasAnyRole(Roles.ANY_ROLE)
                 
                 // Dados do sistema (apenas autenticados com roles específicos)
-                .requestMatchers("/api/categorias/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
+                .requestMatchers("/api/categorias/**").hasAnyRole(Roles.ANY_ROLE)
 
-                .requestMatchers("/api/enderecos/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
+                .requestMatchers("/api/enderecos/**").hasAnyRole(Roles.ANY_ROLE)
 
                 // Usuários (admin) e perfil próprio
-                .requestMatchers("/api/users/**").hasRole("ADMIN")
-                .requestMatchers("/api/me/**").hasAnyRole("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN")
+                .requestMatchers("/api/users/**").hasAnyRole(Roles.ADMIN_ONLY)
+                .requestMatchers("/api/me/**").hasAnyRole(Roles.ANY_ROLE)
                 
                 .anyRequest().authenticated()
             )
@@ -97,13 +106,13 @@ public class SecurityConfig {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                     objectMapper.writeValue(response.getOutputStream(),
-                            ErrorResponse.of(HttpStatus.UNAUTHORIZED, "Authentication token is missing or invalid"));
+                            ErrorResponse.of(HttpStatus.UNAUTHORIZED, UNAUTHORIZED_MESSAGE));
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                     objectMapper.writeValue(response.getOutputStream(),
-                            ErrorResponse.of(HttpStatus.FORBIDDEN, "You do not have permission to access this resource"));
+                            ErrorResponse.of(HttpStatus.FORBIDDEN, FORBIDDEN_MESSAGE));
                 })
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

@@ -8,6 +8,7 @@ import static org.ipredencao.ipredencao_manager.jooq.tables.Endereco.ENDERECO;
 import static org.ipredencao.ipredencao_manager.jooq.tables.Pessoa.PESSOA;
 import org.ipredencao.ipredencao_manager.jooq.tables.records.EnderecoRecord;
 import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
+import org.ipredencao.ipredencao_manager.model.pessoa.ConfidentialAccess;
 import org.jooq.Condition;
 import org.jooq.impl.DSL;
 import java.util.ArrayList;
@@ -154,10 +155,17 @@ public class EnderecoRepository {
             .toList();
         if (addressIds.isEmpty()) return;
 
+        // A gestação herda o endereço do chefe de família: sem o filtro, o morador a mais
+        // denuncia a existência da linha em sigilo para quem não pode vê-la.
+        Condition moradores = PESSOA.ENDERECO_ID.in(addressIds);
+        if (!ConfidentialRows.canSee(ConfidentialAccess.CALLER)) {
+            moradores = moradores.and(ConfidentialRows.notConfidential(PESSOA.CATEGORIA_ID));
+        }
+
         Map<Long, List<Long>> personIdsByAddress = dsl
             .select(PESSOA.ENDERECO_ID, PESSOA.PESSOA_ID)
             .from(PESSOA)
-            .where(PESSOA.ENDERECO_ID.in(addressIds))
+            .where(moradores)
             .orderBy(PESSOA.PESSOA_ID.asc())
             .fetchGroups(PESSOA.ENDERECO_ID, PESSOA.PESSOA_ID);
 

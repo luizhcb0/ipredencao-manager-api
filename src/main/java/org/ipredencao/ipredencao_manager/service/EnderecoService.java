@@ -5,6 +5,7 @@ import org.ipredencao.ipredencao_manager.model.endereco.EnderecoQuery;
 import org.ipredencao.ipredencao_manager.model.pagination.PageInfo;
 import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
+import org.ipredencao.ipredencao_manager.model.pessoa.ConfidentialAccess;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.ipredencao.ipredencao_manager.repository.EnderecoRepository;
@@ -131,7 +132,10 @@ public class EnderecoService {
             throw new NoSuchElementException("Endereço com ID " + id + " não encontrado");
         }
         
-        long count = pessoaRepository.count(PessoaQuery.builder().enderecoId(id).includes().build());
+        // Guard de integridade não depende do perfil: filtrada, a contagem mentiria.
+        long count = pessoaRepository.count(
+                PessoaQuery.builder().enderecoId(id).includes().build(),
+                ConfidentialAccess.INTERNAL);
         if (count > 0) {
             throw new IllegalStateException(
                 "Não é possível deletar o endereço. Existem " + count + 

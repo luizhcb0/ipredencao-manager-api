@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.controller;
 
+import org.ipredencao.ipredencao_manager.config.Roles;
 import org.ipredencao.ipredencao_manager.controller.form.ServingAreaForm;
 import org.ipredencao.ipredencao_manager.controller.form.ServingAreaMemberForm;
 import org.ipredencao.ipredencao_manager.controller.form.ServingAreaPositionForm;
@@ -35,8 +36,8 @@ import java.util.List;
 @RequestMapping("/api/serving-areas")
 public class ServingAreaController {
 
-    private static final String READ = "hasAnyRole('BOLETIM','DIACONO','PRESBITERO','ADMIN')";
-    private static final String WRITE = "hasAnyRole('DIACONO','PRESBITERO','ADMIN')";
+    private static final String READ = Roles.ANY_ROLE_EXPR;
+    private static final String WRITE = Roles.STAFF_EXPR;
 
     @Autowired
     private ServingAreaService service;

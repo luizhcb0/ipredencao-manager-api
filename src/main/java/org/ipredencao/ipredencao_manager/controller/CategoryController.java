@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.controller;
 
+import org.ipredencao.ipredencao_manager.config.Roles;
 import org.ipredencao.ipredencao_manager.model.pessoa.AgregadorCategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.springframework.http.ResponseEntity;
@@ -15,13 +16,13 @@ import java.util.NoSuchElementException;
 public class CategoryController {
 
     @GetMapping("/agregadores")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize(Roles.ANY_ROLE_EXPR)
     public ResponseEntity<List<AgregadorCategoriaEnum>> listCategoryAggregators() {
         return ResponseEntity.ok(Arrays.asList(AgregadorCategoriaEnum.values()));
     }
 
     @GetMapping("/agregadores/{idAgregador}")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize(Roles.ANY_ROLE_EXPR)
     public ResponseEntity<List<CategoriaEnum>> listCategoriesByAggregator(@PathVariable Long idAgregador) {
         AgregadorCategoriaEnum agregador;
         try {
@@ -33,7 +34,7 @@ public class CategoryController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize(Roles.ANY_ROLE_EXPR)
     public ResponseEntity<List<CategoriaEnum>> listAllCategories() {
         return ResponseEntity.ok(Arrays.asList(CategoriaEnum.values()));
     }

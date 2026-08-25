@@ -2,6 +2,7 @@ package org.ipredencao.ipredencao_manager.repository;
 
 import org.ipredencao.ipredencao_manager.model.endereco.Endereco;
 import org.ipredencao.ipredencao_manager.model.endereco.EnderecoQuery;
+import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
 import org.ipredencao.ipredencao_manager.service.PessoaService;
@@ -36,9 +37,11 @@ class EnderecoRepositoryIT extends IntegrationTestBase {
     void findById_populatesPessoaIds() {
         // PessoaService.create reuses the same address row for both people (same cep + logradouro)
         Pessoa first = PessoaFixture.builder(pessoaService)
-                .nome("Resident A").sexo(Sexo.MASCULINO).enderecoPadrao().build();
+                .nome("Resident A").sexo(Sexo.MASCULINO)
+                .categoria(CategoriaEnum.MEMBRO_COMUNGANTE).enderecoPadrao().build();
         Pessoa second = PessoaFixture.builder(pessoaService)
-                .nome("Resident B").sexo(Sexo.FEMININO).enderecoPadrao().build();
+                .nome("Resident B").sexo(Sexo.FEMININO)
+                .categoria(CategoriaEnum.MEMBRO_COMUNGANTE).enderecoPadrao().build();
 
         Long addressId = enderecoRepository
                 .find(EnderecoQuery.builder().cep(FIXTURE_CEP).build())
@@ -55,7 +58,8 @@ class EnderecoRepositoryIT extends IntegrationTestBase {
     @Test
     void find_populatesPessoaIds_andReturnsEmptyListForAddressWithoutResidents() {
         Pessoa resident = PessoaFixture.builder(pessoaService)
-                .nome("Lone Resident").sexo(Sexo.MASCULINO).enderecoPadrao().build();
+                .nome("Lone Resident").sexo(Sexo.MASCULINO)
+                .categoria(CategoriaEnum.MEMBRO_COMUNGANTE).enderecoPadrao().build();
 
         Endereco vacant = new Endereco();
         vacant.setCep("60000-000");

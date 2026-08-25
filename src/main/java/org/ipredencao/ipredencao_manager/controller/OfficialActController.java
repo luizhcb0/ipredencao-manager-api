@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.controller;
 
+import org.ipredencao.ipredencao_manager.config.Roles;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialAct;
 import org.ipredencao.ipredencao_manager.controller.form.OfficialActCreateForm;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActQuery;
@@ -26,7 +27,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/official-acts")
-@PreAuthorize("hasAnyRole('PRESBITERO', 'ADMIN')")
+@PreAuthorize(Roles.ELDER_EXPR)
 public class OfficialActController {
 
     @Autowired

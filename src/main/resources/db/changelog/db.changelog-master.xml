@@ -15,5 +15,6 @@
     <include file="V008__usuario_updated_by_fks.sql" relativeToChangelogFile="true"/>
     <include file="V009__separate_roll_non_communing.sql" relativeToChangelogFile="true"/>
     <include file="V010__serving_areas.sql" relativeToChangelogFile="true"/>
+    <include file="V011__pessoa_categoria_not_null.sql" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

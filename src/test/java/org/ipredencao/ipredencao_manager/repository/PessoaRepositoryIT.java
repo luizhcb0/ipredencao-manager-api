@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.repository;
 
+import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
@@ -31,9 +32,11 @@ class PessoaRepositoryIT extends IntegrationTestBase {
     void find_populatesPessoaIdsOnEndereco_whenPeopleShareAddress() {
         // Same default address (cep + logradouro) is reused by PessoaService.create
         Pessoa first = PessoaFixture.builder(pessoaService)
-                .nome("First Resident").sexo(Sexo.MASCULINO).enderecoPadrao().build();
+                .nome("First Resident").sexo(Sexo.MASCULINO)
+                .categoria(CategoriaEnum.MEMBRO_COMUNGANTE).enderecoPadrao().build();
         Pessoa second = PessoaFixture.builder(pessoaService)
-                .nome("Second Resident").sexo(Sexo.FEMININO).enderecoPadrao().build();
+                .nome("Second Resident").sexo(Sexo.FEMININO)
+                .categoria(CategoriaEnum.MEMBRO_COMUNGANTE).enderecoPadrao().build();
 
         List<Pessoa> people = pessoaRepository.find(
                 PessoaQuery.builder().ids(List.of(first.getId(), second.getId())).build());
@@ -62,7 +65,8 @@ class PessoaRepositoryIT extends IntegrationTestBase {
     @Test
     void find_populatesAuditFieldsOnEmbeddedEndereco() {
         Pessoa pessoa = PessoaFixture.builder(pessoaService)
-                .nome("Audited Resident").sexo(Sexo.MASCULINO).enderecoPadrao().build();
+                .nome("Audited Resident").sexo(Sexo.MASCULINO)
+                .categoria(CategoriaEnum.MEMBRO_COMUNGANTE).enderecoPadrao().build();
 
         List<Pessoa> people = pessoaRepository.find(
                 PessoaQuery.builder().id(pessoa.getId()).build());

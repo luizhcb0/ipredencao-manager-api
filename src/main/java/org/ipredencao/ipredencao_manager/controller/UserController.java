@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.controller;
 
+import org.ipredencao.ipredencao_manager.config.Roles;
 import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
 import org.ipredencao.ipredencao_manager.model.user.dto.CreateUserRequest;
 import org.ipredencao.ipredencao_manager.model.user.dto.UpdateUserRequest;
@@ -24,7 +25,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize(Roles.ADMIN_EXPR)
 public class UserController {
 
     @Autowired

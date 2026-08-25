@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.controller;
 
+import org.ipredencao.ipredencao_manager.config.Roles;
 import org.ipredencao.ipredencao_manager.model.SummaryResponse;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
@@ -23,13 +24,13 @@ public class ReportController {
     private PessoaService pessoaService;
 
     @GetMapping("/summary")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize(Roles.ANY_ROLE_EXPR)
     public ResponseEntity<SummaryResponse> getSummary() {
         return ResponseEntity.ok(reportService.generateSummary());
     }
 
     @PostMapping("/generate-report")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize(Roles.ANY_ROLE_EXPR)
     public ResponseEntity<List<Pessoa>> generateReport(@RequestBody PessoaQuery query) {
         if (query == null) {
             query = PessoaQuery.builder().build();
