@@ -1,0 +1,1 @@
+ALTER TABLE pessoa ALTER COLUMN categoria_id SET NOT NULL;

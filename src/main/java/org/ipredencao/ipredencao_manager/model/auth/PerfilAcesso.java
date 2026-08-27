@@ -1,30 +1,9 @@
 package org.ipredencao.ipredencao_manager.model.auth;
 
-import java.util.Set;
-
+/** A autorização real é a authority {@code ROLE_<perfil>}; os grupos ficam em {@code config.Roles}. */
 public enum PerfilAcesso {
-    BOLETIM("Usuário Boletim", Set.of("READ")),
-    DIACONO("Diácono", Set.of("READ", "WRITE", "UPDATE")),
-    PRESBITERO("Presbítero", Set.of("READ", "WRITE", "UPDATE")),
-    ADMIN("Administrador", Set.of("READ", "WRITE", "UPDATE", "DELETE", "MANAGE"));
-    
-    private final String descricao;
-    private final Set<String> permissoes;
-    
-    PerfilAcesso(String descricao, Set<String> permissoes) {
-        this.descricao = descricao;
-        this.permissoes = permissoes;
-    }
-    
-    public boolean temPermissao(String permissao) {
-        return permissoes.contains(permissao);
-    }
-    
-    public String getDescricao() {
-        return descricao;
-    }
-    
-    public Set<String> getPermissoes() {
-        return permissoes;
-    }
+    BOLETIM,
+    DIACONO,
+    PRESBITERO,
+    ADMIN
 }

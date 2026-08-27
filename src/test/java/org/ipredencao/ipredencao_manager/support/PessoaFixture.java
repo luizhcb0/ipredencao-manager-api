@@ -56,6 +56,7 @@ public final class PessoaFixture {
         public Builder campus(String campus) { pessoa.setCampus(campus); return this; }
         public Builder chefeDeFamiliaId(Long chefeDeFamiliaId) { pessoa.setChefeDeFamiliaId(chefeDeFamiliaId); return this; }
         public Builder endereco(Endereco endereco) { pessoa.setEndereco(endereco); return this; }
+        public Builder bookmark(boolean bookmark) { pessoa.setBookmark(bookmark); return this; }
         public Builder dataBatismo(DateTime dataBatismo) { pessoa.setDataBatismo(dataBatismo); return this; }
         public Builder dataProfissaoDeFe(DateTime dataProfissaoDeFe) { pessoa.setDataProfissaoDeFe(dataProfissaoDeFe); return this; }
         public Builder igrejaAnterior(String igrejaAnterior) { pessoa.setIgrejaAnterior(igrejaAnterior); return this; }

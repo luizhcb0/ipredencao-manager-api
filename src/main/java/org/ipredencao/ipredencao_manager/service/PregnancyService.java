@@ -2,7 +2,9 @@ package org.ipredencao.ipredencao_manager.service;
 
 import org.ipredencao.ipredencao_manager.controller.form.PregnancyCreateForm;
 import org.ipredencao.ipredencao_manager.controller.form.PregnancyUpdateForm;
+import org.ipredencao.ipredencao_manager.config.Roles;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
+import org.ipredencao.ipredencao_manager.model.pessoa.ConfidentialAccess;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaInclude;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
@@ -11,7 +13,9 @@ import org.ipredencao.ipredencao_manager.model.pregnancy.PregnancyNaming;
 import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
 import org.ipredencao.ipredencao_manager.repository.OfficialActRepository;
 import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
+import org.ipredencao.ipredencao_manager.util.SecurityUtils;
 import org.joda.time.DateTime;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +52,7 @@ public class PregnancyService {
             throw new IllegalArgumentException("DPP é obrigatória");
         }
         validateDueDateNotPast(form.getExpectedDueDate());
+        if (form.isConfidential()) requireConfidentialAccess();
 
         Pessoa mother = pessoaService.findById(form.getMotherId());
         Pessoa father = resolveFather(form.getFatherId(), form.getMotherId());
@@ -93,6 +98,8 @@ public class PregnancyService {
         if (form.getExpectedDueDate() != null) {
             validateDueDateNotPast(form.getExpectedDueDate());
         }
+        // Única transição que um diácono alcança: o resto já é 404 em loadPregnancy.
+        if (Boolean.TRUE.equals(form.getConfidential())) requireConfidentialAccess();
 
         Pessoa mother = pessoaService.findById(form.getMotherId());
         Pessoa father = resolveFather(form.getFatherId(), form.getMotherId());
@@ -163,23 +170,41 @@ public class PregnancyService {
         pregnancy.setCategoria(CategoriaEnum.fromId(categoryId));
     }
 
+    /**
+     * Filtrada de propósito: é o que dá 404 em editar, registrar nascimento e encerrar
+     * sob sigilo. Não passe {@code INTERNAL} aqui.
+     */
     private Pessoa loadPregnancy(Long id) {
-        Pessoa person = reloadWithRelationships(id);
+        List<Pessoa> list = pessoaService.find(pregnancyQuery(id).build());
+        if (list.isEmpty()) {
+            throw new NoSuchElementException("Pessoa com ID " + id + " não encontrada");
+        }
+        Pessoa person = list.getFirst();
         if (!isPregnancy(person.getCategoria())) {
             throw new IllegalArgumentException("Operação permitida apenas para gestações (categorias 29 ou 30)");
         }
         return person;
     }
 
+    /** Releitura após gravar: precisa enxergar a linha recém-escrita. */
     private Pessoa reloadWithRelationships(Long id) {
-        List<Pessoa> list = pessoaService.find(PessoaQuery.builder()
-                .id(id)
-                .includes(PessoaInclude.RELACIONAMENTOS, PessoaInclude.CHEFE_DE_FAMILIA, PessoaInclude.ENDERECO)
-                .build());
+        List<Pessoa> list = pessoaService.find(pregnancyQuery(id).build(), ConfidentialAccess.INTERNAL);
         if (list.isEmpty()) {
             throw new NoSuchElementException("Pessoa com ID " + id + " não encontrada");
         }
         return list.getFirst();
+    }
+
+    private static PessoaQuery.Builder pregnancyQuery(Long id) {
+        return PessoaQuery.builder()
+                .id(id)
+                .includes(PessoaInclude.RELACIONAMENTOS, PessoaInclude.CHEFE_DE_FAMILIA, PessoaInclude.ENDERECO);
+    }
+
+    private static void requireConfidentialAccess() {
+        if (!SecurityUtils.hasAnyRole(Roles.elderNames())) {
+            throw new AccessDeniedException("Apenas presbíteros e administradores gerenciam gestação em sigilo.");
+        }
     }
 
     private static boolean isPregnancy(CategoriaEnum category) {

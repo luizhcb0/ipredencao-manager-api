@@ -10,6 +10,7 @@ import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Rela
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.ipredencao.ipredencao_manager.repository.PessoaRepository;
+import org.ipredencao.ipredencao_manager.model.pessoa.ConfidentialAccess;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaInclude;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
@@ -44,6 +45,11 @@ public class PessoaService {
 
     @Transactional
     public Pessoa create(Pessoa pessoa) {
+        // Só o create precisa checar: o update ignora categoria nula e mantém a atual.
+        if (pessoa.getCategoria() == null) {
+            throw new IllegalArgumentException("A categoria é obrigatória");
+        }
+
         // Definir quem criou a pessoa
         Long currentUserId = securityUtils.getCurrentUserId();
         pessoa.setUpdatedByUserId(currentUserId);
@@ -134,6 +140,10 @@ public class PessoaService {
     public List<Pessoa> find(PessoaQuery query) {
         return pessoaRepository.find(query);
     }
+
+    public List<Pessoa> find(PessoaQuery query, ConfidentialAccess access) {
+        return pessoaRepository.find(query, access);
+    }
     
     /**
      * Busca pessoas com paginação
@@ -181,6 +191,13 @@ public class PessoaService {
      * Comportamento idempotente para evitar duplicações.
      */
     public Relacionamento createRelationship(Long pessoaId, Relacionamento relacionamento) {
+        // As duas pontas entram por id, sem passar pelo filtro de linha: 404 se alguma
+        // for invisível, senão o retorno idempotente entrega o nome de quem está em sigilo.
+        findById(pessoaId);
+        if (relacionamento.getPessoaRelacionadaId() != null) {
+            findById(relacionamento.getPessoaRelacionadaId());
+        }
+
         // Verificar se relacionamento já existe (em qualquer direção)
         Relacionamento existingRelationship = pessoaRepository.findExistingRelationship(
             pessoaId, 

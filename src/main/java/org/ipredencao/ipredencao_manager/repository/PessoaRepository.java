@@ -15,6 +15,7 @@ import org.jooq.SelectField;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.ipredencao.ipredencao_manager.model.pessoa.ChefeDeFamiliaRef;
+import org.ipredencao.ipredencao_manager.model.pessoa.ConfidentialAccess;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaInclude;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoRelacionamento;
@@ -30,6 +31,8 @@ import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
 import org.ipredencao.ipredencao_manager.jooq.enums.EstadoCivil;
 import org.ipredencao.ipredencao_manager.jooq.enums.TipoBatismo;
 import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
+import org.ipredencao.ipredencao_manager.config.Roles;
+import org.ipredencao.ipredencao_manager.util.SecurityUtils;
 import org.jooq.Condition;
 import org.joda.time.DateTime;
 
@@ -113,7 +116,12 @@ public class PessoaRepository {
     }
 
     public List<Pessoa> find(PessoaQuery query) {
-        Condition finalCondition = buildFinalCondition(query);
+        return find(query, ConfidentialAccess.CALLER);
+    }
+
+    public List<Pessoa> find(PessoaQuery query, ConfidentialAccess access) {
+        boolean canSeeConfidential = ConfidentialRows.canSee(access);
+        Condition finalCondition = buildFinalCondition(query, canSeeConfidential);
 
         Set<PessoaInclude> includes = query.getIncludes();
         boolean includeChefe = includes.contains(PessoaInclude.CHEFE_DE_FAMILIA);
@@ -156,7 +164,7 @@ public class PessoaRepository {
         }
 
         if (includes.contains(PessoaInclude.RELACIONAMENTOS)) {
-            loadRelationshipsForPeople(people);
+            loadRelationshipsForPeople(people, canSeeConfidential);
         }
 
         return people;
@@ -167,7 +175,11 @@ public class PessoaRepository {
      * (usado para paginação)
      */
     public long count(PessoaQuery query) {
-        Condition finalCondition = buildFinalCondition(query);
+        return count(query, ConfidentialAccess.CALLER);
+    }
+
+    public long count(PessoaQuery query, ConfidentialAccess access) {
+        Condition finalCondition = buildFinalCondition(query, ConfidentialRows.canSee(access));
         return dsl.selectCount()
             .from(PESSOA)
             .where(finalCondition)
@@ -316,9 +328,12 @@ public class PessoaRepository {
         // Buscar o nome da pessoa relacionada
         Long pessoaRelacionadaId = rel.getPessoaRelacionadaId();
         if (pessoaRelacionadaId != null) {
-            PessoaRecord pessoaRelacionada = dsl.selectFrom(PESSOA)
-                .where(PESSOA.PESSOA_ID.eq(pessoaRelacionadaId))
-                .fetchOne();
+            // Sem o filtro, o retorno idempotente do POST entrega o nome do bebê em sigilo.
+            Condition visivel = PESSOA.PESSOA_ID.eq(pessoaRelacionadaId);
+            if (!ConfidentialRows.canSee(ConfidentialAccess.CALLER)) {
+                visivel = visivel.and(ConfidentialRows.notConfidential(PESSOA.CATEGORIA_ID));
+            }
+            PessoaRecord pessoaRelacionada = dsl.selectFrom(PESSOA).where(visivel).fetchOne();
             if (pessoaRelacionada != null) {
                 rel.setNomePessoaRelacionada(pessoaRelacionada.getNome());
             }
@@ -327,15 +342,16 @@ public class PessoaRepository {
         return rel;
     }
     
-    private void loadRelationshipsForPeople(List<Pessoa> people) {
+    /** Query própria: {@link #buildConditions} não a alcança, e o bebê em sigilo apareceria na ficha da mãe. */
+    private void loadRelationshipsForPeople(List<Pessoa> people, boolean canSeeConfidential) {
         if (people.isEmpty()) return;
 
         List<Long> pessoaIds = people.stream().map(Pessoa::getId).toList();
 
         var records = dsl.select(
                 PESSOA_RELACIONAMENTO.asterisk(),
-                PP.NOME, PP.SEXO,
-                PR.NOME, PR.SEXO)
+                PP.NOME, PP.SEXO, PP.CATEGORIA_ID,
+                PR.NOME, PR.SEXO, PR.CATEGORIA_ID)
             .from(PESSOA_RELACIONAMENTO)
             .leftJoin(PP).on(PESSOA_RELACIONAMENTO.PESSOA_ID.eq(PP.PESSOA_ID))
             .leftJoin(PR).on(PESSOA_RELACIONAMENTO.PESSOA_RELACIONADA_ID.eq(PR.PESSOA_ID))
@@ -352,7 +368,11 @@ public class PessoaRepository {
             var sexoPrincipal = record.get(PP.SEXO);
             var tipoDb = record.get(PESSOA_RELACIONAMENTO.TIPO_RELACIONAMENTO);
 
-            if (pessoaIds.contains(principalId)) {
+            // Cada ramo mostra a ponta oposta, então é a categoria dela que importa.
+            boolean hidePrincipal = !canSeeConfidential && ConfidentialRows.isConfidential(record.get(PP.CATEGORIA_ID));
+            boolean hideRelacionada = !canSeeConfidential && ConfidentialRows.isConfidential(record.get(PR.CATEGORIA_ID));
+
+            if (pessoaIds.contains(principalId) && !hideRelacionada) {
                 Relacionamento rel = new Relacionamento();
                 rel.setPessoaId(principalId);
                 rel.setPessoaRelacionadaId(relacionadaId);
@@ -362,7 +382,7 @@ public class PessoaRepository {
                 relMap.computeIfAbsent(principalId, k -> new ArrayList<>()).add(rel);
             }
 
-            if (pessoaIds.contains(relacionadaId)) {
+            if (pessoaIds.contains(relacionadaId) && !hidePrincipal) {
                 Relacionamento rel = new Relacionamento();
                 rel.setPessoaId(relacionadaId);
                 rel.setPessoaRelacionadaId(principalId);
@@ -382,13 +402,15 @@ public class PessoaRepository {
         }
     }
 
-    private Condition buildFinalCondition(PessoaQuery query) {
-        return QueryConditions.reduceToAnd(buildConditions(query));
+    private Condition buildFinalCondition(PessoaQuery query, boolean canSeeConfidential) {
+        return QueryConditions.reduceToAnd(buildConditions(query, canSeeConfidential));
     }
 
-    private List<Condition> buildConditions(PessoaQuery query) {
+    private List<Condition> buildConditions(PessoaQuery query, boolean canSeeConfidential) {
         List<Condition> conditions = new ArrayList<>();
 
+        // Fecha find e count de uma vez; na busca por id o efeito é 404, não 403.
+        if (!canSeeConfidential) conditions.add(ConfidentialRows.notConfidential(PESSOA.CATEGORIA_ID));
         if (query.getId() != null) conditions.add(PESSOA.PESSOA_ID.eq(query.getId()));
         if (query.getIds() != null && !query.getIds().isEmpty()) conditions.add(PESSOA.PESSOA_ID.in(query.getIds()));
         QueryConditions.addUnaccentedLike(conditions, PESSOA.NOME, query.getNome());
@@ -415,7 +437,10 @@ public class PessoaRepository {
             conditions.add(PESSOA.CATEGORIA_ID.in(categoriaIds));
         }
         if (query.getEnderecoId() != null) conditions.add(PESSOA.ENDERECO_ID.eq(query.getEnderecoId()));
-        if (query.getBookmark() != null) conditions.add(PESSOA.BOOKMARK.eq(query.getBookmark()));
+        // Pedir bookmark no corpo não muda nada abaixo de diácono.
+        if (query.getBookmark() != null && SecurityUtils.hasAnyRole(Roles.staffNames())) {
+            conditions.add(PESSOA.BOOKMARK.eq(query.getBookmark()));
+        }
         return conditions;
     }
 

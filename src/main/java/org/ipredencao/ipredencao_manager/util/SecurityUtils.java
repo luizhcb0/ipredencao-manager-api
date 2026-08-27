@@ -1,47 +1,42 @@
 package org.ipredencao.ipredencao_manager.util;
 
-import org.ipredencao.ipredencao_manager.service.JwtService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.ipredencao.ipredencao_manager.model.auth.AuthUser;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 @Component
 public class SecurityUtils {
-    
-    @Autowired
-    private JwtService jwtService;
-    
+
     /**
-     * Extrai o ID do usuário atual do token JWT
-     * @return ID do usuário ou null se não autenticado
+     * Mesma fonte dos matchers e do {@code @PreAuthorize}: a authority {@code ROLE_<perfil>}.
+     * Sem {@code Authentication} retorna {@code false}. Os grupos estão em {@code Roles}.
      */
-    public Long getCurrentUserId() {
-        try {
-            // Obter o request atual
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes == null) {
-                return null;
-            }
-            
-            HttpServletRequest request = attributes.getRequest();
-            String authHeader = request.getHeader("Authorization");
-            
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                String jwt = authHeader.substring(7);
-                return jwtService.extractUserId(jwt);
-            }
-            
-            return null;
-        } catch (Exception e) {
-            return null;
-        }
+    public static boolean hasAnyRole(String... roles) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return hasAnyRole(authentication, roles);
     }
-    
+
+    public static boolean hasAnyRole(Authentication authentication, String... roles) {
+        if (authentication == null || roles == null || roles.length == 0) return false;
+        for (GrantedAuthority granted : authentication.getAuthorities()) {
+            String authority = granted.getAuthority();
+            for (String role : roles) {
+                if (authority.equals("ROLE_" + role)) return true;
+            }
+        }
+        return false;
+    }
+
+    /** Id do {@link AuthUser} no contexto; {@code null} se o principal não for o do filtro JWT. */
+    public Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) return null;
+        if (authentication.getPrincipal() instanceof AuthUser user) return user.id();
+        return null;
+    }
+
     /**
      * Extrai o email do usuário atual do SecurityContext
      * @return Email do usuário ou null se não autenticado
@@ -53,39 +48,14 @@ public class SecurityUtils {
         }
         return null;
     }
-    
+
     /**
      * Verifica se existe um usuário autenticado
      * @return true se autenticado, false caso contrário
      */
     public boolean isAuthenticated() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication != null && authentication.isAuthenticated() && 
+        return authentication != null && authentication.isAuthenticated() &&
                !"anonymousUser".equals(authentication.getName());
-    }
-    
-    /**
-     * Extrai a role do usuário atual
-     * @return Role do usuário ou null se não autenticado
-     */
-    public String getCurrentUserRole() {
-        try {
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes == null) {
-                return null;
-            }
-            
-            HttpServletRequest request = attributes.getRequest();
-            String authHeader = request.getHeader("Authorization");
-            
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                String jwt = authHeader.substring(7);
-                return jwtService.extractRole(jwt);
-            }
-            
-            return null;
-        } catch (Exception e) {
-            return null;
-        }
     }
 }

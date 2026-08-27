@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.filter;
 
+import org.ipredencao.ipredencao_manager.model.auth.AuthUser;
 import org.ipredencao.ipredencao_manager.model.user.Usuario;
 import org.ipredencao.ipredencao_manager.repository.UsuarioRepository;
 import org.ipredencao.ipredencao_manager.service.JwtService;
@@ -88,9 +89,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     List<SimpleGrantedAuthority> authorities = List.of(
                         new SimpleGrantedAuthority("ROLE_" + actualRole)
                     );
-                    
-                    UsernamePasswordAuthenticationToken authToken = 
-                        new UsernamePasswordAuthenticationToken(userEmail, null, authorities);
+
+                    UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                            new AuthUser(usuario.getId(), usuario.getEmail(), usuario.getAccessProfile()),
+                            null,
+                            authorities);
                     
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);

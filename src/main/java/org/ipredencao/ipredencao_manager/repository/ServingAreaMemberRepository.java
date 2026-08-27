@@ -6,6 +6,7 @@ import org.ipredencao.ipredencao_manager.model.serving_area.ServingAreaMember;
 import org.ipredencao.ipredencao_manager.model.serving_area.ServingAreaMemberQuery;
 import org.ipredencao.ipredencao_manager.model.serving_area.ServingAreaPositionKindEnum;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
+import org.ipredencao.ipredencao_manager.model.pessoa.ConfidentialAccess;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
@@ -84,6 +85,11 @@ public class ServingAreaMemberRepository {
         List<Condition> conditions = new ArrayList<>();
         if (categoryIds != null && !categoryIds.isEmpty()) conditions.add(PESSOA.CATEGORIA_ID.in(categoryIds));
         QueryConditions.addEqIfNotBlank(conditions, PESSOA.CAMPUS, campus);
+        // O corpo da requisição escolhe as categorias: sem isto, pedir a 30 lista as
+        // gestações em sigilo com nome para qualquer perfil.
+        if (!ConfidentialRows.canSee(ConfidentialAccess.CALLER)) {
+            conditions.add(ConfidentialRows.notConfidential(PESSOA.CATEGORIA_ID));
+        }
 
         return dsl.select(PESSOA.PESSOA_ID, PESSOA.NOME, PESSOA.CATEGORIA_ID, CATEGORIA.NOME.as("categoria_nome"))
                 .from(PESSOA)

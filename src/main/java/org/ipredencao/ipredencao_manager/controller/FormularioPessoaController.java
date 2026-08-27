@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.controller;
 
+import org.ipredencao.ipredencao_manager.config.Roles;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoa;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoaQuery;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.ProcessarFormularioRequest;
@@ -43,19 +44,19 @@ public class FormularioPessoaController {
     }
 
     @PostMapping("/search")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize(Roles.STAFF_EXPR)
     public ResponseEntity<PagedResponse<FormularioPessoa>> searchForms(@RequestBody FormularioPessoaQuery query) {
         return ResponseEntity.ok(service.findPaginated(query));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('BOLETIM', 'DIACONO', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize(Roles.STAFF_EXPR)
     public ResponseEntity<FormularioPessoa> findById(@PathVariable Long id) {
         return ResponseEntity.ok(service.findById(id));
     }
 
     @PostMapping("/processar")
-    @PreAuthorize("hasAnyRole('DIACONO', 'PRESBITERO', 'ADMIN')")
+    @PreAuthorize(Roles.STAFF_EXPR)
     public ResponseEntity<ProcessarFormularioResponse> processForm(@RequestBody ProcessarFormularioRequest request) {
         return ResponseEntity.ok(service.processForm(request));
     }
