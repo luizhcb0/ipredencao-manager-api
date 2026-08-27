@@ -203,6 +203,9 @@ class OfficialActControllerIT extends IntegrationTestBase {
                 // immutable fields stay put
                 .andExpect(jsonPath("$.officialActFormId").value(act.getOfficialActFormId()))
                 .andExpect(jsonPath("$.personId").value(act.getPersonId()));
+
+        assertThat(officialActService.findById(act.getId()).getMinuteDate())
+                .isEqualTo(new LocalDate(2024, 12, 1));
     }
 
     // ===== DELETE /{id} =====
@@ -277,6 +280,54 @@ class OfficialActControllerIT extends IntegrationTestBase {
     @WithMockUser(roles = "PRESBITERO")
     void minuteReport_returns404WhenNoActs() throws Exception {
         mockMvc.perform(get(BASE + "/minutes/no-such-minute-xyz/report"))
+                .andExpect(status().isNotFound());
+    }
+
+    // ===== PUT /minutes/{minuteNumber} =====
+
+    @Test
+    @WithMockUser(roles = "PRESBITERO")
+    void updateMinute_changesDateOnActAndReport() throws Exception {
+        String minute = "PUT-MIN-" + System.nanoTime();
+        Pessoa p = somePessoa("Put minute");
+        OfficialAct act = createOneActWithMinute(p, minute);
+
+        mockMvc.perform(put(BASE + "/minutes/" + minute)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"minuteDate\":\"2024-06-15\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.minuteNumber").value(minute));
+
+        assertThat(officialActService.findById(act.getId()).getMinuteDate())
+                .isEqualTo(new LocalDate(2024, 6, 15));
+        mockMvc.perform(get(BASE + "/minutes/" + minute + "/report"))
+                .andExpect(status().isOk());
+        assertThat(officialActService.findByMinuteNumber(minute).get(0).getMinuteDate())
+                .isEqualTo(new LocalDate(2024, 6, 15));
+    }
+
+    @Test
+    @WithMockUser(roles = "PRESBITERO")
+    void updateMinute_nullClearsDate() throws Exception {
+        String minute = "PUT-CLR-" + System.nanoTime();
+        Pessoa p = somePessoa("Clear minute");
+        OfficialAct act = createOneActWithMinute(p, minute);
+
+        mockMvc.perform(put(BASE + "/minutes/" + minute)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"minuteDate\":null}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.minuteNumber").value(minute));
+
+        assertThat(officialActService.findById(act.getId()).getMinuteDate()).isNull();
+    }
+
+    @Test
+    @WithMockUser(roles = "PRESBITERO")
+    void updateMinute_unknownReturns404() throws Exception {
+        mockMvc.perform(put(BASE + "/minutes/no-such-ata")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"minuteDate\":\"2024-01-01\"}"))
                 .andExpect(status().isNotFound());
     }
 

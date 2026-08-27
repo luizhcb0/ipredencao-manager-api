@@ -10,6 +10,7 @@ import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoBatismo;
+import org.ipredencao.ipredencao_manager.repository.MinuteRepository;
 import org.ipredencao.ipredencao_manager.support.IntegrationTestBase;
 import org.ipredencao.ipredencao_manager.support.OfficialActFixture;
 import org.ipredencao.ipredencao_manager.support.PessoaFixture;
@@ -43,6 +44,7 @@ class OfficialActServiceIT extends IntegrationTestBase {
 
     @Autowired private OfficialActService service;
     @Autowired private PessoaService pessoaService;
+    @Autowired private MinuteRepository minuteRepository;
 
     // ===== validateCreateForm =====
 
@@ -440,6 +442,73 @@ class OfficialActServiceIT extends IntegrationTestBase {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
+    @Test
+    void create_twoActsSameMinuteShareOneDate() {
+        String minute = uniqueMinute();
+        LocalDate date = new LocalDate(2024, 3, 10);
+        OfficialAct first = createAdmission(somePessoa("Share A"), minute, date);
+        OfficialAct second = createAdmission(somePessoa("Share B"), minute, date);
+
+        assertThat(minuteRepository.findByNumber(minute).date()).isEqualTo(date);
+        assertThat(first.getMinuteDate()).isEqualTo(date);
+        assertThat(second.getMinuteDate()).isEqualTo(date);
+        assertThat(service.findByMinuteNumber(minute)).hasSize(2);
+    }
+
+    @Test
+    void create_divergentHintDoesNotOverwriteCanonicalDate() {
+        String minute = uniqueMinute();
+        LocalDate canonical = new LocalDate(2024, 3, 10);
+        OfficialAct first = createAdmission(somePessoa("Hint A"), minute, canonical);
+        OfficialAct second = createAdmission(somePessoa("Hint B"), minute, new LocalDate(2024, 5, 1));
+
+        assertThat(first.getMinuteDate()).isEqualTo(canonical);
+        assertThat(second.getMinuteDate()).isEqualTo(canonical);
+        assertThat(service.findById(first.getId()).getMinuteDate()).isEqualTo(canonical);
+        assertThat(minuteRepository.findByNumber(minute).date()).isEqualTo(canonical);
+    }
+
+    @Test
+    void create_fillsEmptyMinuteDateFromHint() {
+        String minute = uniqueMinute();
+        LocalDate filled = new LocalDate(2024, 4, 1);
+        OfficialAct first = createAdmission(somePessoa("Fill A"), minute, null);
+        OfficialAct second = createAdmission(somePessoa("Fill B"), minute, filled);
+
+        assertThat(first.getMinuteDate()).isNull();
+        assertThat(second.getMinuteDate()).isEqualTo(filled);
+        assertThat(service.findById(first.getId()).getMinuteDate()).isEqualTo(filled);
+    }
+
+    @Test
+    void create_secondActWithoutHintInheritsMinuteDate() {
+        String minute = uniqueMinute();
+        LocalDate date = new LocalDate(2024, 3, 10);
+        createAdmission(somePessoa("Inherit A"), minute, date);
+        OfficialAct second = createAdmission(somePessoa("Inherit B"), minute, null);
+
+        assertThat(second.getMinuteDate()).isEqualTo(date);
+    }
+
+    @Test
+    void findPaginated_filtersByMinuteNumber() {
+        String minute = uniqueMinute();
+        Pessoa p = somePessoa("Min filter");
+        createAdmission(p, minute, new LocalDate(2024, 3, 10));
+        service.create(OfficialActFixture.builder(OfficialActFormEnum.DEM_MC_EXCLUSAO_A_PEDIDO)
+                .personId(p.getId())
+                .actDate(new LocalDate(2024, 4, 1))
+                .build());
+
+        OfficialActQuery query = new OfficialActQuery();
+        query.setMinuteNumber(minute);
+
+        PagedResponse<OfficialAct> page = service.findPaginated(query);
+
+        assertThat(page.getPage().getTotal()).isEqualTo(1);
+        assertThat(page.getData()).extracting(OfficialAct::getMinuteNumber).containsExactly(minute);
+    }
+
     // ===== delete (reverts category via pessoa_history) =====
     //
     // These tests run with NOT_SUPPORTED because the trigger-driven added_at on pessoa_history
@@ -550,5 +619,18 @@ class OfficialActServiceIT extends IntegrationTestBase {
         createForm.setPersonIds(List.of(pessoa.getId()));
         createForm.setMetadata(new HashMap<>(OfficialActFixture.metadataMinimo(form)));
         return createForm;
+    }
+
+    private OfficialAct createAdmission(Pessoa pessoa, String minute, LocalDate minuteDate) {
+        return service.create(OfficialActFixture.builder(OfficialActFormEnum.ADM_MC_PROFISSAO_FE)
+                .personId(pessoa.getId())
+                .actDate(new LocalDate(2024, 1, 1))
+                .minuteNumber(minute)
+                .minuteDate(minuteDate)
+                .build()).get(0);
+    }
+
+    private static String uniqueMinute() {
+        return "OA-IT-" + System.nanoTime();
     }
 }

@@ -16,10 +16,14 @@ import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.TipoBatismo;
 import org.ipredencao.ipredencao_manager.repository.OfficialActTypesRepository;
 import org.ipredencao.ipredencao_manager.repository.OfficialActRepository;
+import org.ipredencao.ipredencao_manager.repository.MinuteRepository;
+import org.ipredencao.ipredencao_manager.model.official_act.Minute;
 import org.ipredencao.ipredencao_manager.util.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.joda.time.LocalDate;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,6 +43,8 @@ public class OfficialActService {
     private PessoaService pessoaService;
     @Autowired
     private SecurityUtils securityUtils;
+    @Autowired
+    private MinuteRepository minuteRepository;
 
     @Transactional
     public List<OfficialAct> create(OfficialActCreateForm form) {
@@ -47,10 +53,11 @@ public class OfficialActService {
 
         Long currentUserId = securityUtils.getCurrentUserId();
         List<Long> personIds = new ArrayList<>(new LinkedHashSet<>(form.getPersonIds()));
+        String minuteNumber = resolveMinute(form.getMinuteNumber(), form.getMinuteDate());
 
         List<OfficialAct> created = new ArrayList<>();
         for (Long personId : personIds) {
-            OfficialAct act = buildAct(form, personId, currentUserId);
+            OfficialAct act = buildAct(form, personId, currentUserId, minuteNumber);
             assignAdmissionOrderNumber(act, form);
             act = repo.insert(act);
 
@@ -72,8 +79,7 @@ public class OfficialActService {
             validateMetadata(existing.getOfficialActFormId(), form.getMetadata());
             existing.setMetadata(form.getMetadata());
         }
-        existing.setMinuteNumber(form.getMinuteNumber());
-        existing.setMinuteDate(form.getMinuteDate());
+        existing.setMinuteNumber(resolveMinute(form.getMinuteNumber(), form.getMinuteDate()));
         existing.setNotes(form.getNotes());
         existing.setUpdatedBy(securityUtils.getCurrentUserId());
         return repo.update(existing);
@@ -108,7 +114,8 @@ public class OfficialActService {
 
     @Transactional(readOnly = true)
     public List<OfficialAct> findByMinuteNumber(String minuteNumber) {
-        return repo.findByMinuteNumber(minuteNumber);
+        if (minuteNumber == null || minuteNumber.isBlank()) return List.of();
+        return repo.findByMinuteNumber(minuteNumber.trim());
     }
 
     @Transactional(readOnly = true)
@@ -261,16 +268,27 @@ public class OfficialActService {
         pessoa.setCategoria(CategoriaEnum.fromId(previousCategoriaId));
     }
 
-    private OfficialAct buildAct(OfficialActCreateForm form, Long personId, Long currentUserId) {
+    private OfficialAct buildAct(OfficialActCreateForm form, Long personId, Long currentUserId, String minuteNumber) {
         OfficialAct act = new OfficialAct();
         act.setOfficialActFormId(form.getOfficialActFormId());
         act.setPersonId(personId);
         act.setActDate(form.getActDate());
-        act.setMinuteNumber(form.getMinuteNumber());
-        act.setMinuteDate(form.getMinuteDate());
+        act.setMinuteNumber(minuteNumber);
         act.setMetadata(form.getMetadata() != null ? form.getMetadata() : new HashMap<>());
         act.setNotes(form.getNotes());
         act.setUpdatedBy(currentUserId);
         return act;
+    }
+
+    String resolveMinute(String rawNumber, LocalDate hint) {
+        if (rawNumber == null || rawNumber.isBlank()) return null;
+        String number = rawNumber.trim();
+        Minute existing = minuteRepository.findByNumber(number);
+        if (existing == null) {
+            minuteRepository.insert(new Minute(number, hint));
+        } else if (existing.date() == null && hint != null) {
+            minuteRepository.update(new Minute(number, hint));
+        }
+        return number;
     }
 }

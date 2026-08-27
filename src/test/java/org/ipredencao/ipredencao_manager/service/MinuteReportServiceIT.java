@@ -76,6 +76,20 @@ class MinuteReportServiceIT extends IntegrationTestBase {
         assertThat(report.getMinuteDate()).isEqualTo(minuteDate);
     }
 
+    @Test
+    void generate_headerKeepsCanonicalDateWhenLaterActSendsDifferentHint() {
+        String minute = uniqueMinute("CANON");
+        LocalDate canonical = new LocalDate(2024, 3, 10);
+        createAct(OfficialActFormEnum.ADM_MC_PROFISSAO_FE,
+                somePessoa("First"), new LocalDate(2024, 3, 5), minute, canonical);
+        createAct(OfficialActFormEnum.ADM_MC_PROFISSAO_FE,
+                somePessoa("Second"), new LocalDate(2024, 3, 20), minute, new LocalDate(2024, 5, 1));
+
+        MinuteReportResponse report = service.generate(minute);
+
+        assertThat(report.getMinuteDate()).isEqualTo(canonical);
+    }
+
     // ===== ordering =====
 
     @Test

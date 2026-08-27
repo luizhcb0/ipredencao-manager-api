@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.ipredencao.ipredencao_manager.jooq.Tables.CATEGORIA;
+import static org.ipredencao.ipredencao_manager.jooq.Tables.MINUTE;
 import static org.ipredencao.ipredencao_manager.jooq.Tables.OFFICIAL_ACT;
 import static org.ipredencao.ipredencao_manager.jooq.Tables.OFFICIAL_ACT_FORM;
 import static org.ipredencao.ipredencao_manager.jooq.Tables.OFFICIAL_ACT_TYPE;
@@ -48,7 +49,6 @@ public class OfficialActRepository {
                 .set(OFFICIAL_ACT.PERSON_ID, act.getPersonId())
                 .set(OFFICIAL_ACT.ACT_DATE, DateTimeHelper.toDbDate(act.getActDate()))
                 .set(OFFICIAL_ACT.MINUTE_NUMBER, act.getMinuteNumber())
-                .set(OFFICIAL_ACT.MINUTE_DATE, DateTimeHelper.toDbDate(act.getMinuteDate()))
                 .set(OFFICIAL_ACT.ADMISSION_ORDER_NUMBER, act.getAdmissionOrderNumber())
                 .set(OFFICIAL_ACT.METADATA, toJsonb(act.getMetadata()))
                 .set(OFFICIAL_ACT.NOTES, act.getNotes())
@@ -61,7 +61,6 @@ public class OfficialActRepository {
     public OfficialAct update(OfficialAct act) {
         dsl.update(OFFICIAL_ACT)
                 .set(OFFICIAL_ACT.MINUTE_NUMBER, act.getMinuteNumber())
-                .set(OFFICIAL_ACT.MINUTE_DATE, DateTimeHelper.toDbDate(act.getMinuteDate()))
                 .set(OFFICIAL_ACT.NOTES, act.getNotes())
                 .set(OFFICIAL_ACT.METADATA, toJsonb(act.getMetadata()))
                 .set(OFFICIAL_ACT.UPDATED_BY, act.getUpdatedBy())
@@ -194,12 +193,14 @@ public class OfficialActRepository {
                         OFFICIAL_ACT_TYPE.REFERENCE_ARTICLE,
                         PESSOA.NOME.as("person_name"),
                         PESSOA.CATEGORIA_ID.as("current_categoria_id"),
-                        CATEGORIA.NOME.as("current_categoria_nome"))
+                        CATEGORIA.NOME.as("current_categoria_nome"),
+                        MINUTE.DATE.as("minute_date"))
                 .from(OFFICIAL_ACT)
                 .join(OFFICIAL_ACT_FORM).on(OFFICIAL_ACT_FORM.ID.eq(OFFICIAL_ACT.OFFICIAL_ACT_FORM_ID))
                 .join(OFFICIAL_ACT_TYPE).on(OFFICIAL_ACT_TYPE.ID.eq(OFFICIAL_ACT_FORM.OFFICIAL_ACT_TYPE_ID))
                 .join(PESSOA).on(PESSOA.PESSOA_ID.eq(OFFICIAL_ACT.PERSON_ID))
-                .leftJoin(CATEGORIA).on(CATEGORIA.ID.eq(PESSOA.CATEGORIA_ID));
+                .leftJoin(CATEGORIA).on(CATEGORIA.ID.eq(PESSOA.CATEGORIA_ID))
+                .leftJoin(MINUTE).on(MINUTE.NUMBER.eq(OFFICIAL_ACT.MINUTE_NUMBER));
     }
 
     private OfficialAct fromRecord(Record record) {
@@ -209,7 +210,7 @@ public class OfficialActRepository {
         act.setPersonId(record.get(OFFICIAL_ACT.PERSON_ID));
         act.setActDate(DateTimeHelper.fromDbDate(record.get(OFFICIAL_ACT.ACT_DATE)));
         act.setMinuteNumber(record.get(OFFICIAL_ACT.MINUTE_NUMBER));
-        act.setMinuteDate(DateTimeHelper.fromDbDate(record.get(OFFICIAL_ACT.MINUTE_DATE)));
+        act.setMinuteDate(DateTimeHelper.fromDbDate(record.get("minute_date", java.time.LocalDate.class)));
         act.setAdmissionOrderNumber(record.get(OFFICIAL_ACT.ADMISSION_ORDER_NUMBER));
         act.setMetadata(fromJsonb(record.get(OFFICIAL_ACT.METADATA)));
         act.setNotes(record.get(OFFICIAL_ACT.NOTES));

@@ -46,7 +46,7 @@ public class MinuteReportService {
         if (minuteNumber == null || minuteNumber.isBlank()) {
             throw new IllegalArgumentException("minuteNumber é obrigatório");
         }
-        List<OfficialAct> acts = repo.findByMinuteNumber(minuteNumber);
+        List<OfficialAct> acts = repo.findByMinuteNumber(minuteNumber.trim());
         if (acts.isEmpty()) {
             throw new NoSuchElementException("Nenhum ato encontrado para a ata " + minuteNumber);
         }
