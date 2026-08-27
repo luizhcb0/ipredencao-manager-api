@@ -44,7 +44,7 @@ public class MinuteReportService {
     @Transactional(readOnly = true)
     public MinuteReportResponse generate(String minuteNumber) {
         if (minuteNumber == null || minuteNumber.isBlank()) {
-            throw new IllegalArgumentException("minuteNumber é obrigatório");
+            throw new IllegalArgumentException("Número da ata é obrigatório");
         }
         List<OfficialAct> acts = repo.findByMinuteNumber(minuteNumber.trim());
         if (acts.isEmpty()) {

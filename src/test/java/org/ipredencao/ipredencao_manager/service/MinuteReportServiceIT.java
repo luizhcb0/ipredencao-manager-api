@@ -43,14 +43,14 @@ class MinuteReportServiceIT extends IntegrationTestBase {
     void generate_throwsWhenMinuteNumberIsNull() {
         assertThatThrownBy(() -> service.generate(null))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("minuteNumber");
+                .hasMessageContaining("Número da ata");
     }
 
     @Test
     void generate_throwsWhenMinuteNumberIsBlank() {
         assertThatThrownBy(() -> service.generate("   "))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("minuteNumber");
+                .hasMessageContaining("Número da ata");
     }
 
     @Test

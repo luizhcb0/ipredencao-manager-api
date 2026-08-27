@@ -19,7 +19,7 @@ public class MinuteService {
     @Transactional
     public MinuteResponse updateDate(String rawNumber, LocalDate date) {
         if (rawNumber == null || rawNumber.isBlank()) {
-            throw new IllegalArgumentException("minuteNumber é obrigatório");
+            throw new IllegalArgumentException("Número da ata é obrigatório");
         }
         String number = rawNumber.trim();
         Minute existing = minuteRepository.findByNumber(number);
