@@ -3,13 +3,16 @@ package org.ipredencao.ipredencao_manager.controller;
 import org.ipredencao.ipredencao_manager.config.Roles;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialAct;
 import org.ipredencao.ipredencao_manager.controller.form.OfficialActCreateForm;
+import org.ipredencao.ipredencao_manager.controller.form.OfficialActUpdateForm;
+import org.ipredencao.ipredencao_manager.controller.form.MinuteUpdateForm;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActQuery;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActType;
-import org.ipredencao.ipredencao_manager.controller.form.OfficialActUpdateForm;
+import org.ipredencao.ipredencao_manager.model.official_act.MinuteResponse;
 import org.ipredencao.ipredencao_manager.model.official_act.minute_report.MinuteReportResponse;
 import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.repository.OfficialActTypesRepository;
 import org.ipredencao.ipredencao_manager.service.MinuteReportService;
+import org.ipredencao.ipredencao_manager.service.MinuteService;
 import org.ipredencao.ipredencao_manager.service.OfficialActService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +37,8 @@ public class OfficialActController {
     private OfficialActService officialActService;
     @Autowired
     private MinuteReportService minuteReportService;
+    @Autowired
+    private MinuteService minuteService;
     @Autowired
     private OfficialActTypesRepository officialActTypesRepository;
 
@@ -75,6 +80,15 @@ public class OfficialActController {
     @GetMapping("/minutes/{minuteNumber}/report")
     public ResponseEntity<MinuteReportResponse> minuteReport(@PathVariable String minuteNumber) {
         return ResponseEntity.ok(minuteReportService.generate(minuteNumber));
+    }
+
+    @PutMapping("/minutes/{minuteNumber}")
+    public ResponseEntity<MinuteResponse> updateMinute(
+            @PathVariable String minuteNumber,
+            @RequestBody MinuteUpdateForm form) {
+        return ResponseEntity.ok(minuteService.updateDate(
+                minuteNumber,
+                form != null ? form.minuteDate() : null));
     }
 
     @GetMapping("/types")

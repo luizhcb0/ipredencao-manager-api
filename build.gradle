@@ -77,7 +77,7 @@ tasks.named('test') {
 	failFast = true
 	testLogging {
 		events 'passed', 'skipped', 'failed'
-		exceptionFormat 'short'
+		exceptionFormat 'full'
 		showStandardStreams = false
 	}
 }

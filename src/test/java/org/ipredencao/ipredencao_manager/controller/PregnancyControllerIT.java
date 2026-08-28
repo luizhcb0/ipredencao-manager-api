@@ -1,5 +1,7 @@
 package org.ipredencao.ipredencao_manager.controller;
 
+import org.ipredencao.ipredencao_manager.controller.form.PregnancyCreateForm;
+import org.ipredencao.ipredencao_manager.controller.form.PregnancyUpdateForm;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialAct;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActFormEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
@@ -14,6 +16,7 @@ import org.ipredencao.ipredencao_manager.support.IntegrationTestBase;
 import org.ipredencao.ipredencao_manager.support.OfficialActFixture;
 import org.ipredencao.ipredencao_manager.support.PessoaFixture;
 import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -21,7 +24,6 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -63,20 +65,14 @@ class PregnancyControllerIT extends IntegrationTestBase {
 
         Pessoa father = PessoaFixture.membroComungante(pessoaService, "Pedro Silva", Sexo.MASCULINO);
 
-        DateTime expectedDueDate = DateTime.now().plusMonths(3).withTimeAtStartOfDay();
-
-        String body = objectMapper.writeValueAsString(Map.of(
-                "motherId", mother.getId(),
-                "fatherId", father.getId(),
-                "expectedDueDate", expectedDueDate.toString(),
-                "name", "Ana",
-                "gender", "FEMININO",
-                "confidential", false
-        ));
+        PregnancyCreateForm form = pregnancy(
+                mother, father, DateTime.now().plusMonths(3).withTimeAtStartOfDay());
+        form.setName("Ana");
+        form.setGender(Sexo.FEMININO);
 
         mockMvc.perform(post(BASE + "/pregnancy")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
+                        .content(objectMapper.writeValueAsString(form)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.categoria.id").value(29))
                 .andExpect(jsonPath("$.nome").value("Ana (bebê de Maria Silva e Pedro Silva)"))
@@ -89,18 +85,11 @@ class PregnancyControllerIT extends IntegrationTestBase {
     void createPregnancy_pastDueDate_returns400() throws Exception {
         Pessoa mother = PessoaFixture.membroComungante(pessoaService, "Mae Teste", Sexo.FEMININO);
         Pessoa father = PessoaFixture.membroComungante(pessoaService, "Pai Teste", Sexo.MASCULINO);
-        DateTime expectedDueDate = DateTime.now().minusDays(1);
-
-        String body = objectMapper.writeValueAsString(Map.of(
-                "motherId", mother.getId(),
-                "fatherId", father.getId(),
-                "expectedDueDate", expectedDueDate.toString(),
-                "confidential", false
-        ));
 
         mockMvc.perform(post(BASE + "/pregnancy")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
+                        .content(objectMapper.writeValueAsString(
+                                pregnancy(mother, father, DateTime.now().minusDays(1)))))
                 .andExpect(status().isBadRequest());
     }
 
@@ -109,18 +98,13 @@ class PregnancyControllerIT extends IntegrationTestBase {
     void createPregnancy_confidential_usesCategory30() throws Exception {
         Pessoa mother = PessoaFixture.membroComungante(pessoaService, "Mae Sigilo", Sexo.FEMININO);
         Pessoa father = PessoaFixture.membroComungante(pessoaService, "Pai Sigilo", Sexo.MASCULINO);
-        DateTime expectedDueDate = DateTime.now().plusMonths(2);
 
-        String body = objectMapper.writeValueAsString(Map.of(
-                "motherId", mother.getId(),
-                "fatherId", father.getId(),
-                "expectedDueDate", expectedDueDate.toString(),
-                "confidential", true
-        ));
+        PregnancyCreateForm form = pregnancy(mother, father, DateTime.now().plusMonths(2));
+        form.setConfidential(true);
 
         mockMvc.perform(post(BASE + "/pregnancy")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
+                        .content(objectMapper.writeValueAsString(form)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.categoria.id").value(30));
     }
@@ -130,18 +114,11 @@ class PregnancyControllerIT extends IntegrationTestBase {
     void motherListsChildAfterCreatePregnancy() throws Exception {
         Pessoa mother = PessoaFixture.membroComungante(pessoaService, "Camila Biagi", Sexo.FEMININO);
         Pessoa father = PessoaFixture.membroComungante(pessoaService, "Pai Camila", Sexo.MASCULINO);
-        DateTime expectedDueDate = DateTime.now().plusMonths(4);
-
-        String body = objectMapper.writeValueAsString(Map.of(
-                "motherId", mother.getId(),
-                "fatherId", father.getId(),
-                "expectedDueDate", expectedDueDate.toString(),
-                "confidential", false
-        ));
 
         mockMvc.perform(post(BASE + "/pregnancy")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
+                        .content(objectMapper.writeValueAsString(
+                                pregnancy(mother, father, DateTime.now().plusMonths(4)))))
                 .andExpect(status().isOk());
 
         Pessoa motherReloaded = pessoaService.find(PessoaQuery.builder()
@@ -158,34 +135,19 @@ class PregnancyControllerIT extends IntegrationTestBase {
     void registerBirth_convertsToCategory16() throws Exception {
         Pessoa mother = PessoaFixture.membroComungante(pessoaService, "Mae Nascimento", Sexo.FEMININO);
         Pessoa father = PessoaFixture.membroComungante(pessoaService, "Pai Nascimento", Sexo.MASCULINO);
-        DateTime expectedDueDate = DateTime.now().plusMonths(2);
 
-        String createBody = objectMapper.writeValueAsString(Map.of(
-                "motherId", mother.getId(),
-                "fatherId", father.getId(),
-                "expectedDueDate", expectedDueDate.toString(),
-                "name", "Bebê",
-                "confidential", false
-        ));
+        PregnancyCreateForm create = pregnancy(mother, father, DateTime.now().plusMonths(2));
+        create.setName("Bebê");
+        Long pregnancyId = postedPregnancyId(create);
 
-        String createResponse = mockMvc.perform(post(BASE + "/pregnancy")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(createBody))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-
-        Long pregnancyId = objectMapper.readTree(createResponse).get("id").asLong();
-        DateTime birthDate = DateTime.now().minusDays(1).withTimeAtStartOfDay();
-
-        String birthBody = objectMapper.writeValueAsString(Map.of(
-                "name", "Manuela Silva",
-                "birthDate", birthDate.toString(),
-                "gender", "FEMININO"
-        ));
+        PregnancyUpdateForm birth = birth(
+                "Manuela Silva",
+                DateTime.now().minusDays(1).withTimeAtStartOfDay(),
+                Sexo.FEMININO);
 
         mockMvc.perform(put(BASE + "/{id}/pregnancy", pregnancyId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(birthBody))
+                        .content(objectMapper.writeValueAsString(birth)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.categoria.id").value(16))
                 .andExpect(jsonPath("$.nome").value("Manuela Silva"));
@@ -210,18 +172,11 @@ class PregnancyControllerIT extends IntegrationTestBase {
         mother = pessoaService.update(mother);
 
         Pessoa father = PessoaFixture.membroComungante(pessoaService, "Pai Endereco", Sexo.MASCULINO);
-        DateTime expectedDueDate = DateTime.now().plusMonths(2);
-
-        String createBody = objectMapper.writeValueAsString(Map.of(
-                "motherId", mother.getId(),
-                "fatherId", father.getId(),
-                "expectedDueDate", expectedDueDate.toString(),
-                "confidential", false
-        ));
 
         mockMvc.perform(post(BASE + "/pregnancy")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(createBody))
+                        .content(objectMapper.writeValueAsString(
+                                pregnancy(mother, father, DateTime.now().plusMonths(2)))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.endereco.logradouro").value("Rua Teste"))
                 .andExpect(jsonPath("$.endereco.numero").value("100"));
@@ -232,22 +187,8 @@ class PregnancyControllerIT extends IntegrationTestBase {
     void closePregnancy_returns204() throws Exception {
         Pessoa mother = PessoaFixture.membroComungante(pessoaService, "Mae Encerrar", Sexo.FEMININO);
         Pessoa father = PessoaFixture.membroComungante(pessoaService, "Pai Encerrar", Sexo.MASCULINO);
-        DateTime expectedDueDate = DateTime.now().plusMonths(1);
-
-        String createBody = objectMapper.writeValueAsString(Map.of(
-                "motherId", mother.getId(),
-                "fatherId", father.getId(),
-                "expectedDueDate", expectedDueDate.toString(),
-                "confidential", false
-        ));
-
-        String createResponse = mockMvc.perform(post(BASE + "/pregnancy")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(createBody))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-
-        Long pregnancyId = objectMapper.readTree(createResponse).get("id").asLong();
+        Long pregnancyId = postedPregnancyId(
+                pregnancy(mother, father, DateTime.now().plusMonths(1)));
 
         mockMvc.perform(delete(BASE + "/{id}/pregnancy", pregnancyId))
                 .andExpect(status().isNoContent());
@@ -270,29 +211,16 @@ class PregnancyControllerIT extends IntegrationTestBase {
     void closePregnancyWithOfficialAct_returns409() throws Exception {
         Pessoa mother = PessoaFixture.membroComungante(pessoaService, "Mae Ato", Sexo.FEMININO);
         Pessoa father = PessoaFixture.membroComungante(pessoaService, "Pai Ato", Sexo.MASCULINO);
-        DateTime expectedDueDate = DateTime.now().plusMonths(1);
+        Long pregnancyId = postedPregnancyId(
+                pregnancy(mother, father, DateTime.now().plusMonths(1)));
 
-        String createBody = objectMapper.writeValueAsString(Map.of(
-                "motherId", mother.getId(),
-                "fatherId", father.getId(),
-                "expectedDueDate", expectedDueDate.toString(),
-                "confidential", false
-        ));
-
-        String createResponse = mockMvc.perform(post(BASE + "/pregnancy")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(createBody))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-
-        Long pregnancyId = objectMapper.readTree(createResponse).get("id").asLong();
-
+        // Insert direto: o service do ato mudaria a categoria e o close viraria 400, não 409.
+        OfficialActFormEnum form = OfficialActFormEnum.ADM_MNC_BATISMO_INFANCIA;
         OfficialAct act = new OfficialAct();
-        act.setOfficialActFormId(OfficialActFormEnum.ADM_MNC_BATISMO_INFANCIA.getId());
+        act.setOfficialActFormId(form.getId());
         act.setPersonId(pregnancyId);
-        act.setActDate(org.joda.time.LocalDate.now());
-        act.setMinuteNumber("999");
-        act.setMetadata(new HashMap<>(OfficialActFixture.metadataMinimo(OfficialActFormEnum.ADM_MNC_BATISMO_INFANCIA)));
+        act.setActDate(LocalDate.now());
+        act.setMetadata(new HashMap<>(OfficialActFixture.metadataMinimo(form)));
         officialActRepository.insert(act);
 
         mockMvc.perform(delete(BASE + "/{id}/pregnancy", pregnancyId))
@@ -306,32 +234,17 @@ class PregnancyControllerIT extends IntegrationTestBase {
         Pessoa father1 = PessoaFixture.membroComungante(pessoaService, "Pai Um", Sexo.MASCULINO);
         Pessoa father2 = PessoaFixture.membroComungante(pessoaService, "Pai Dois", Sexo.MASCULINO);
         DateTime expectedDueDate = DateTime.now().plusMonths(5);
+        Long pregnancyId = postedPregnancyId(pregnancy(mother, father1, expectedDueDate));
 
-        String createBody = objectMapper.writeValueAsString(Map.of(
-                "motherId", mother.getId(),
-                "fatherId", father1.getId(),
-                "expectedDueDate", expectedDueDate.toString(),
-                "confidential", false
-        ));
-
-        String createResponse = mockMvc.perform(post(BASE + "/pregnancy")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(createBody))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-
-        Long pregnancyId = objectMapper.readTree(createResponse).get("id").asLong();
-
-        String updateBody = objectMapper.writeValueAsString(Map.of(
-                "motherId", mother.getId(),
-                "fatherId", father2.getId(),
-                "expectedDueDate", expectedDueDate.toString(),
-                "confidential", false
-        ));
+        PregnancyUpdateForm update = new PregnancyUpdateForm();
+        update.setMotherId(mother.getId());
+        update.setFatherId(father2.getId());
+        update.setExpectedDueDate(expectedDueDate);
+        update.setConfidential(false);
 
         mockMvc.perform(put(BASE + "/{id}/pregnancy", pregnancyId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updateBody))
+                        .content(objectMapper.writeValueAsString(update)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.apelido").value("(bebê de Mae Update e Pai Dois)"));
     }
@@ -343,30 +256,21 @@ class PregnancyControllerIT extends IntegrationTestBase {
         Pessoa father = PessoaFixture.membroComungante(pessoaService, "Pai Preserve", Sexo.MASCULINO);
         DateTime expectedDueDate = DateTime.now().plusMonths(5);
 
-        String createBody = objectMapper.writeValueAsString(Map.of(
-                "motherId", mother.getId(),
-                "fatherId", father.getId(),
-                "expectedDueDate", expectedDueDate.toString(),
-                "confidential", true
-        ));
+        PregnancyCreateForm create = pregnancy(mother, father, expectedDueDate);
+        create.setConfidential(true);
+        Long pregnancyId = postedPregnancyId(create);
 
-        String createResponse = mockMvc.perform(post(BASE + "/pregnancy")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(createBody))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.categoria.id").value(30))
-                .andReturn().getResponse().getContentAsString();
+        mockMvc.perform(get(BASE + "/{id}", pregnancyId))
+                .andExpect(jsonPath("$.categoria.id").value(30));
 
-        Long pregnancyId = objectMapper.readTree(createResponse).get("id").asLong();
-        String updateBody = objectMapper.writeValueAsString(Map.of(
-                "motherId", mother.getId(),
-                "fatherId", father.getId(),
-                "expectedDueDate", expectedDueDate.plusDays(1).toString()
-        ));
+        PregnancyUpdateForm update = new PregnancyUpdateForm();
+        update.setMotherId(mother.getId());
+        update.setFatherId(father.getId());
+        update.setExpectedDueDate(expectedDueDate.plusDays(1));
 
         mockMvc.perform(put(BASE + "/{id}/pregnancy", pregnancyId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updateBody))
+                        .content(objectMapper.writeValueAsString(update)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.categoria.id").value(30));
     }
@@ -376,31 +280,13 @@ class PregnancyControllerIT extends IntegrationTestBase {
     void registerBirth_futureBirthDate_returns400() throws Exception {
         Pessoa mother = PessoaFixture.membroComungante(pessoaService, "Mae Futuro", Sexo.FEMININO);
         Pessoa father = PessoaFixture.membroComungante(pessoaService, "Pai Futuro", Sexo.MASCULINO);
-        DateTime expectedDueDate = DateTime.now().plusMonths(2);
-
-        String createBody = objectMapper.writeValueAsString(Map.of(
-                "motherId", mother.getId(),
-                "fatherId", father.getId(),
-                "expectedDueDate", expectedDueDate.toString(),
-                "confidential", false
-        ));
-
-        String createResponse = mockMvc.perform(post(BASE + "/pregnancy")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(createBody))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-
-        Long pregnancyId = objectMapper.readTree(createResponse).get("id").asLong();
-        String birthBody = objectMapper.writeValueAsString(Map.of(
-                "name", "Bebe Futuro",
-                "birthDate", DateTime.now().plusDays(1).toString(),
-                "gender", "MASCULINO"
-        ));
+        Long pregnancyId = postedPregnancyId(
+                pregnancy(mother, father, DateTime.now().plusMonths(2)));
 
         mockMvc.perform(put(BASE + "/{id}/pregnancy", pregnancyId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(birthBody))
+                        .content(objectMapper.writeValueAsString(
+                                birth("Bebe Futuro", DateTime.now().plusDays(1), Sexo.MASCULINO))))
                 .andExpect(status().isBadRequest());
     }
 
@@ -409,31 +295,13 @@ class PregnancyControllerIT extends IntegrationTestBase {
     void registerBirth_preservesParentRelationships() throws Exception {
         Pessoa mother = PessoaFixture.membroComungante(pessoaService, "Mae Rel", Sexo.FEMININO);
         Pessoa father = PessoaFixture.membroComungante(pessoaService, "Pai Rel", Sexo.MASCULINO);
-        DateTime expectedDueDate = DateTime.now().plusMonths(2);
-
-        String createBody = objectMapper.writeValueAsString(Map.of(
-                "motherId", mother.getId(),
-                "fatherId", father.getId(),
-                "expectedDueDate", expectedDueDate.toString(),
-                "confidential", false
-        ));
-
-        String createResponse = mockMvc.perform(post(BASE + "/pregnancy")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(createBody))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-
-        Long pregnancyId = objectMapper.readTree(createResponse).get("id").asLong();
-        String birthBody = objectMapper.writeValueAsString(Map.of(
-                "name", "Bebe Rel",
-                "birthDate", DateTime.now().minusDays(1).toString(),
-                "gender", "MASCULINO"
-        ));
+        Long pregnancyId = postedPregnancyId(
+                pregnancy(mother, father, DateTime.now().plusMonths(2)));
 
         mockMvc.perform(put(BASE + "/{id}/pregnancy", pregnancyId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(birthBody))
+                        .content(objectMapper.writeValueAsString(
+                                birth("Bebe Rel", DateTime.now().minusDays(1), Sexo.MASCULINO))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.categoria.id").value(16));
 
@@ -448,5 +316,30 @@ class PregnancyControllerIT extends IntegrationTestBase {
         assertThat(reloaded.getRelacionamentos()).anyMatch(r ->
                 r.getTipoRelacionamento() == TipoRelacionamento.PAI
                         && r.getPessoaRelacionadaId().equals(father.getId()));
+    }
+
+    private static PregnancyCreateForm pregnancy(Pessoa mother, Pessoa father, DateTime dueDate) {
+        PregnancyCreateForm form = new PregnancyCreateForm();
+        form.setMotherId(mother.getId());
+        form.setFatherId(father.getId());
+        form.setExpectedDueDate(dueDate);
+        return form;
+    }
+
+    private static PregnancyUpdateForm birth(String name, DateTime birthDate, Sexo gender) {
+        PregnancyUpdateForm form = new PregnancyUpdateForm();
+        form.setName(name);
+        form.setBirthDate(birthDate);
+        form.setGender(gender);
+        return form;
+    }
+
+    private Long postedPregnancyId(PregnancyCreateForm form) throws Exception {
+        String json = mockMvc.perform(post(BASE + "/pregnancy")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(form)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readTree(json).get("id").asLong();
     }
 }

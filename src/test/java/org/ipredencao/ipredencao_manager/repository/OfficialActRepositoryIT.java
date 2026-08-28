@@ -1,5 +1,6 @@
 package org.ipredencao.ipredencao_manager.repository;
 
+import org.ipredencao.ipredencao_manager.model.official_act.Minute;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialAct;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActFormEnum;
 import org.ipredencao.ipredencao_manager.model.official_act.OfficialActQuery;
@@ -22,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Integration tests for {@link OfficialActRepository}. Each test inserts its own data and
@@ -35,6 +37,9 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
     private OfficialActRepository repo;
 
     @Autowired
+    private MinuteRepository minuteRepository;
+
+    @Autowired
     private PessoaService pessoaService;
 
     @Test
@@ -44,8 +49,8 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
         OfficialAct act = newAct(pessoa, OfficialActFormEnum.ADM_MNC_BATISMO_INFANCIA);
         act.setActDate(actDate);
         act.setMinuteNumber("298");
-        act.setMinuteDate(actDate);
         act.setAdmissionOrderNumber(42L);
+        ensureMinute("298", actDate);
         act.setMetadata(Map.of("celebrant", Map.of("name", "Rev. Fulano")));
         act.setNotes("Some notes");
 
@@ -107,6 +112,16 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
         OfficialAct saved = repo.insert(act);
 
         assertThat(saved.getMetadata()).isNotNull().isEmpty();
+    }
+
+    @Test
+    void insert_unknownMinuteNumberFailsFk() {
+        Pessoa pessoa = somePessoa("Fk Person");
+        OfficialAct act = newAct(pessoa, OfficialActFormEnum.ADM_MC_PROFISSAO_FE);
+        act.setMinuteNumber("no-such-minute-" + System.nanoTime());
+
+        assertThatThrownBy(() -> repo.insert(act))
+                .hasStackTraceContaining("fk_official_act_minute_number");
     }
 
     @Test
@@ -172,13 +187,14 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
             DateTime originalUpdatedAt = saved.getUpdatedAt();
             Thread.sleep(10);
 
-            saved.setMinuteNumber("999");
-            saved.setMinuteDate(new LocalDate(2025, 3, 1));
+            String minute = "upd-" + System.nanoTime();
+            ensureMinute(minute, new LocalDate(2025, 3, 1));
+            saved.setMinuteNumber(minute);
             saved.setNotes("changed");
             saved.setMetadata(Map.of("celebrant", Map.of("name", "Rev. Updated")));
             OfficialAct updated = repo.update(saved);
 
-            assertThat(updated.getMinuteNumber()).isEqualTo("999");
+            assertThat(updated.getMinuteNumber()).isEqualTo(minute);
             assertThat(updated.getMinuteDate()).isEqualTo(new LocalDate(2025, 3, 1));
             assertThat(updated.getNotes()).isEqualTo("changed");
             assertThat(updated.getMetadata()).containsKey("celebrant");
@@ -313,9 +329,16 @@ class OfficialActRepositoryIT extends IntegrationTestBase {
     }
 
     private OfficialAct insertAct(Pessoa pessoa, OfficialActFormEnum form, String minute, LocalDate actDate) {
+        ensureMinute(minute, null);
         OfficialAct act = newAct(pessoa, form);
         act.setActDate(actDate);
         act.setMinuteNumber(minute);
         return repo.insert(act);
+    }
+
+    private void ensureMinute(String number, LocalDate date) {
+        if (number == null || number.isBlank()) return;
+        if (minuteRepository.findByNumber(number) != null) return;
+        minuteRepository.insert(new Minute(number, date));
     }
 }
