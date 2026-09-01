@@ -8,6 +8,7 @@ import org.ipredencao.ipredencao_manager.model.pessoa.PessoaQuery;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistory;
 import org.ipredencao.ipredencao_manager.model.pessoa.pessoa_history.PessoaHistoryResponse;
 import org.ipredencao.ipredencao_manager.model.pessoa.relacionamento_pessoa.Relacionamento;
+import org.ipredencao.ipredencao_manager.controller.form.PersonCategoryUpdateForm;
 import org.ipredencao.ipredencao_manager.controller.form.PregnancyCreateForm;
 import org.ipredencao.ipredencao_manager.controller.form.PregnancyUpdateForm;
 import org.ipredencao.ipredencao_manager.repository.PersonNoteRepository;
@@ -85,6 +86,14 @@ public class PessoaController {
     public ResponseEntity<Pessoa> updatePerson(@PathVariable Long id, @RequestBody Pessoa pessoa) {
         pessoa.setId(id);
         return ResponseEntity.ok(pessoaService.update(pessoa));
+    }
+
+    @PatchMapping("/{id}/categoria")
+    @PreAuthorize(Roles.STAFF_EXPR)
+    public ResponseEntity<Pessoa> updateCategory(
+            @PathVariable Long id,
+            @RequestBody PersonCategoryUpdateForm form) {
+        return ResponseEntity.ok(pessoaService.updateCategory(id, form.categoriaId()));
     }
 
     @GetMapping("/{id}/history")

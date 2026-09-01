@@ -72,6 +72,14 @@ public class PessoaRepository {
         return pessoa;
     }
 
+    public void updateCategory(Long personId, CategoriaEnum category, Long updatedBy) {
+        dsl.update(PESSOA)
+                .set(PESSOA.CATEGORIA_ID, category.getId())
+                .set(PESSOA.UPDATED_BY, updatedBy)
+                .where(PESSOA.PESSOA_ID.eq(personId))
+                .execute();
+    }
+
     /**
      * Retorna a categoria_id em vigor para a pessoa imediatamente antes do timestamp informado.
      * <p>

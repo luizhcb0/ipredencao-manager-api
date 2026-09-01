@@ -184,6 +184,14 @@ public class PessoaService {
         return updated;
     }
 
+    @Transactional
+    public Pessoa updateCategory(Long id, Long categoryId) {
+        findById(id);
+        CategoriaEnum category = CategoriaEnum.fromId(categoryId);
+        pessoaRepository.updateCategory(id, category, securityUtils.getCurrentUserId());
+        return findById(id);
+    }
+
     // Relacionamento qualificados
     /**
      * Cria um relacionamento entre duas pessoas.

@@ -49,6 +49,7 @@ public class FormularioPessoa {
     private String nomePai;
     private String nomeMae;
     private List<String> nomeFilhos;
+    private DateTime updatedAt;
 
     // Getters e setters
     public Long getId() { return id; }
@@ -125,4 +126,6 @@ public class FormularioPessoa {
     public void setNomeMae(String nomeMae) { this.nomeMae = nomeMae; }
     public List<String> getNomeFilhos() { return nomeFilhos; }
     public void setNomeFilhos(List<String> nomeFilhos) { this.nomeFilhos = nomeFilhos; }
+    public DateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(DateTime updatedAt) { this.updatedAt = updatedAt; }
 }
