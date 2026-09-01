@@ -176,6 +176,7 @@ public class FormularioPessoaRepository {
         f.setNomeFilhos(record.getNomeFilhos() != null ? java.util.Arrays.asList(record.getNomeFilhos()) : null);
         if (record.getStatus() != null)
             f.setStatus(org.ipredencao.ipredencao_manager.model.pessoa.FormPessoaStatus.valueOf(record.getStatus().name()));
+        f.setUpdatedAt(DateTimeHelper.fromDb(record.getUpdatedAt()));
         return f;
     }
 
