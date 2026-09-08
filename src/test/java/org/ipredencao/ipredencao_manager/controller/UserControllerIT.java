@@ -60,11 +60,9 @@ class UserControllerIT extends IntegrationTestBase {
     @MockitoBean
     private FirebaseAuthService firebaseAuthService;
 
-    private Usuario adminUser;
-
     @BeforeEach
     void setUp() throws FirebaseAuthException {
-        adminUser = usuarioRepository.insert(UsuarioFixture.builder()
+        usuarioRepository.insert(UsuarioFixture.builder()
             .email("admin@test.local")
             .name("Admin Teste")
             .accessProfile(PerfilAcesso.ADMIN)
