@@ -19,6 +19,14 @@ class RolesTest {
     }
 
     @Test
+    void authorizedGroupsExcludeMemberProfiles() {
+        assertThat(Roles.anyNames()).containsExactlyInAnyOrder("BOLETIM", "DIACONO", "PRESBITERO", "ADMIN");
+        assertThat(Roles.staffNames()).containsExactlyInAnyOrder("DIACONO", "PRESBITERO", "ADMIN");
+        assertThat(Roles.elderNames()).containsExactlyInAnyOrder("PRESBITERO", "ADMIN");
+        assertThat(Roles.adminNames()).containsExactly("ADMIN");
+    }
+
+    @Test
     void domainProfilesMatchDatabaseEnum() {
         Set<String> domainProfiles = Arrays.stream(
                 org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso.values())

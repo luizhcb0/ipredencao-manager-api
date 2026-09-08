@@ -4,6 +4,7 @@ import com.google.firebase.auth.FirebaseAuthException;
 import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
 import org.ipredencao.ipredencao_manager.model.auth.ProviderAutenticacao;
 import org.ipredencao.ipredencao_manager.model.auth.UserProfile;
+import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.user.Usuario;
 import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
 import org.ipredencao.ipredencao_manager.model.user.dto.CreateUserRequest;
@@ -34,6 +35,11 @@ public class UserService {
     /** Mensagem 409 quando FK updated_by impede exclusão (V008). */
     public static final String CANNOT_DELETE_USER_WITH_REFERENCES =
         "Não é possível excluir este usuário porque existem registros vinculados a ele. Desative-o em vez de excluir.";
+    public static final String PERSON_ALREADY_LINKED =
+        "Esta pessoa já está vinculada a outro usuário";
+    public static final String PERSON_NOT_FOUND = "Pessoa não encontrada";
+    public static final String USER_PROVISION_WARNING =
+        "A pessoa foi processada, mas não foi possível criar o usuário.";
 
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -43,6 +49,9 @@ public class UserService {
 
     @Autowired
     private FirebaseAuthService firebaseAuthService;
+
+    @Autowired
+    private PessoaService pessoaService;
 
     public List<UserSummaryResponse> listUsers(Boolean active, PerfilAcesso profile, String search) {
         UsuarioQuery.Builder builder = UsuarioQuery.builder();
@@ -66,59 +75,68 @@ public class UserService {
     }
 
     public UserSummaryResponse createUser(CreateUserRequest request) {
-        if (request.getProfile() == null) {
+        if (request.profile() == null) {
             throw new IllegalArgumentException("Tipo de acesso é obrigatório");
         }
-        if (request.getName() == null || request.getName().isBlank()) {
+        if (request.name() == null || request.name().isBlank()) {
             throw new IllegalArgumentException("Nome é obrigatório");
         }
-        if (request.getEmail() == null || request.getEmail().isBlank()) {
+        if (request.email() == null || request.email().isBlank()) {
             throw new IllegalArgumentException("Email é obrigatório");
         }
 
-        String email = request.getEmail().trim();
-        String name = request.getName().trim();
+        String email = request.email().trim();
+        String name = request.name().trim();
 
-        Usuario existing = usuarioRepository.findByEmail(email);
-        if (existing != null) {
+        if (usuarioRepository.findByEmail(email) != null) {
             throw new IllegalStateException("Usuário já existe com este email");
         }
 
-        FirebaseUser firebaseUser;
-        boolean createdInFirebase = true;
+        FirebaseIdentity identity = resolveFirebaseIdentity(email, name);
+
+        Usuario usuario = newEmailUser(identity.user().uid(), email, name, request.profile(), true);
+        applyPersonLink(usuario, request.personId());
+
+        if (!identity.created()) {
+            syncFirebaseDisplayName(usuario);
+        }
+
+        return UserSummaryResponse.from(insertCompensating(usuario, identity));
+    }
+
+    /** `created` distingue identidade nova (compensável) de conta Firebase reaproveitada. */
+    private record FirebaseIdentity(FirebaseUser user, boolean created) {}
+
+    private FirebaseIdentity resolveFirebaseIdentity(String email, String name) {
         try {
-            firebaseUser = firebaseAuthService.createUserWithoutPassword(email, name);
+            return new FirebaseIdentity(firebaseAuthService.createUserWithoutPassword(email, name), true);
         } catch (FirebaseAuthException | RuntimeException e) {
             if (!FirebaseAuthService.isEmailAlreadyExists(e)) {
                 throw firebaseInviteFailure(e);
             }
-            log.info("Convite vinculado a conta Firebase já existente: {}", email);
-            firebaseUser = fetchFirebaseUserByEmail(email);
-            createdInFirebase = false;
+            log.info("Vinculado a conta Firebase já existente: {}", email);
+            return new FirebaseIdentity(fetchFirebaseUserByEmail(email), false);
         }
+    }
 
+    private Usuario newEmailUser(String uid, String email, String name, PerfilAcesso profile, boolean active) {
         Usuario usuario = new Usuario();
-        usuario.setFirebaseUid(firebaseUser.uid());
+        usuario.setFirebaseUid(uid);
         usuario.setEmail(email);
         usuario.setName(name);
         usuario.setProvider(ProviderAutenticacao.EMAIL);
         usuario.setAddedAt(DateTime.now());
-        usuario.setActive(true);
-        usuario.setAccessProfile(request.getProfile());
+        usuario.setActive(active);
+        usuario.setAccessProfile(profile);
+        return usuario;
+    }
 
-        if (!createdInFirebase) {
-            syncFirebaseDisplayName(usuario);
-        }
-
+    private Usuario insertCompensating(Usuario usuario, FirebaseIdentity identity) {
         try {
-            return UserSummaryResponse.from(usuarioRepository.insert(usuario));
+            return usuarioRepository.insert(usuario);
         } catch (Exception e) {
-            if (createdInFirebase) {
-                try {
-                    firebaseAuthService.deleteUser(firebaseUser.uid());
-                } catch (FirebaseAuthException ex) {
-                    log.error("Falha ao compensar usuário Firebase {}: {}", firebaseUser.uid(), ex.getMessage());
-                }
+            if (identity.created()) {
+                compensateFirebaseCreate(identity.user().uid());
             }
             throw e;
         }
@@ -162,6 +180,10 @@ public class UserService {
             }
         }
 
+        if (request.isPersonIdPresent()) {
+            applyPersonLink(usuario, request.getPersonId());
+        }
+
         usuarioRepository.update(usuario);
         return UserSummaryResponse.from(usuario);
     }
@@ -174,9 +196,7 @@ public class UserService {
             throw new IllegalArgumentException("Você não pode excluir sua própria conta");
         }
 
-        if (Boolean.TRUE.equals(usuario.getActive()) && usuario.getAccessProfile() == PerfilAcesso.ADMIN) {
-            ensureNotLastActiveAdmin(usuario, usuario.getAccessProfile(), false);
-        }
+        ensureNotLastActiveAdmin(usuario, usuario.getAccessProfile(), false);
 
         try {
             usuarioRepository.deleteById(id);
@@ -298,5 +318,87 @@ public class UserService {
         String term = search.trim().toLowerCase();
         return usuario.getName().toLowerCase().contains(term)
             || usuario.getEmail().toLowerCase().contains(term);
+    }
+
+    /**
+     * Cria ou vincula um usuário inativo para pessoa elegível (agregadores 2, 3 ou 5) com e-mail.
+     * Idempotente: vínculo já existente ou usuário do mesmo e-mail livre é só associado.
+     */
+    @Transactional
+    public void ensureInactiveUserForPerson(Pessoa person) {
+        PerfilAcesso profile = profileForEligiblePerson(person);
+        if (profile == null) return;
+
+        String email = normalizeEmail(person.getEmail());
+        if (email == null) return;
+
+        if (usuarioRepository.findByPersonId(person.getId()) != null) return;
+
+        Usuario byEmail = usuarioRepository.findByNormalizedEmail(email);
+        if (byEmail != null) {
+            if (byEmail.getPersonId() != null && !byEmail.getPersonId().equals(person.getId())) {
+                throw new IllegalStateException(PERSON_ALREADY_LINKED);
+            }
+            byEmail.setPersonId(person.getId());
+            usuarioRepository.update(byEmail);
+            return;
+        }
+
+        FirebaseIdentity identity = resolveFirebaseIdentity(email, person.getNome());
+
+        try {
+            firebaseAuthService.setUserDisabled(identity.user().uid(), true);
+        } catch (FirebaseAuthException e) {
+            if (identity.created()) {
+                compensateFirebaseCreate(identity.user().uid());
+            }
+            throw firebaseInviteFailure(e);
+        }
+
+        Usuario usuario = newEmailUser(identity.user().uid(), email, person.getNome(), profile, false);
+        usuario.setPersonId(person.getId());
+        insertCompensating(usuario, identity);
+    }
+
+    private static PerfilAcesso profileForEligiblePerson(Pessoa person) {
+        if (person == null || person.getCategoria() == null) return null;
+        Long aggregatorId = person.getCategoria().getAgregadorCategoriaId();
+        if (Long.valueOf(2L).equals(aggregatorId) || Long.valueOf(3L).equals(aggregatorId)) {
+            return PerfilAcesso.MEMBER;
+        }
+        if (Long.valueOf(5L).equals(aggregatorId)) {
+            return PerfilAcesso.MEMBERSHIP_CANDIDATE;
+        }
+        return null;
+    }
+
+    private void applyPersonLink(Usuario usuario, Long personId) {
+        if (personId == null) {
+            usuario.setPersonId(null);
+            return;
+        }
+        try {
+            pessoaService.findById(personId);
+        } catch (NoSuchElementException e) {
+            throw new IllegalArgumentException(PERSON_NOT_FOUND);
+        }
+        Usuario existing = usuarioRepository.findByPersonId(personId);
+        if (existing != null && !existing.getId().equals(usuario.getId())) {
+            throw new IllegalStateException(PERSON_ALREADY_LINKED);
+        }
+        usuario.setPersonId(personId);
+    }
+
+    private void compensateFirebaseCreate(String uid) {
+        try {
+            firebaseAuthService.deleteUser(uid);
+        } catch (FirebaseAuthException ex) {
+            log.error("Falha ao compensar usuário Firebase {}: {}", uid, ex.getMessage());
+        }
+    }
+
+    private static String normalizeEmail(String email) {
+        if (email == null || email.isBlank()) return null;
+        return email.trim().toLowerCase();
     }
 }

@@ -67,6 +67,23 @@ public class UsuarioRepository {
         
         return fromRepository(record);
     }
+
+    public Usuario findByNormalizedEmail(String email) {
+        if (email == null || email.isBlank()) return null;
+        String normalized = email.trim().toLowerCase();
+        UsuarioRecord record = dsl.selectFrom(USUARIO)
+                .where(DSL.lower(DSL.trim(USUARIO.EMAIL)).eq(normalized))
+                .fetchOne();
+        return fromRepository(record);
+    }
+
+    public Usuario findByPersonId(Long personId) {
+        if (personId == null) return null;
+        UsuarioRecord record = dsl.selectFrom(USUARIO)
+                .where(USUARIO.PERSON_ID.eq(personId))
+                .fetchOne();
+        return fromRepository(record);
+    }
     
     public List<Usuario> find(UsuarioQuery query) {
         List<Condition> conditions = buildConditions(query);
@@ -141,6 +158,7 @@ public class UsuarioRepository {
             
         u.setFailedLoginAttempts(record.getFailedLoginAttempts());
         u.setBlockedUntil(DateTimeHelper.fromDb(record.getBlockedUntil()));
+        u.setPersonId(record.getPersonId());
         
         return u;
     }
@@ -169,6 +187,7 @@ public class UsuarioRepository {
             
         record.setFailedLoginAttempts(usuario.getFailedLoginAttempts());
         record.setBlockedUntil(DateTimeHelper.toDb(usuario.getBlockedUntil()));
+        record.setPersonId(usuario.getPersonId());
         
         return record;
     }

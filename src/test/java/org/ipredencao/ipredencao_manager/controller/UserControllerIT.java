@@ -8,6 +8,7 @@ import org.ipredencao.ipredencao_manager.model.user.Usuario;
 import org.ipredencao.ipredencao_manager.repository.UsuarioRepository;
 import org.ipredencao.ipredencao_manager.service.FirebaseAuthService;
 import org.ipredencao.ipredencao_manager.service.PessoaService;
+import org.ipredencao.ipredencao_manager.service.UserService;
 import org.ipredencao.ipredencao_manager.service.firebase.FirebaseUser;
 import org.ipredencao.ipredencao_manager.support.IntegrationTestBase;
 import org.ipredencao.ipredencao_manager.support.PessoaFixture;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Map;
 
 import static org.ipredencao.ipredencao_manager.jooq.tables.Pessoa.PESSOA;
+import static org.ipredencao.ipredencao_manager.jooq.tables.PessoaHistory.PESSOA_HISTORY;
 import static org.ipredencao.ipredencao_manager.service.UserService.CANNOT_DELETE_USER_WITH_REFERENCES;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -208,5 +210,103 @@ class UserControllerIT extends IntegrationTestBase {
             .andExpect(jsonPath("$.message").value(CANNOT_DELETE_USER_WITH_REFERENCES));
 
         verify(firebaseAuthService, never()).deleteUser(any());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void create_linksPersonWhenPersonIdProvided() throws Exception {
+        Pessoa pessoa = PessoaFixture.membroComungante(pessoaService, "Pessoa Convite", Sexo.FEMININO);
+
+        mockMvc.perform(post(BASE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "name", "Novo Usuario",
+                    "email", "novo@test.local",
+                    "profile", "BOLETIM",
+                    "personId", pessoa.getId()
+                ))))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.personId").value(pessoa.getId()));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void create_returnsBadRequestWhenPersonMissing() throws Exception {
+        mockMvc.perform(post(BASE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "name", "Novo Usuario",
+                    "email", "novo@test.local",
+                    "profile", "BOLETIM",
+                    "personId", 999_999L
+                ))))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(UserService.PERSON_NOT_FOUND));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void create_returnsConflictWhenPersonAlreadyLinked() throws Exception {
+        Pessoa pessoa = PessoaFixture.membroComungante(pessoaService, "Pessoa Duplicada", Sexo.MASCULINO);
+        usuarioRepository.insert(UsuarioFixture.builder()
+            .email("ja-vinculado@test.local")
+            .personId(pessoa.getId())
+            .build());
+
+        mockMvc.perform(post(BASE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "name", "Outro",
+                    "email", "outro@test.local",
+                    "profile", "BOLETIM",
+                    "personId", pessoa.getId()
+                ))))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.message").value(UserService.PERSON_ALREADY_LINKED));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void patch_linksAndClearsPerson() throws Exception {
+        Pessoa pessoa = PessoaFixture.membroComungante(pessoaService, "Pessoa Patch", Sexo.FEMININO);
+        Usuario user = usuarioRepository.insert(UsuarioFixture.builder()
+            .email("patch-person@test.local")
+            .firebaseUid("patch-person-uid")
+            .build());
+
+        mockMvc.perform(patch(BASE + "/" + user.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("personId", pessoa.getId()))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.personId").value(pessoa.getId()));
+
+        mockMvc.perform(patch(BASE + "/" + user.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Ainda vinculado\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.personId").value(pessoa.getId()))
+            .andExpect(jsonPath("$.name").value("Ainda vinculado"));
+
+        mockMvc.perform(patch(BASE + "/" + user.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"personId\":null}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.personId").value(org.hamcrest.Matchers.nullValue()));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void deletingPerson_nullsUserPersonId() {
+        Pessoa pessoa = PessoaFixture.membroComungante(pessoaService, "Pessoa Apagar", Sexo.MASCULINO);
+        Usuario user = usuarioRepository.insert(UsuarioFixture.builder()
+            .email("set-null@test.local")
+            .personId(pessoa.getId())
+            .build());
+
+        dsl.deleteFrom(PESSOA_HISTORY).where(PESSOA_HISTORY.PESSOA_ID.eq(pessoa.getId())).execute();
+        dsl.deleteFrom(PESSOA).where(PESSOA.PESSOA_ID.eq(pessoa.getId())).execute();
+
+        Usuario reloaded = usuarioRepository.findById(user.getId());
+        assertNull(reloaded.getPersonId());
     }
 }

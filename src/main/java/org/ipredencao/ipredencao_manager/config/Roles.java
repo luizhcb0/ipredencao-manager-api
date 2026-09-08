@@ -13,6 +13,10 @@ import java.util.Arrays;
 @Component("roles")
 public final class Roles {
 
+    /** MEMBER e MEMBERSHIP_CANDIDATE ficam de fora de todos os grupos. */
+    private static final PerfilAcesso[] ANY = {
+        PerfilAcesso.BOLETIM, PerfilAcesso.DIACONO, PerfilAcesso.PRESBITERO, PerfilAcesso.ADMIN
+    };
     private static final PerfilAcesso[] STAFF = {
         PerfilAcesso.DIACONO, PerfilAcesso.PRESBITERO, PerfilAcesso.ADMIN
     };
@@ -21,9 +25,9 @@ public final class Roles {
     };
     private static final PerfilAcesso[] ADMIN_ONLY = { PerfilAcesso.ADMIN };
 
-    /** Todos os perfis: leitura de pessoas, categorias, endereços, relatórios e serviços. */
+    /** Leitura de pessoas, categorias, endereços, relatórios e serviços. */
     public static String[] anyNames() {
-        return names(PerfilAcesso.values());
+        return names(ANY);
     }
 
     /** DIACONO+: escrita de pessoa/endereço/serviço, filtro de pendência e leitura de formulários. */

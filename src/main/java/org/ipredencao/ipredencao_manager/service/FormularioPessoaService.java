@@ -18,18 +18,24 @@ import org.ipredencao.ipredencao_manager.repository.EnderecoRepository;
 import org.ipredencao.ipredencao_manager.model.endereco.EnderecoQuery;
 import org.ipredencao.ipredencao_manager.repository.FormularioPessoaRepository;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
 public class FormularioPessoaService {
+    private static final Logger logger = LoggerFactory.getLogger(FormularioPessoaService.class);
+
     @Autowired
     private FormularioPessoaRepository repository;
     @Autowired
@@ -38,6 +44,10 @@ public class FormularioPessoaService {
     private PessoaService pessoaService;
     @Autowired
     private EnderecoRepository enderecoRepository;
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     public FormularioPessoa create(FormularioPessoa formulario) {
         return repository.insert(formulario);
@@ -61,10 +71,6 @@ public class FormularioPessoaService {
         }
     }
 
-    public List<FormularioPessoa> find(FormularioPessoaQuery query) {
-        return repository.find(query);
-    }
-
     public PagedResponse<FormularioPessoa> findPaginated(FormularioPessoaQuery query) {
         if (query.getPagination() == null) query.setPagination(new PaginationParameters());
         query.getPagination().applyDefaults();
@@ -81,8 +87,23 @@ public class FormularioPessoaService {
         return new PagedResponse<>(formularios, pageInfo);
     }
 
-    @Transactional
     public ProcessarFormularioResponse processForm(ProcessarFormularioRequest request) {
+        ProcessarFormularioResponse persisted = Objects.requireNonNull(
+            new TransactionTemplate(transactionManager).execute(status -> persistProcessedForm(request)));
+        try {
+            userService.ensureInactiveUserForPerson(persisted.pessoaPrincipal());
+            return persisted;
+        } catch (Exception e) {
+            logger.warn("Falha ao provisionar usuário para pessoa {}: {}",
+                persisted.pessoaPrincipal().getId(), e.getMessage());
+            return new ProcessarFormularioResponse(
+                persisted.pessoaPrincipal(),
+                persisted.relacionamentosCriados(),
+                UserService.USER_PROVISION_WARNING);
+        }
+    }
+
+    private ProcessarFormularioResponse persistProcessedForm(ProcessarFormularioRequest request) {
         FormularioPessoa formulario = findById(request.getFormularioId());
         String campus = formulario.getCampus();
 
@@ -149,34 +170,33 @@ public class FormularioPessoaService {
         return enderecoRepository.insert(endereco);
     }
 
-    /**
-     * Se o valor for um ID numérico, retorna a pessoa existente.
-     * Caso contrário, cria uma pessoa referenciada (nome + categoria + campus),
-     * a aponta como própria chefe de família e a retorna.
-     */
+    /** Valor numérico é id de pessoa existente; qualquer outro texto vira pessoa referenciada, chefe de si mesma. */
     private Pessoa findOrCreateFamilyHead(String nameOrId, String campus, Endereco endereco) {
-        try {
-            Long id = Long.parseLong(nameOrId.trim());
+        Long id = asId(nameOrId);
+        if (id != null) {
             return pessoaService.findById(id);
-        } catch (NumberFormatException e) {
-            Pessoa newPerson = buildReferencedPerson(nameOrId, campus);
-            newPerson.setEndereco(endereco);
-            Pessoa created = pessoaService.create(newPerson);
-            created.setChefeDeFamiliaId(created.getId());
-            return pessoaService.update(created);
         }
+
+        Pessoa newPerson = buildReferencedPerson(nameOrId, campus);
+        newPerson.setEndereco(endereco);
+        Pessoa created = pessoaService.create(newPerson);
+        created.setChefeDeFamiliaId(created.getId());
+        return pessoaService.update(created);
     }
 
-    /**
-     * Se o valor for um ID numérico, retorna a pessoa existente.
-     * Caso contrário, cria uma pessoa referenciada com nome + categoria + campus.
-     */
+    /** Valor numérico é id de pessoa existente; qualquer outro texto vira pessoa referenciada. */
     private Pessoa findOrCreateReferencedPerson(String nameOrId, String campus) {
+        Long id = asId(nameOrId);
+        return id != null
+            ? pessoaService.findById(id)
+            : pessoaService.create(buildReferencedPerson(nameOrId, campus));
+    }
+
+    private static Long asId(String value) {
         try {
-            Long id = Long.parseLong(nameOrId.trim());
-            return pessoaService.findById(id);
+            return Long.parseLong(value.trim());
         } catch (NumberFormatException e) {
-            return pessoaService.create(buildReferencedPerson(nameOrId, campus));
+            return null;
         }
     }
 
@@ -189,38 +209,26 @@ public class FormularioPessoaService {
     }
 
     private Pessoa createOrUpdatePerson(FormularioPessoa formulario, Long pessoaId, Pessoa familyHead, Endereco endereco) {
-        Pessoa person;
+        Pessoa person = pessoaId != null ? pessoaService.findById(pessoaId) : new Pessoa();
+        mapFormToPerson(formulario, person);
+        person.setEndereco(endereco);
 
-        if (pessoaId != null) {
-            person = pessoaService.findById(pessoaId);
-            mapFormToPerson(formulario, person);
-            person.setEndereco(endereco);
-
-            if (familyHead != null) {
-                person.setChefeDeFamiliaId(familyHead.getId());
-            } else if (person.getChefeDeFamiliaId() == null) {
-                person.setChefeDeFamiliaId(person.getId());
-            }
-
-            person = pessoaService.update(person);
-        } else {
-            person = new Pessoa();
-            mapFormToPerson(formulario, person);
-            person.setEndereco(endereco);
-
-            if (familyHead != null) {
-                person.setChefeDeFamiliaId(familyHead.getId());
-            }
-
-            person = pessoaService.create(person);
-
-            // Pessoa sem chefe declarado é o próprio chefe de família.
-            if (familyHead == null) {
-                person.setChefeDeFamiliaId(person.getId());
-                person = pessoaService.update(person);
-            }
+        if (familyHead != null) {
+            person.setChefeDeFamiliaId(familyHead.getId());
         }
 
+        if (pessoaId != null) {
+            if (familyHead == null && person.getChefeDeFamiliaId() == null) {
+                person.setChefeDeFamiliaId(person.getId());
+            }
+            return pessoaService.update(person);
+        }
+
+        person = pessoaService.create(person);
+        if (familyHead == null) {
+            person.setChefeDeFamiliaId(person.getId());
+            return pessoaService.update(person);
+        }
         return person;
     }
 
