@@ -5,6 +5,7 @@ import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
 import org.ipredencao.ipredencao_manager.model.user.Usuario;
+import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
 import org.ipredencao.ipredencao_manager.repository.UsuarioRepository;
 import org.ipredencao.ipredencao_manager.service.FirebaseAuthService;
 import org.ipredencao.ipredencao_manager.service.PessoaService;
@@ -188,7 +189,7 @@ class UserControllerIT extends IntegrationTestBase {
         mockMvc.perform(delete(BASE + "/" + user.getId()))
             .andExpect(status().isNoContent());
 
-        assertNull(usuarioRepository.findById(user.getId()));
+        assertNull(findUser(user.getId()));
     }
 
     @Test
@@ -306,7 +307,12 @@ class UserControllerIT extends IntegrationTestBase {
         dsl.deleteFrom(PESSOA_HISTORY).where(PESSOA_HISTORY.PESSOA_ID.eq(pessoa.getId())).execute();
         dsl.deleteFrom(PESSOA).where(PESSOA.PESSOA_ID.eq(pessoa.getId())).execute();
 
-        Usuario reloaded = usuarioRepository.findById(user.getId());
+        Usuario reloaded = findUser(user.getId());
         assertNull(reloaded.getPersonId());
+    }
+
+    private Usuario findUser(Long id) {
+        return usuarioRepository.find(UsuarioQuery.builder().id(id).build())
+            .stream().findFirst().orElse(null);
     }
 }

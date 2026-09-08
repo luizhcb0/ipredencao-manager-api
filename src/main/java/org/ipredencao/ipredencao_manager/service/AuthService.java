@@ -128,11 +128,10 @@ public class AuthService {
             throw new IllegalArgumentException("Refresh token inválido");
         }
 
-        Usuario usuario = usuarioRepository.find(
-            UsuarioQuery.builder().id(sessao.getUsuarioId()).build()
-        ).stream().findFirst().orElseThrow(() ->
-            new IllegalArgumentException("Usuário não encontrado")
-        );
+        Usuario usuario = findOne(UsuarioQuery.builder().id(sessao.getUsuarioId()).build());
+        if (usuario == null) {
+            throw new IllegalArgumentException("Usuário não encontrado");
+        }
 
         if (!Boolean.TRUE.equals(usuario.getActive())) {
             throw new IllegalArgumentException("Usuário inativo");
@@ -161,10 +160,10 @@ public class AuthService {
 
     private Usuario requireExistingUsuario(String firebaseUid, String email,
                                            String name, ProviderAutenticacao provider) {
-        Usuario usuario = usuarioRepository.findByFirebaseUid(firebaseUid);
+        Usuario usuario = findOne(UsuarioQuery.builder().firebaseUid(firebaseUid).build());
 
         if (usuario == null && email != null) {
-            usuario = usuarioRepository.findByEmail(email);
+            usuario = findOne(UsuarioQuery.builder().email(email).build());
             if (usuario != null && usuario.getFirebaseUid() == null) {
                 usuario.setFirebaseUid(firebaseUid);
                 usuarioRepository.update(usuario);
@@ -208,5 +207,9 @@ public class AuthService {
 
     private UserProfile toUserProfile(Usuario usuario, String photoUrl) {
         return userService.toUserProfile(usuario, photoUrl);
+    }
+
+    private Usuario findOne(UsuarioQuery query) {
+        return usuarioRepository.find(query).stream().findFirst().orElse(null);
     }
 }

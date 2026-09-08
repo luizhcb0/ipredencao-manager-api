@@ -44,55 +44,9 @@ public class UsuarioRepository {
         return usuario;
     }
     
-    public Usuario findByFirebaseUid(String firebaseUid) {
-        UsuarioRecord record = dsl.selectFrom(USUARIO)
-                .where(USUARIO.FIREBASE_UID.eq(firebaseUid))
-                .fetchOne();
-        
-        return fromRepository(record);
-    }
-    
-    public Usuario findById(Long id) {
-        UsuarioRecord record = dsl.selectFrom(USUARIO)
-                .where(USUARIO.ID.eq(id))
-                .fetchOne();
-        
-        return fromRepository(record);
-    }
-    
-    public Usuario findByEmail(String email) {
-        UsuarioRecord record = dsl.selectFrom(USUARIO)
-                .where(USUARIO.EMAIL.eq(email))
-                .fetchOne();
-        
-        return fromRepository(record);
-    }
-
-    public Usuario findByNormalizedEmail(String email) {
-        if (email == null || email.isBlank()) return null;
-        String normalized = email.trim().toLowerCase();
-        UsuarioRecord record = dsl.selectFrom(USUARIO)
-                .where(DSL.lower(DSL.trim(USUARIO.EMAIL)).eq(normalized))
-                .fetchOne();
-        return fromRepository(record);
-    }
-
-    public Usuario findByPersonId(Long personId) {
-        if (personId == null) return null;
-        UsuarioRecord record = dsl.selectFrom(USUARIO)
-                .where(USUARIO.PERSON_ID.eq(personId))
-                .fetchOne();
-        return fromRepository(record);
-    }
-    
     public List<Usuario> find(UsuarioQuery query) {
-        List<Condition> conditions = buildConditions(query);
-
-        Condition finalCondition = conditions.stream()
-            .reduce(DSL.noCondition(), Condition::and);
-
         return dsl.selectFrom(USUARIO)
-                .where(finalCondition)
+                .where(conditions(query))
                 .orderBy(USUARIO.NAME.asc())
                 .fetch()
                 .stream()
@@ -100,13 +54,8 @@ public class UsuarioRepository {
                 .toList();
     }
 
-    public long countActiveByProfile(PerfilAcesso profile) {
-        return dsl.fetchCount(
-            USUARIO,
-            USUARIO.ACCESS_PROFILE.eq(
-                org.ipredencao.ipredencao_manager.jooq.enums.PerfilAcesso.valueOf(profile.name())
-            ).and(USUARIO.ACTIVE.eq(true))
-        );
+    public long count(UsuarioQuery query) {
+        return dsl.fetchCount(USUARIO, conditions(query));
     }
 
     public void deleteById(Long id) {
@@ -115,25 +64,30 @@ public class UsuarioRepository {
             .execute();
     }
     
-    private List<Condition> buildConditions(UsuarioQuery query) {
+    private Condition conditions(UsuarioQuery query) {
         List<Condition> conditions = new ArrayList<>();
-        
+
         if (query.getId() != null) conditions.add(USUARIO.ID.eq(query.getId()));
-        if (query.getEmail() != null && !query.getEmail().trim().isEmpty()) 
-            conditions.add(USUARIO.EMAIL.eq(query.getEmail()));
-        if (query.getFirebaseUid() != null && !query.getFirebaseUid().trim().isEmpty()) 
+        if (query.getEmail() != null && !query.getEmail().isBlank()) {
+            conditions.add(DSL.lower(DSL.trim(USUARIO.EMAIL)).eq(query.getEmail().trim().toLowerCase()));
+        }
+        if (query.getFirebaseUid() != null && !query.getFirebaseUid().isBlank()) {
             conditions.add(USUARIO.FIREBASE_UID.eq(query.getFirebaseUid()));
-        if (query.getAccessProfile() != null) 
+        }
+        if (query.getAccessProfile() != null) {
             conditions.add(USUARIO.ACCESS_PROFILE.eq(
                 org.ipredencao.ipredencao_manager.jooq.enums.PerfilAcesso.valueOf(query.getAccessProfile().name())
             ));
+        }
         if (query.getActive() != null) conditions.add(USUARIO.ACTIVE.eq(query.getActive()));
-        if (query.getProvider() != null)
+        if (query.getProvider() != null) {
             conditions.add(USUARIO.PROVIDER.eq(
                 org.ipredencao.ipredencao_manager.jooq.enums.ProviderAutenticacao.valueOf(query.getProvider().name())
             ));
-        
-        return conditions;
+        }
+        if (query.getPersonId() != null) conditions.add(USUARIO.PERSON_ID.eq(query.getPersonId()));
+
+        return conditions.stream().reduce(DSL.noCondition(), Condition::and);
     }
     
     private static Usuario fromRepository(UsuarioRecord record) {

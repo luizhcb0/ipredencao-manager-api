@@ -8,6 +8,7 @@ import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
 import org.ipredencao.ipredencao_manager.model.user.Usuario;
+import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
 import org.ipredencao.ipredencao_manager.repository.UsuarioRepository;
 import org.ipredencao.ipredencao_manager.service.FirebaseAuthService;
 import org.ipredencao.ipredencao_manager.service.PessoaService;
@@ -90,7 +91,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
             .andExpect(jsonPath("$.mensagem").value("Pessoa criada e relacionamentos criados com sucesso"))
             .andExpect(jsonPath("$.pessoaPrincipal.id").isNumber());
 
-        Usuario user = usuarioRepository.findByNormalizedEmail("membro@exemplo.com");
+        Usuario user = findUserByEmail("membro@exemplo.com");
         assertNotNull(user);
         assertFalse(user.getActive());
         assertEquals(PerfilAcesso.MEMBER, user.getAccessProfile());
@@ -107,7 +108,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
                 .content("{\"formularioId\":" + formId + "}"))
             .andExpect(status().isOk());
 
-        Usuario user = usuarioRepository.findByNormalizedEmail("admitendo@exemplo.com");
+        Usuario user = findUserByEmail("admitendo@exemplo.com");
         assertNotNull(user);
         assertEquals(PerfilAcesso.MEMBERSHIP_CANDIDATE, user.getAccessProfile());
         assertFalse(user.getActive());
@@ -123,7 +124,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
                 .content("{\"formularioId\":" + formId + "}"))
             .andExpect(status().isOk());
 
-        assertNull(usuarioRepository.findByNormalizedEmail("pastor@exemplo.com"));
+        assertNull(findUserByEmail("pastor@exemplo.com"));
         verify(firebaseAuthService, never()).createUserWithoutPassword(any(), any());
     }
 
@@ -139,7 +140,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.mensagem").value("Pessoa atualizada e relacionamentos criados com sucesso"));
 
-        Usuario user = usuarioRepository.findByNormalizedEmail("enriquecido@exemplo.com");
+        Usuario user = findUserByEmail("enriquecido@exemplo.com");
         assertNotNull(user);
         assertEquals(pessoa.getId(), user.getPersonId());
         assertEquals(PerfilAcesso.MEMBER, user.getAccessProfile());
@@ -169,7 +170,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
                 .content("{\"formularioId\":" + formId + ",\"pessoaId\":" + pessoa.getId() + "}"))
             .andExpect(status().isOk());
 
-        Usuario user = usuarioRepository.findByPersonId(pessoa.getId());
+        Usuario user = findUserByPersonId(pessoa.getId());
         assertEquals(PerfilAcesso.BOLETIM, user.getAccessProfile());
         assertEquals(Boolean.TRUE, user.getActive());
         verify(firebaseAuthService, never()).createUserWithoutPassword(any(), any());
@@ -193,7 +194,17 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
 
         long pessoaId = objectMapper.readTree(body).at("/pessoaPrincipal/id").asLong();
         assertNotNull(pessoaService.findById(pessoaId));
-        assertNull(usuarioRepository.findByNormalizedEmail("falha@exemplo.com"));
+        assertNull(findUserByEmail("falha@exemplo.com"));
+    }
+
+    private Usuario findUserByEmail(String email) {
+        return usuarioRepository.find(UsuarioQuery.builder().email(email).build())
+            .stream().findFirst().orElse(null);
+    }
+
+    private Usuario findUserByPersonId(Long personId) {
+        return usuarioRepository.find(UsuarioQuery.builder().personId(personId).build())
+            .stream().findFirst().orElse(null);
     }
 
     private long createForm(String nome, String email, CategoriaEnum categoria) throws Exception {

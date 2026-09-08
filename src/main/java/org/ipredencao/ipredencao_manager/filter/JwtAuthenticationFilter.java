@@ -2,6 +2,7 @@ package org.ipredencao.ipredencao_manager.filter;
 
 import org.ipredencao.ipredencao_manager.model.auth.AuthUser;
 import org.ipredencao.ipredencao_manager.model.user.Usuario;
+import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
 import org.ipredencao.ipredencao_manager.repository.UsuarioRepository;
 import org.ipredencao.ipredencao_manager.service.JwtService;
 import org.slf4j.Logger;
@@ -55,7 +56,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (jwtService.isTokenValido(jwt)) {
                     // VALIDAÇÃO DE SEGURANÇA: Verificar se o usuário existe e está ativo
                     Long userId = jwtService.extractUserId(jwt);
-                    Usuario usuario = usuarioRepository.findById(userId);
+                    Usuario usuario = usuarioRepository.find(UsuarioQuery.builder().id(userId).build())
+                        .stream().findFirst().orElse(null);
                     
                     if (usuario == null) {
                         log.warn("Token válido mas usuário não existe: userId={}", userId);

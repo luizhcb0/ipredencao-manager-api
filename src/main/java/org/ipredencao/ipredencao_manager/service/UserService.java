@@ -88,7 +88,7 @@ public class UserService {
         String email = request.email().trim();
         String name = request.name().trim();
 
-        if (usuarioRepository.findByEmail(email) != null) {
+        if (findOne(UsuarioQuery.builder().email(email).build()) != null) {
             throw new IllegalStateException("Usuário já existe com este email");
         }
 
@@ -244,11 +244,15 @@ public class UserService {
     }
 
     private Usuario requireUsuario(Long id) {
-        Usuario usuario = usuarioRepository.findById(id);
+        Usuario usuario = findOne(UsuarioQuery.builder().id(id).build());
         if (usuario == null) {
             throw new NoSuchElementException("Usuário não encontrado");
         }
         return usuario;
+    }
+
+    private Usuario findOne(UsuarioQuery query) {
+        return usuarioRepository.find(query).stream().findFirst().orElse(null);
     }
 
     private void validateAdminMutation(Usuario target, UpdateUserRequest request, Long currentUserId) {
@@ -276,7 +280,8 @@ public class UserService {
         boolean deactivating = newActive != null && !newActive;
 
         if (demotingAdmin || deactivating) {
-            long activeAdmins = usuarioRepository.countActiveByProfile(PerfilAcesso.ADMIN);
+            long activeAdmins = usuarioRepository.count(
+                UsuarioQuery.builder().accessProfile(PerfilAcesso.ADMIN).active(true).build());
             if (activeAdmins <= 1) {
                 throw new IllegalArgumentException("Não é possível remover o último administrador ativo");
             }
@@ -332,9 +337,9 @@ public class UserService {
         String email = normalizeEmail(person.getEmail());
         if (email == null) return;
 
-        if (usuarioRepository.findByPersonId(person.getId()) != null) return;
+        if (findOne(UsuarioQuery.builder().personId(person.getId()).build()) != null) return;
 
-        Usuario byEmail = usuarioRepository.findByNormalizedEmail(email);
+        Usuario byEmail = findOne(UsuarioQuery.builder().email(email).build());
         if (byEmail != null) {
             if (byEmail.getPersonId() != null && !byEmail.getPersonId().equals(person.getId())) {
                 throw new IllegalStateException(PERSON_ALREADY_LINKED);
@@ -382,7 +387,7 @@ public class UserService {
         } catch (NoSuchElementException e) {
             throw new IllegalArgumentException(PERSON_NOT_FOUND);
         }
-        Usuario existing = usuarioRepository.findByPersonId(personId);
+        Usuario existing = findOne(UsuarioQuery.builder().personId(personId).build());
         if (existing != null && !existing.getId().equals(usuario.getId())) {
             throw new IllegalStateException(PERSON_ALREADY_LINKED);
         }
