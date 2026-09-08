@@ -390,3 +390,9 @@ cp scripts/.env.local.example scripts/.env.local
 
 # App disponível em http://localhost:8080
 ```
+
+## user-backfill (usuários inativos ↔ pessoas)
+
+One-shot operacional **depois** da V014 em produção. Dry-run padrão; `--apply` explícito. Não envia convites.
+
+Instruções, credenciais e rollback: [`scripts/user-backfill/README.md`](user-backfill/README.md).
