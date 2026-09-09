@@ -142,11 +142,7 @@ public class FormularioPessoaService {
 
         List<Relacionamento> relationships = createRelationships(person, formulario, father, mother, spouse, children);
 
-        String message = request.getPessoaId() != null ?
-            "Pessoa atualizada e relacionamentos criados com sucesso" :
-            "Pessoa criada e relacionamentos criados com sucesso";
-
-        return new ProcessarFormularioResponse(person, relationships, message);
+        return new ProcessarFormularioResponse(person, relationships, null);
     }
 
     private boolean hasText(String value) {

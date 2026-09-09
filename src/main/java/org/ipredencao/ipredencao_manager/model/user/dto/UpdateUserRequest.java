@@ -2,8 +2,15 @@ package org.ipredencao.ipredencao_manager.model.user.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
 
+import java.io.IOException;
+
+@JsonSerialize(using = UpdateUserRequest.Serializer.class)
 public class UpdateUserRequest {
 
     private String name;
@@ -49,5 +56,26 @@ public class UpdateUserRequest {
     @JsonIgnore
     public boolean isPersonIdPresent() {
         return personIdPresent;
+    }
+
+    // omitir personId ≠ enviar null
+    static final class Serializer extends JsonSerializer<UpdateUserRequest> {
+        @Override
+        public void serialize(UpdateUserRequest value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            if (value.getName() != null) {
+                gen.writeStringField("name", value.getName());
+            }
+            if (value.getAccessProfile() != null) {
+                gen.writeStringField("accessProfile", value.getAccessProfile().name());
+            }
+            if (value.getActive() != null) {
+                gen.writeBooleanField("active", value.getActive());
+            }
+            if (value.isPersonIdPresent()) {
+                gen.writeObjectField("personId", value.getPersonId());
+            }
+            gen.writeEndObject();
+        }
     }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.firebase.auth.FirebaseAuthException;
 import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
 import org.ipredencao.ipredencao_manager.model.formulario_pessoa.FormularioPessoa;
+import org.ipredencao.ipredencao_manager.model.formulario_pessoa.ProcessarFormularioRequest;
 import org.ipredencao.ipredencao_manager.model.pessoa.CategoriaEnum;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
@@ -24,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -66,17 +68,14 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
     @Test
     @WithMockUser(roles = "DIACONO")
     void findById_includesUpdatedAtFromDatabase() throws Exception {
-        String created = mockMvc.perform(post(BASE)
+        FormularioPessoa created = read(mockMvc.perform(post(BASE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(publicFormBody("Formulário Timestamp", "captacao@exemplo.com", null)))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
+                .andExpect(status().isOk()), FormularioPessoa.class);
 
-        long id = objectMapper.readTree(created).get("id").asLong();
-
-        mockMvc.perform(get(BASE + "/{id}", id))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.updatedAt").isNotEmpty());
+        FormularioPessoa fetched = read(mockMvc.perform(get(BASE + "/{id}", created.getId()))
+                .andExpect(status().isOk()), FormularioPessoa.class);
+        assertNotNull(fetched.getUpdatedAt());
     }
 
     @Test
@@ -84,11 +83,9 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
     void process_createsInactiveMemberUser() throws Exception {
         long formId = createForm("Membro Novo", "membro@exemplo.com", CategoriaEnum.MEMBRO_COMUNGANTE);
 
-        mockMvc.perform(post(BASE + "/processar")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"formularioId\":" + formId + "}"))
+        process(formId, null)
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.mensagem").value("Pessoa criada e relacionamentos criados com sucesso"))
+            .andExpect(jsonPath("$.mensagem").value((Object) null))
             .andExpect(jsonPath("$.pessoaPrincipal.id").isNumber());
 
         Usuario user = findUserByEmail("membro@exemplo.com");
@@ -103,10 +100,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
     void process_createsInactiveMembershipCandidate() throws Exception {
         long formId = createForm("Admitendo Novo", "admitendo@exemplo.com", CategoriaEnum.AGUARDANDO_ENTREVISTA);
 
-        mockMvc.perform(post(BASE + "/processar")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"formularioId\":" + formId + "}"))
-            .andExpect(status().isOk());
+        process(formId, null).andExpect(status().isOk());
 
         Usuario user = findUserByEmail("admitendo@exemplo.com");
         assertNotNull(user);
@@ -119,10 +113,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
     void process_skipsUserForIneligibleCategory() throws Exception {
         long formId = createForm("Pastor Novo", "pastor@exemplo.com", CategoriaEnum.PASTOR_DA_IGREJA);
 
-        mockMvc.perform(post(BASE + "/processar")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"formularioId\":" + formId + "}"))
-            .andExpect(status().isOk());
+        process(formId, null).andExpect(status().isOk());
 
         assertNull(findUserByEmail("pastor@exemplo.com"));
         verify(firebaseAuthService, never()).createUserWithoutPassword(any(), any());
@@ -134,11 +125,9 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
         Pessoa pessoa = PessoaFixture.membroComungante(pessoaService, "Pessoa Sem Email", Sexo.FEMININO);
         long formId = createForm("Pessoa Sem Email", "enriquecido@exemplo.com", CategoriaEnum.MEMBRO_COMUNGANTE);
 
-        mockMvc.perform(post(BASE + "/processar")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"formularioId\":" + formId + ",\"pessoaId\":" + pessoa.getId() + "}"))
+        process(formId, pessoa.getId())
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.mensagem").value("Pessoa atualizada e relacionamentos criados com sucesso"));
+            .andExpect(jsonPath("$.mensagem").value((Object) null));
 
         Usuario user = findUserByEmail("enriquecido@exemplo.com");
         assertNotNull(user);
@@ -165,10 +154,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
 
         long formId = createForm("Já Vinculada", "ja@exemplo.com", CategoriaEnum.MEMBRO_COMUNGANTE);
 
-        mockMvc.perform(post(BASE + "/processar")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"formularioId\":" + formId + ",\"pessoaId\":" + pessoa.getId() + "}"))
-            .andExpect(status().isOk());
+        process(formId, pessoa.getId()).andExpect(status().isOk());
 
         Usuario user = findUserByPersonId(pessoa.getId());
         assertEquals(PerfilAcesso.BOLETIM, user.getAccessProfile());
@@ -184,9 +170,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
 
         long formId = createForm("Falha Firebase", "falha@exemplo.com", CategoriaEnum.MEMBRO_NAO_COMUNGANTE);
 
-        String body = mockMvc.perform(post(BASE + "/processar")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"formularioId\":" + formId + "}"))
+        String body = process(formId, null)
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.mensagem").value(UserService.USER_PROVISION_WARNING))
             .andExpect(jsonPath("$.pessoaPrincipal.id").isNumber())
@@ -195,6 +179,16 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
         long pessoaId = objectMapper.readTree(body).at("/pessoaPrincipal/id").asLong();
         assertNotNull(pessoaService.findById(pessoaId));
         assertNull(findUserByEmail("falha@exemplo.com"));
+    }
+
+    private ResultActions process(long formId, Long pessoaId) throws Exception {
+        return mockMvc.perform(post(BASE + "/processar")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new ProcessarFormularioRequest(formId, pessoaId))));
+    }
+
+    private <T> T read(ResultActions actions, Class<T> type) throws Exception {
+        return objectMapper.readValue(actions.andReturn().getResponse().getContentAsString(), type);
     }
 
     private Usuario findUserByEmail(String email) {

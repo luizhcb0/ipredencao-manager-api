@@ -92,6 +92,8 @@ public class UserService {
             throw new IllegalStateException("Usuário já existe com este email");
         }
 
+        assertPersonLinkable(request.personId(), null);
+
         FirebaseIdentity identity = resolveFirebaseIdentity(email, name);
 
         Usuario usuario = newEmailUser(identity.user().uid(), email, name, request.profile(), true);
@@ -382,16 +384,21 @@ public class UserService {
             usuario.setPersonId(null);
             return;
         }
+        assertPersonLinkable(personId, usuario.getId());
+        usuario.setPersonId(personId);
+    }
+
+    private void assertPersonLinkable(Long personId, Long currentUserId) {
+        if (personId == null) return;
         try {
             pessoaService.findById(personId);
         } catch (NoSuchElementException e) {
             throw new IllegalArgumentException(PERSON_NOT_FOUND);
         }
         Usuario existing = findOne(UsuarioQuery.builder().personId(personId).build());
-        if (existing != null && !existing.getId().equals(usuario.getId())) {
+        if (existing != null && !existing.getId().equals(currentUserId)) {
             throw new IllegalStateException(PERSON_ALREADY_LINKED);
         }
-        usuario.setPersonId(personId);
     }
 
     private void compensateFirebaseCreate(String uid) {
