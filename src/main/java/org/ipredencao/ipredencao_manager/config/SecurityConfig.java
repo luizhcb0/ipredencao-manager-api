@@ -95,6 +95,20 @@ public class SecurityConfig {
 
                 .requestMatchers("/api/enderecos/**").hasAnyRole(Roles.anyNames())
 
+                // EBD: explícito (em vez de cair no catch-all) pra deixar claro que a
+                // rota foi pensada, não esquecida — mas só isAuthenticated(), não
+                // hasAnyRole(...). MEMBER/MEMBERSHIP_CANDIDATE (V014) ficam de fora de
+                // TODOS os grupos de Roles e precisam alcançar automatrícula/presença
+                // (endpoints "/me"); um hasAnyRole(...) aqui os barraria antes mesmo de
+                // chegar no @PreAuthorize do controller (matcher decide primeiro — ver
+                // nota de "Role groups" acima). A distinção real de permissão (STAFF nos
+                // endpoints administrativos, aluno matriculado nos de leitura) não é
+                // uniforme por método HTTP nem por prefixo de path — ex.: GET
+                // /lessons/{id}/attendance é STAFF, GET /lessons/{id}/attendance/me é
+                // qualquer autenticado — então fica inteira no @PreAuthorize por método
+                // em EbdController, que é o único lugar que enxerga isso corretamente.
+                .requestMatchers("/api/ebd/**").authenticated()
+
                 // Usuários (admin) e perfil próprio
                 .requestMatchers("/api/users/**").hasAnyRole(Roles.adminNames())
                 .requestMatchers("/api/me/**").hasAnyRole(Roles.anyNames())

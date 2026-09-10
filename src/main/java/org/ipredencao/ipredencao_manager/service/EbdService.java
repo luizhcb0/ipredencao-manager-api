@@ -44,7 +44,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 
 @Service
 public class EbdService {
@@ -107,10 +106,8 @@ public class EbdService {
     public PagedResponse<EbdClass> searchClasses(EbdClassQuery query) {
         PaginationParameters pagination = query.pagination() != null ? query.pagination() : new PaginationParameters();
         pagination.applyDefaults();
-        // Visibilidade: STAFF vê qualquer status; qualquer outro autenticado
-        // (incluindo professor e aluno) só enxerga turmas ACTIVE na busca geral —
-        // "minhas turmas" (rascunho incluso, se professor) é resolvido por
-        // matrícula, não por esta busca (ver docs/EBD_ANALISE_E_PLANO.md G).
+        // Visibilidade: STAFF vê qualquer status; qualquer outro autenticado só
+        // enxerga turmas ACTIVE na busca geral (ver docs/EBD_ANALISE_E_PLANO.md G).
         EbdClassStatusEnum status = isStaff() ? query.status() : EbdClassStatusEnum.ACTIVE;
         EbdClassQuery effectiveQuery = EbdClassQuery.builder()
                 .id(query.id())
@@ -128,7 +125,7 @@ public class EbdService {
     @Transactional(readOnly = true)
     public EbdClass getClassDetail(Long id) {
         EbdClass base = requireClass(id);
-        if (isStaff() || isTeacherOfClass(id)) {
+        if (isStaff()) {
             return base.withEnrollments(enrollmentRepo.find(EbdEnrollmentQuery.builder().classId(id).build()));
         }
         // Sem visibilidade administrativa: turma em rascunho/encerrada não pode
@@ -160,9 +157,6 @@ public class EbdService {
         validateClassName(form);
         boolean fixed = form.fixed() != null ? form.fixed() : existing.fixed();
         Long cycleId = form.cycleId() != null ? form.cycleId() : existing.cycleId();
-        if (!isStaff() && (!Objects.equals(fixed, existing.fixed()) || !Objects.equals(cycleId, existing.cycleId()))) {
-            throw new AccessDeniedException("Apenas um administrador pode alterar o tipo da turma ou o ciclo");
-        }
         validateCycleRequirement(fixed, cycleId);
         EbdClassStatusEnum status = form.status() != null ? form.status() : existing.status();
         if (fixed && status == EbdClassStatusEnum.ACTIVE) {
@@ -173,7 +167,7 @@ public class EbdService {
         return requireClass(id);
     }
 
-    // ===== Matrícula (administrativa: STAFF ou professor-da-turma) =====
+    // ===== Matrícula (administrativa: STAFF) =====
 
     @Transactional(readOnly = true)
     public List<EbdEnrollment> listEnrollments(Long classId) {
@@ -188,18 +182,9 @@ public class EbdService {
             throw new IllegalArgumentException("Pessoa (personId) é obrigatória");
         }
         EbdEnrollmentRoleEnum role = form.role() != null ? form.role() : EbdEnrollmentRoleEnum.STUDENT;
-        if (role == EbdEnrollmentRoleEnum.TEACHER) {
-            if (!isStaff()) {
-                throw new AccessDeniedException("Apenas um administrador pode associar professor a uma turma");
-            }
-        } else {
-            if (!klass.fixed()) {
-                throw new IllegalArgumentException(
-                        "Turma não-fixa: o aluno se matricula sozinho (POST /api/ebd/classes/{id}/enrollments/me)");
-            }
-            if (!isStaff() && !isTeacherOfClass(classId)) {
-                throw new AccessDeniedException("Apenas o professor da turma ou um administrador pode incluir aluno");
-            }
+        if (role != EbdEnrollmentRoleEnum.TEACHER && !klass.fixed()) {
+            throw new IllegalArgumentException(
+                    "Turma não-fixa: o aluno se matricula sozinho (POST /api/ebd/classes/{id}/enrollments/me)");
         }
         pessoaService.findById(form.personId());
         if (enrollmentRepo.exists(classId, form.personId(), role)) {
@@ -215,13 +200,6 @@ public class EbdService {
         EbdEnrollment enrollment = requireEnrollment(enrollmentId);
         if (!enrollment.classId().equals(classId)) {
             throw new NoSuchElementException("Vínculo " + enrollmentId + " não encontrado nesta turma");
-        }
-        if (enrollment.role() == EbdEnrollmentRoleEnum.TEACHER) {
-            if (!isStaff()) {
-                throw new AccessDeniedException("Apenas um administrador pode remover um professor da turma");
-            }
-        } else if (!isStaff() && !isTeacherOfClass(classId)) {
-            throw new AccessDeniedException("Apenas o professor da turma ou um administrador pode remover aluno");
         }
         enrollmentRepo.delete(enrollmentId);
     }
@@ -268,7 +246,7 @@ public class EbdService {
     @Transactional(readOnly = true)
     public List<EbdLesson> listLessons(Long classId) {
         requireClass(classId);
-        if (isStaff() || isTeacherOfClass(classId)) {
+        if (isStaff()) {
             return lessonRepo.find(EbdLessonQuery.builder().classId(classId).build());
         }
         requireEnrolledStudent(classId);
@@ -290,7 +268,7 @@ public class EbdService {
     @Transactional
     public EbdLesson updateLesson(Long lessonId, EbdLessonForm form) {
         EbdLesson existing = requireLesson(lessonId);
-        requireStaffOrTeacher(existing.classId());
+        requireStaff();
         validateLessonTitle(form);
         int order = form.displayOrder() != null ? form.displayOrder() : existing.displayOrder();
         EbdLessonStatusEnum status = form.status() != null ? form.status() : existing.status();
@@ -303,7 +281,7 @@ public class EbdService {
     @Transactional
     public void deleteLesson(Long lessonId) {
         EbdLesson existing = requireLesson(lessonId);
-        requireStaffOrTeacher(existing.classId());
+        requireStaff();
         lessonRepo.delete(lessonId); // cascade apaga materiais da aula (V015)
     }
 
@@ -312,7 +290,7 @@ public class EbdService {
     @Transactional(readOnly = true)
     public List<EbdMaterial> listClassMaterials(Long classId) {
         requireClass(classId);
-        if (!isStaff() && !isTeacherOfClass(classId)) {
+        if (!isStaff()) {
             requireEnrolledStudent(classId);
         }
         return materialRepo.find(EbdMaterialQuery.builder().classId(classId).generalOnly(true).build());
@@ -321,7 +299,7 @@ public class EbdService {
     @Transactional(readOnly = true)
     public List<EbdMaterial> listLessonMaterials(Long lessonId) {
         EbdLesson lesson = requireLesson(lessonId);
-        if (!isStaff() && !isTeacherOfClass(lesson.classId())) {
+        if (!isStaff()) {
             requireEnrolledStudent(lesson.classId());
             requirePublished(lesson);
         }
@@ -331,30 +309,29 @@ public class EbdService {
     @Transactional
     public EbdMaterial addClassMaterial(Long classId, MultipartFile file) {
         requireClass(classId);
-        requireStaffOrTeacher(classId);
         return insertMaterial(classId, null, file);
     }
 
     @Transactional
     public EbdMaterial addLessonMaterial(Long lessonId, MultipartFile file) {
         EbdLesson lesson = requireLesson(lessonId);
-        requireStaffOrTeacher(lesson.classId());
+        requireStaff();
         return insertMaterial(lesson.classId(), lessonId, file);
     }
 
     @Transactional
     public void deleteMaterial(Long materialId) {
         EbdMaterial material = requireMaterial(materialId);
-        requireStaffOrTeacher(material.classId());
+        requireStaff();
         materialRepo.delete(materialId);
     }
 
-    // Visibilidade espelha listLessonMaterials/listClassMaterials: STAFF/professor
-    // sempre; aluno matriculado só se o material for geral ou da aula publicada.
+    // Visibilidade espelha listLessonMaterials/listClassMaterials: STAFF sempre;
+    // aluno matriculado só se o material for geral ou da aula publicada.
     @Transactional(readOnly = true)
     public EbdMaterialContent downloadMaterial(Long materialId) {
         EbdMaterial material = requireMaterial(materialId);
-        if (!isStaff() && !isTeacherOfClass(material.classId())) {
+        if (!isStaff()) {
             requireEnrolledStudent(material.classId());
             if (material.lessonId() != null) {
                 requirePublished(requireLesson(material.lessonId()));
@@ -428,18 +405,18 @@ public class EbdService {
 
     @Transactional(readOnly = true)
     public List<EbdAttendance> listAttendance(Long lessonId) {
-        EbdLesson lesson = requireLesson(lessonId);
-        requireStaffOrTeacher(lesson.classId());
+        requireLesson(lessonId);
+        requireStaff();
         return attendanceRepo.find(EbdAttendanceQuery.builder().lessonId(lessonId).build());
     }
 
-    // Retificação: STAFF/professor registrando ou corrigindo em nome do aluno
-    // (self_reported vira false, mesmo quando o valor de present não muda).
+    // Retificação: STAFF registrando ou corrigindo em nome do aluno (self_reported
+    // vira false, mesmo quando o valor de present não muda).
     @Transactional
     public EbdAttendance rectifyAttendance(Long attendanceId, EbdAttendanceForm form) {
         EbdAttendance existing = requireAttendance(attendanceId);
-        EbdLesson lesson = requireLesson(existing.lessonId());
-        requireStaffOrTeacher(lesson.classId());
+        requireLesson(existing.lessonId());
+        requireStaff();
         if (form == null || form.present() == null) {
             throw new IllegalArgumentException("Campo obrigatório: present");
         }
@@ -486,12 +463,12 @@ public class EbdService {
         }
     }
 
-    // Reutilizado por aula e material: quem edita uma delas precisa ser STAFF ou
-    // o professor da turma dona (não dá para expressar em @PreAuthorize porque
-    // o path variable desses endpoints é o id da aula/material, não da turma).
-    private void requireStaffOrTeacher(Long classId) {
-        if (!isStaff() && !isTeacherOfClass(classId)) {
-            throw new AccessDeniedException("Apenas o professor da turma ou um administrador pode fazer isso");
+    // Reutilizado pelos endpoints de aula/presença/material cujo path variable é
+    // o id da aula/presença/material, não o da turma (não dá para expressar
+    // STAFF em @PreAuthorize sem esse id) — ver comentário em EbdController.
+    private void requireStaff() {
+        if (!isStaff()) {
+            throw new AccessDeniedException("Apenas um administrador pode fazer isso");
         }
     }
 
@@ -541,7 +518,9 @@ public class EbdService {
     }
 
     // Decisão confirmada com o usuário: turma fixa não pode ser ativada sem
-    // professor vinculado.
+    // professor vinculado. Continua sendo uma exigência de dado (existe ao
+    // menos um vínculo TEACHER), não de autorização — não depende de quem é o
+    // professor, só de que exista um.
     private void requireTeacherForActivation(Long classId) {
         boolean hasTeacher = !enrollmentRepo.find(EbdEnrollmentQuery.builder()
                 .classId(classId).role(EbdEnrollmentRoleEnum.TEACHER).build()).isEmpty();
@@ -552,10 +531,6 @@ public class EbdService {
 
     private boolean isStaff() {
         return SecurityUtils.hasAnyRole(Roles.staffNames());
-    }
-
-    private boolean isTeacherOfClass(Long classId) {
-        return ebdAccess.isTeacherOf(SecurityContextHolder.getContext().getAuthentication(), classId);
     }
 
     // Usado pelas ações de autoatendimento (matricular-se/cancelar). O vínculo

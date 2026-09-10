@@ -36,11 +36,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Fase 1 da EBD (docs/EBD_ANALISE_E_PLANO.md): ciclo, turma e matrícula.
- * Cobre a matriz de permissões (STAFF / professor-da-turma via {@code EbdAccess}
- * / automatrícula) e as regras confirmadas com o usuário (1 ciclo ativo por
- * vez; turma fixa só ativa com professor; STUDENT só por matrícula
- * administrativa em turma fixa ou por automatrícula em turma não-fixa).
+ * EBD (docs/EBD_ANALISE_E_PLANO.md): ciclo, turma, matrícula, aula, material e
+ * presença. Cobre a matriz de permissões (STAFF / automatrícula / self-service)
+ * e as regras confirmadas com o usuário (1 ciclo ativo por vez; turma fixa só
+ * ativa com professor vinculado — vínculo, não permissão, ver
+ * {@code activateFixedClass_withTeacher_isAllowed}; STUDENT só por matrícula
+ * administrativa em turma fixa ou por automatrícula em turma não-fixa; gerenciar
+ * uma turma é STAFF, sem a granularidade "ou o professor dela" que existiu numa
+ * versão anterior — ver {@code teacherOfClass_withoutStaffRole_cannotAddStudent}).
  */
 @Transactional
 class EbdControllerIT extends IntegrationTestBase {
@@ -160,11 +163,14 @@ class EbdControllerIT extends IntegrationTestBase {
     }
 
     @Test
-    void teacherOfClass_canAddStudent_evenWithoutStaffRole() throws Exception {
+    void teacherOfClass_withoutStaffRole_cannotAddStudent() throws Exception {
+        // Simplificação pedida em revisão do PR: o vínculo TEACHER, sozinho, não
+        // concede mais permissão de gerenciar a turma — só STAFF (diácono/
+        // presbítero/admin) gerencia, mesmo sendo o professor dela.
         Long classId = createFixedClassAsAdmin("Turma com professor logado");
         Pessoa teacherPerson = PessoaFixture.membroComungante(pessoaService, "Professor Logado", Sexo.MASCULINO);
         Usuario teacherUser = usuarioRepository.insert(UsuarioFixture.builder()
-                .accessProfile(PerfilAcesso.BOLETIM) // não-STAFF: prova que o acesso vem do vínculo, não do perfil
+                .accessProfile(PerfilAcesso.BOLETIM) // não-STAFF
                 .personId(teacherPerson.getId())
                 .build());
 
@@ -174,13 +180,12 @@ class EbdControllerIT extends IntegrationTestBase {
                         .content("{\"personId\":" + teacherPerson.getId() + ",\"role\":\"TEACHER\"}"))
                 .andExpect(status().isOk());
 
-        // O professor (BOLETIM, não-STAFF) inclui um aluno na própria turma fixa.
+        // O professor (BOLETIM, não-STAFF) tenta incluir um aluno na própria turma: barrado.
         Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno via professor", Sexo.FEMININO);
         mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(teacherUser))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"personId\":" + student.getId() + "}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.role").value("STUDENT"));
+                .andExpect(status().isForbidden());
     }
 
     // ===== automatrícula (turma não-fixa) =====
@@ -282,7 +287,7 @@ class EbdControllerIT extends IntegrationTestBase {
 
     @Test
     @WithMockUser(roles = "BOLETIM")
-    void createLesson_isForbiddenForNonStaffNonTeacher() throws Exception {
+    void createLesson_isForbiddenForNonStaff() throws Exception {
         Long classId = createFixedClassAsAdmin("Turma aula forbidden");
         mockMvc.perform(post(BASE + "/classes/" + classId + "/lessons").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"Aula X\"}"))
@@ -292,25 +297,24 @@ class EbdControllerIT extends IntegrationTestBase {
     // ===== material =====
 
     @Test
-    void materialUpload_thenDownload_isAllowedForTeacher_andRejectedForOutsider() throws Exception {
+    void materialUpload_thenDownload_isAllowedForStaff_andRejectedForOutsider() throws Exception {
         Long classId = createFixedClassAsAdmin("Turma materiais");
-        Pessoa teacherPerson = PessoaFixture.membroComungante(pessoaService, "Professor Materiais", Sexo.FEMININO);
-        Usuario teacherUser = usuarioRepository.insert(UsuarioFixture.builder().personId(teacherPerson.getId()).build());
-        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asAdmin())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"personId\":" + teacherPerson.getId() + ",\"role\":\"TEACHER\"}"))
-                .andExpect(status().isOk());
+        Pessoa staffPerson = PessoaFixture.membroComungante(pessoaService, "Diácono Materiais", Sexo.FEMININO);
+        Usuario staffUser = usuarioRepository.insert(UsuarioFixture.builder()
+                .accessProfile(PerfilAcesso.DIACONO)
+                .personId(staffPerson.getId())
+                .build());
 
         MockMultipartFile file = new MockMultipartFile("file", "apostila.pdf", "application/pdf", "conteudo".getBytes());
         String body = mockMvc.perform(multipart(BASE + "/classes/" + classId + "/materials")
-                        .file(file).with(asUsuario(teacherUser)))
+                        .file(file).with(asUsuario(staffUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fileName").value("apostila.pdf"))
                 .andExpect(jsonPath("$.fileSizeBytes").value("conteudo".getBytes().length))
                 .andReturn().getResponse().getContentAsString();
         Long materialId = objectMapper.readTree(body).get("id").asLong();
 
-        mockMvc.perform(get(BASE + "/materials/" + materialId + "/download").with(asUsuario(teacherUser)))
+        mockMvc.perform(get(BASE + "/materials/" + materialId + "/download").with(asUsuario(staffUser)))
                 .andExpect(status().isOk())
                 .andExpect(content().bytes("conteudo".getBytes()));
 
@@ -471,7 +475,7 @@ class EbdControllerIT extends IntegrationTestBase {
 
     @Test
     @WithMockUser(roles = "BOLETIM")
-    void listAttendance_isForbiddenForNonStaffNonTeacher() throws Exception {
+    void listAttendance_isForbiddenForNonStaff() throws Exception {
         Long classId = createFixedClassAsAdmin("Turma presença forbidden");
         Long lessonId = createLessonAsAdmin(classId, "Aula forbidden");
 

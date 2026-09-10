@@ -36,18 +36,19 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-// Sem matcher próprio em SecurityConfig (deliberado): MEMBER/MEMBERSHIP_CANDIDATE
-// (V014) ficam de fora de todos os grupos de Roles, mas precisam alcançar os
-// endpoints de automatrícula/presença — então /api/ebd/** cai no catch-all
-// `anyRequest().authenticated()` (só exige um JWT válido) e toda autorização
-// real vive aqui, em @PreAuthorize por método (STAFF, professor-da-turma via
-// EbdAccess, ou qualquer autenticado nos endpoints "/me").
+// SecurityConfig só exige "autenticado" pra todo /api/ebd/** (ver matcher lá):
+// MEMBER/MEMBERSHIP_CANDIDATE (V014) ficam de fora de todos os grupos de
+// Roles, mas precisam alcançar os endpoints de automatrícula/presença — um
+// matcher hasAnyRole(...) os barraria antes de chegar aqui. Toda autorização
+// real vive em @PreAuthorize por método: STAFF nos endpoints administrativos,
+// isAuthenticated() nos de leitura/self-service ("/me"), com a diferença fina
+// entre "STAFF vê tudo" e "aluno matriculado só vê o que pode" resolvida no
+// service quando o @PreAuthorize sozinho não dá conta.
 @RestController
 @RequestMapping("/api/ebd")
 public class EbdController {
 
     private static final String STAFF = Roles.STAFF_EXPR;
-    private static final String STAFF_OR_TEACHER = "@roles.staff(authentication) or @ebdAccess.isTeacherOf(authentication, #id)";
     private static final String AUTHENTICATED = "isAuthenticated()";
 
     @Autowired
@@ -94,30 +95,29 @@ public class EbdController {
     }
 
     @PutMapping("/classes/{id}")
-    @PreAuthorize(STAFF_OR_TEACHER)
+    @PreAuthorize(STAFF)
     public ResponseEntity<EbdClass> updateClass(@PathVariable Long id, @RequestBody EbdClassForm form) {
         return ResponseEntity.ok(service.updateClass(id, form));
     }
 
-    // ===== Matrícula administrativa (STAFF ou professor-da-turma) =====
-    // A checagem fina — professor só inclui STUDENT, só STAFF associa/remove
-    // TEACHER, STUDENT só em turma fixa — fica no service (não dá para expressar
-    // "olhe o role do body" em @PreAuthorize).
+    // ===== Matrícula administrativa (STAFF) =====
+    // A checagem fina — TEACHER só por STAFF, STUDENT só em turma fixa — fica
+    // no service (não dá para expressar "olhe o role do body" em @PreAuthorize).
 
     @GetMapping("/classes/{id}/enrollments")
-    @PreAuthorize(STAFF_OR_TEACHER)
+    @PreAuthorize(STAFF)
     public ResponseEntity<List<EbdEnrollment>> listEnrollments(@PathVariable Long id) {
         return ResponseEntity.ok(service.listEnrollments(id));
     }
 
     @PostMapping("/classes/{id}/enrollments")
-    @PreAuthorize(STAFF_OR_TEACHER)
+    @PreAuthorize(STAFF)
     public ResponseEntity<EbdEnrollment> addEnrollment(@PathVariable Long id, @RequestBody EbdEnrollmentForm form) {
         return ResponseEntity.ok(service.addEnrollment(id, form));
     }
 
     @DeleteMapping("/classes/{id}/enrollments/{enrollmentId}")
-    @PreAuthorize(STAFF_OR_TEACHER)
+    @PreAuthorize(STAFF)
     public ResponseEntity<Void> removeEnrollment(@PathVariable Long id, @PathVariable Long enrollmentId) {
         service.removeEnrollment(id, enrollmentId);
         return ResponseEntity.noContent().build();
@@ -139,9 +139,10 @@ public class EbdController {
     }
 
     // ===== Aula =====
-    // updateLesson/deleteLesson recebem o id da AULA, não da turma — não dá
-    // para expressar "STAFF ou professor da turma" em @PreAuthorize com esse
-    // path variable, então a checagem fica no service (EbdService.requireStaffOrTeacher).
+    // updateLesson/deleteLesson recebem o id da AULA, não da turma; a checagem
+    // (STAFF) fica no service (EbdService.requireStaff) pra ficar no mesmo
+    // lugar dos outros métodos administrativos de aula/material que têm o
+    // mesmo formato de path variable.
 
     @GetMapping("/classes/{id}/lessons")
     @PreAuthorize(AUTHENTICATED)
@@ -150,7 +151,7 @@ public class EbdController {
     }
 
     @PostMapping("/classes/{id}/lessons")
-    @PreAuthorize(STAFF_OR_TEACHER)
+    @PreAuthorize(STAFF)
     public ResponseEntity<EbdLesson> createLesson(@PathVariable Long id, @RequestBody EbdLessonForm form) {
         return ResponseEntity.ok(service.createLesson(id, form));
     }
@@ -178,7 +179,7 @@ public class EbdController {
     }
 
     @PostMapping("/classes/{id}/materials")
-    @PreAuthorize(STAFF_OR_TEACHER)
+    @PreAuthorize(STAFF)
     public ResponseEntity<EbdMaterial> addClassMaterial(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(service.addClassMaterial(id, file));
     }

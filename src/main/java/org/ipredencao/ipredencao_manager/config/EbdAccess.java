@@ -1,9 +1,6 @@
 package org.ipredencao.ipredencao_manager.config;
 
 import org.ipredencao.ipredencao_manager.model.auth.AuthUser;
-import org.ipredencao.ipredencao_manager.model.ebd.EbdEnrollmentQuery;
-import org.ipredencao.ipredencao_manager.model.ebd.EbdEnrollmentRoleEnum;
-import org.ipredencao.ipredencao_manager.repository.EbdEnrollmentRepository;
 import org.ipredencao.ipredencao_manager.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -12,29 +9,21 @@ import org.springframework.stereotype.Component;
 import java.util.NoSuchElementException;
 
 /**
- * Autorização data-driven da EBD: "esta pessoa é professora desta turma?" não é
- * um {@code perfil_acesso} (ver docs/EBD_ANALISE_E_PLANO.md B.3) — é um vínculo
- * ({@code ebd_enrollment.role = TEACHER}). Uso: {@code @PreAuthorize("@roles.staff(authentication)
- * or @ebdAccess.isTeacherOf(authentication, #id)")}.
+ * Resolve a identidade do chamador dentro do domínio da EBD. Chegou a expor
+ * também {@code isTeacherOf(authentication, classId)} (autorização data-driven:
+ * "esta pessoa é professora desta turma?", via {@code ebd_enrollment.role =
+ * TEACHER}), removido a pedido do time em revisão do PR — de início a permissão
+ * de gerenciar uma turma fica só com STAFF (diácono/presbítero/admin), sem essa
+ * granularidade por vínculo. O papel {@code TEACHER} em si continua existindo
+ * em {@code ebd_enrollment} (turma fixa exige pelo menos um vínculo assim para
+ * ativar — ver {@code EbdService.requireTeacherForActivation}), só não concede
+ * mais permissão sozinho.
  */
 @Component("ebdAccess")
 public class EbdAccess {
 
     @Autowired
     private UserService userService;
-
-    @Autowired
-    private EbdEnrollmentRepository enrollmentRepository;
-
-    public boolean isTeacherOf(Authentication authentication, Long classId) {
-        Long personId = currentPersonId(authentication);
-        if (personId == null || classId == null) return false;
-        return !enrollmentRepository.find(EbdEnrollmentQuery.builder()
-                .classId(classId)
-                .personId(personId)
-                .role(EbdEnrollmentRoleEnum.TEACHER)
-                .build()).isEmpty();
-    }
 
     /**
      * Resolve o {@code usuario.person_id} do chamador — vínculo já existente
