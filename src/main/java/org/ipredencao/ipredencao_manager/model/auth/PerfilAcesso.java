@@ -5,5 +5,7 @@ public enum PerfilAcesso {
     BOLETIM,
     DIACONO,
     PRESBITERO,
-    ADMIN
+    ADMIN,
+    MEMBER,
+    MEMBERSHIP_CANDIDATE
 }

@@ -10,6 +10,7 @@ public class UsuarioQuery {
     private PerfilAcesso accessProfile;
     private Boolean active;
     private ProviderAutenticacao provider;
+    private Long personId;
     
     // Construtor privado para forçar uso do builder
     private UsuarioQuery() {}
@@ -50,6 +51,11 @@ public class UsuarioQuery {
             query.provider = provider;
             return this;
         }
+
+        public Builder personId(Long personId) {
+            query.personId = personId;
+            return this;
+        }
         
         public UsuarioQuery build() {
             return query;
@@ -79,5 +85,9 @@ public class UsuarioQuery {
     
     public ProviderAutenticacao getProvider() {
         return provider;
+    }
+
+    public Long getPersonId() {
+        return personId;
     }
 }

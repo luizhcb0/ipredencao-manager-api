@@ -31,6 +31,8 @@ public class Usuario {
     private Integer failedLoginAttempts = 0;
     
     private DateTime blockedUntil;
+
+    private Long personId;
     
     // Métodos de conveniência
     public boolean isContaBloqueada() {
@@ -144,5 +146,13 @@ public class Usuario {
     
     public void setBlockedUntil(DateTime blockedUntil) {
         this.blockedUntil = blockedUntil;
+    }
+
+    public Long getPersonId() {
+        return personId;
+    }
+
+    public void setPersonId(Long personId) {
+        this.personId = personId;
     }
 }

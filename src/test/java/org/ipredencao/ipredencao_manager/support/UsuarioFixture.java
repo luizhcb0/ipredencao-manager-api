@@ -20,6 +20,7 @@ public final class UsuarioFixture {
         private PerfilAcesso accessProfile = PerfilAcesso.BOLETIM;
         private ProviderAutenticacao provider = ProviderAutenticacao.EMAIL;
         private Boolean active = true;
+        private Long personId;
 
         public Builder firebaseUid(String firebaseUid) {
             this.firebaseUid = firebaseUid;
@@ -51,6 +52,11 @@ public final class UsuarioFixture {
             return this;
         }
 
+        public Builder personId(Long personId) {
+            this.personId = personId;
+            return this;
+        }
+
         public Usuario build() {
             Usuario usuario = new Usuario();
             usuario.setFirebaseUid(firebaseUid);
@@ -60,6 +66,7 @@ public final class UsuarioFixture {
             usuario.setProvider(provider);
             usuario.setAddedAt(DateTime.now());
             usuario.setActive(active);
+            usuario.setPersonId(personId);
             return usuario;
         }
     }

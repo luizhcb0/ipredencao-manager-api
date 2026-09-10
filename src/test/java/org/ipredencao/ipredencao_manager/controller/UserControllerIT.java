@@ -1,13 +1,19 @@
 package org.ipredencao.ipredencao_manager.controller;
 
 import com.google.firebase.auth.FirebaseAuthException;
+import org.ipredencao.ipredencao_manager.model.ErrorResponse;
 import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
 import org.ipredencao.ipredencao_manager.model.user.Usuario;
+import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
+import org.ipredencao.ipredencao_manager.model.user.dto.CreateUserRequest;
+import org.ipredencao.ipredencao_manager.model.user.dto.UpdateUserRequest;
+import org.ipredencao.ipredencao_manager.model.user.dto.UserSummaryResponse;
 import org.ipredencao.ipredencao_manager.repository.UsuarioRepository;
 import org.ipredencao.ipredencao_manager.service.FirebaseAuthService;
 import org.ipredencao.ipredencao_manager.service.PessoaService;
+import org.ipredencao.ipredencao_manager.service.UserService;
 import org.ipredencao.ipredencao_manager.service.firebase.FirebaseUser;
 import org.ipredencao.ipredencao_manager.support.IntegrationTestBase;
 import org.ipredencao.ipredencao_manager.support.PessoaFixture;
@@ -19,14 +25,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
-
 import static org.ipredencao.ipredencao_manager.jooq.tables.Pessoa.PESSOA;
+import static org.ipredencao.ipredencao_manager.jooq.tables.PessoaHistory.PESSOA_HISTORY;
 import static org.ipredencao.ipredencao_manager.service.UserService.CANNOT_DELETE_USER_WITH_REFERENCES;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -37,7 +44,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Transactional
@@ -57,11 +63,9 @@ class UserControllerIT extends IntegrationTestBase {
     @MockitoBean
     private FirebaseAuthService firebaseAuthService;
 
-    private Usuario adminUser;
-
     @BeforeEach
     void setUp() throws FirebaseAuthException {
-        adminUser = usuarioRepository.insert(UsuarioFixture.builder()
+        usuarioRepository.insert(UsuarioFixture.builder()
             .email("admin@test.local")
             .name("Admin Teste")
             .accessProfile(PerfilAcesso.ADMIN)
@@ -96,23 +100,18 @@ class UserControllerIT extends IntegrationTestBase {
             .accessProfile(PerfilAcesso.BOLETIM)
             .build());
 
-        mockMvc.perform(get(BASE))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(org.hamcrest.Matchers.greaterThanOrEqualTo(2)));
+        UserSummaryResponse[] users = read(mockMvc.perform(get(BASE)).andExpect(status().isOk()), UserSummaryResponse[].class);
+        assertTrue(users.length >= 2);
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     void create_returnsCreated() throws Exception {
-        mockMvc.perform(post(BASE)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of(
-                    "name", "Novo Usuario",
-                    "email", "novo@test.local",
-                    "profile", "BOLETIM"
-                ))))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.email").value("novo@test.local"));
+        UserSummaryResponse created = read(postUser(new CreateUserRequest(
+            "Novo Usuario", "novo@test.local", PerfilAcesso.BOLETIM, null
+        )).andExpect(status().isCreated()), UserSummaryResponse.class);
+
+        assertEquals("novo@test.local", created.email());
     }
 
     @Test
@@ -122,37 +121,25 @@ class UserControllerIT extends IntegrationTestBase {
             .email("duplicado@test.local")
             .build());
 
-        mockMvc.perform(post(BASE)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of(
-                    "name", "Outro",
-                    "email", "duplicado@test.local",
-                    "profile", "BOLETIM"
-                ))))
+        postUser(new CreateUserRequest("Outro", "duplicado@test.local", PerfilAcesso.BOLETIM, null))
             .andExpect(status().isConflict());
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     void create_linksExistingFirebaseAccountWhenNotInDb() throws Exception {
-        // Caminho Lambda: o erro do Firebase chega embrulhado em RuntimeException
         when(firebaseAuthService.createUserWithoutPassword(eq("mateus@test.local"), any()))
             .thenThrow(new RuntimeException(
                 "Firebase Lambda error: The user with the provided email already exists (EMAIL_EXISTS)."));
         when(firebaseAuthService.getUserByEmail("mateus@test.local"))
             .thenReturn(new FirebaseUser("existing-firebase-uid", "mateus@test.local", "Mateus", true, null, false));
 
-        mockMvc.perform(post(BASE)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of(
-                    "name", "Mateus Souza",
-                    "email", "mateus@test.local",
-                    "profile", "PRESBITERO"
-                ))))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.email").value("mateus@test.local"))
-            .andExpect(jsonPath("$.name").value("Mateus Souza"));
+        UserSummaryResponse created = read(postUser(new CreateUserRequest(
+            "Mateus Souza", "mateus@test.local", PerfilAcesso.PRESBITERO, null
+        )).andExpect(status().isCreated()), UserSummaryResponse.class);
 
+        assertEquals("mateus@test.local", created.email());
+        assertEquals("Mateus Souza", created.name());
         verify(firebaseAuthService, never()).deleteUser(any());
         verify(firebaseAuthService).updateUser("existing-firebase-uid", "Mateus Souza");
     }
@@ -166,13 +153,11 @@ class UserControllerIT extends IntegrationTestBase {
             .firebaseUid("patch-firebase-uid")
             .build());
 
-        mockMvc.perform(patch(BASE + "/" + user.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of(
-                    "accessProfile", "DIACONO"
-                ))))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.accessProfile").value("DIACONO"));
+        UpdateUserRequest body = new UpdateUserRequest();
+        body.setAccessProfile(PerfilAcesso.DIACONO);
+
+        UserSummaryResponse updated = read(patchUser(user.getId(), body).andExpect(status().isOk()), UserSummaryResponse.class);
+        assertEquals(PerfilAcesso.DIACONO, updated.accessProfile());
     }
 
     @Test
@@ -186,7 +171,7 @@ class UserControllerIT extends IntegrationTestBase {
         mockMvc.perform(delete(BASE + "/" + user.getId()))
             .andExpect(status().isNoContent());
 
-        assertNull(usuarioRepository.findById(user.getId()));
+        assertNull(findUser(user.getId()));
     }
 
     @Test
@@ -203,10 +188,113 @@ class UserControllerIT extends IntegrationTestBase {
             .where(PESSOA.PESSOA_ID.eq(pessoa.getId()))
             .execute();
 
-        mockMvc.perform(delete(BASE + "/" + user.getId()))
-            .andExpect(status().isConflict())
-            .andExpect(jsonPath("$.message").value(CANNOT_DELETE_USER_WITH_REFERENCES));
+        ErrorResponse error = read(mockMvc.perform(delete(BASE + "/" + user.getId()))
+            .andExpect(status().isConflict()), ErrorResponse.class);
+        assertEquals(CANNOT_DELETE_USER_WITH_REFERENCES, error.getMessage());
 
         verify(firebaseAuthService, never()).deleteUser(any());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void create_linksPersonWhenPersonIdProvided() throws Exception {
+        Pessoa pessoa = PessoaFixture.membroComungante(pessoaService, "Pessoa Convite", Sexo.FEMININO);
+
+        UserSummaryResponse created = read(postUser(new CreateUserRequest(
+            "Novo Usuario", "novo@test.local", PerfilAcesso.BOLETIM, pessoa.getId()
+        )).andExpect(status().isCreated()), UserSummaryResponse.class);
+
+        assertEquals(pessoa.getId(), created.personId());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void create_returnsBadRequestWhenPersonMissing() throws Exception {
+        ErrorResponse error = read(postUser(new CreateUserRequest(
+            "Novo Usuario", "novo@test.local", PerfilAcesso.BOLETIM, 999_999L
+        )).andExpect(status().isBadRequest()), ErrorResponse.class);
+
+        assertEquals(UserService.PERSON_NOT_FOUND, error.getMessage());
+        verify(firebaseAuthService, never()).createUserWithoutPassword(any(), any());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void create_returnsConflictWhenPersonAlreadyLinked() throws Exception {
+        Pessoa pessoa = PessoaFixture.membroComungante(pessoaService, "Pessoa Duplicada", Sexo.MASCULINO);
+        usuarioRepository.insert(UsuarioFixture.builder()
+            .email("ja-vinculado@test.local")
+            .personId(pessoa.getId())
+            .build());
+
+        ErrorResponse error = read(postUser(new CreateUserRequest(
+            "Outro", "outro@test.local", PerfilAcesso.BOLETIM, pessoa.getId()
+        )).andExpect(status().isConflict()), ErrorResponse.class);
+
+        assertEquals(UserService.PERSON_ALREADY_LINKED, error.getMessage());
+        verify(firebaseAuthService, never()).createUserWithoutPassword(any(), any());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void patch_linksAndClearsPerson() throws Exception {
+        Pessoa pessoa = PessoaFixture.membroComungante(pessoaService, "Pessoa Patch", Sexo.FEMININO);
+        Usuario user = usuarioRepository.insert(UsuarioFixture.builder()
+            .email("patch-person@test.local")
+            .firebaseUid("patch-person-uid")
+            .build());
+
+        UpdateUserRequest link = new UpdateUserRequest();
+        link.setPersonId(pessoa.getId());
+        UserSummaryResponse linked = read(patchUser(user.getId(), link).andExpect(status().isOk()), UserSummaryResponse.class);
+        assertEquals(pessoa.getId(), linked.personId());
+
+        UpdateUserRequest rename = new UpdateUserRequest();
+        rename.setName("Ainda vinculado");
+        UserSummaryResponse kept = read(patchUser(user.getId(), rename).andExpect(status().isOk()), UserSummaryResponse.class);
+        assertEquals(pessoa.getId(), kept.personId());
+        assertEquals("Ainda vinculado", kept.name());
+
+        UpdateUserRequest unlink = new UpdateUserRequest();
+        unlink.setPersonId(null);
+        UserSummaryResponse cleared = read(patchUser(user.getId(), unlink).andExpect(status().isOk()), UserSummaryResponse.class);
+        assertNull(cleared.personId());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void deletingPerson_nullsUserPersonId() {
+        Pessoa pessoa = PessoaFixture.membroComungante(pessoaService, "Pessoa Apagar", Sexo.MASCULINO);
+        Usuario user = usuarioRepository.insert(UsuarioFixture.builder()
+            .email("set-null@test.local")
+            .personId(pessoa.getId())
+            .build());
+
+        dsl.deleteFrom(PESSOA_HISTORY).where(PESSOA_HISTORY.PESSOA_ID.eq(pessoa.getId())).execute();
+        dsl.deleteFrom(PESSOA).where(PESSOA.PESSOA_ID.eq(pessoa.getId())).execute();
+
+        Usuario reloaded = findUser(user.getId());
+        assertNull(reloaded.getPersonId());
+    }
+
+    private ResultActions postUser(CreateUserRequest request) throws Exception {
+        return mockMvc.perform(post(BASE)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)));
+    }
+
+    private ResultActions patchUser(Long id, UpdateUserRequest request) throws Exception {
+        return mockMvc.perform(patch(BASE + "/" + id)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)));
+    }
+
+    private <T> T read(ResultActions actions, Class<T> type) throws Exception {
+        return objectMapper.readValue(actions.andReturn().getResponse().getContentAsString(), type);
+    }
+
+    private Usuario findUser(Long id) {
+        return usuarioRepository.find(UsuarioQuery.builder().id(id).build())
+            .stream().findFirst().orElse(null);
     }
 }

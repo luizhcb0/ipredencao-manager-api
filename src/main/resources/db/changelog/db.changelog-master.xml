@@ -17,5 +17,6 @@
     <include file="V010__serving_areas.sql" relativeToChangelogFile="true"/>
     <include file="V011__pessoa_categoria_not_null.sql" relativeToChangelogFile="true"/>
     <include file="V013__minute.sql" relativeToChangelogFile="true"/>
+    <include file="V014__user_person_profiles.sql" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
