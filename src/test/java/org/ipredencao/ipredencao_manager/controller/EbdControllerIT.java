@@ -28,6 +28,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -345,6 +346,97 @@ class EbdControllerIT extends IntegrationTestBase {
         mockMvc.perform(get(BASE + "/materials/" + materialId + "/download").with(asUsuario(studentUser)))
                 .andExpect(status().isOk())
                 .andExpect(content().bytes("slides".getBytes()));
+    }
+
+    // ===== presença =====
+
+    @Test
+    void selfReportAttendance_thenDuplicate_isRejected_andStaffSeesIt() throws Exception {
+        Long cycleId = createActiveCycleAsAdmin("Ciclo presença 1");
+        Long classId = createActiveNonFixedClassAsAdmin("Turma presença 1", cycleId);
+        Long lessonId = createLessonAsAdmin(classId, "Aula com presença");
+        publishLessonAsAdmin(lessonId, "Aula com presença");
+
+        Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Presença", Sexo.FEMININO);
+        Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(studentUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.present").value(true))
+                .andExpect(jsonPath("$.selfReported").value(true))
+                .andExpect(jsonPath("$.personId").value(student.getId()));
+
+        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(studentUser)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get(BASE + "/lessons/" + lessonId + "/attendance").with(asAdmin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].present").value(true));
+    }
+
+    @Test
+    void selfReportAttendance_onDraftLesson_isRejected() throws Exception {
+        Long cycleId = createActiveCycleAsAdmin("Ciclo presença 2");
+        Long classId = createActiveNonFixedClassAsAdmin("Turma presença 2", cycleId);
+        Long lessonId = createLessonAsAdmin(classId, "Aula rascunho presença");
+
+        Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Presença Rascunho", Sexo.MASCULINO);
+        Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(studentUser)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void selfReportAttendance_withoutEnrollment_isRejected() throws Exception {
+        Long cycleId = createActiveCycleAsAdmin("Ciclo presença 3");
+        Long classId = createActiveNonFixedClassAsAdmin("Turma presença 3", cycleId);
+        Long lessonId = createLessonAsAdmin(classId, "Aula sem matrícula");
+        publishLessonAsAdmin(lessonId, "Aula sem matrícula");
+
+        Pessoa outsider = PessoaFixture.membroComungante(pessoaService, "Não Matriculado", Sexo.FEMININO);
+        Usuario outsiderUser = usuarioRepository.insert(UsuarioFixture.builder().personId(outsider.getId()).build());
+
+        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(outsiderUser)))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void rectifyAttendance_asStaff_flipsPresentAndClearsSelfReported() throws Exception {
+        Long cycleId = createActiveCycleAsAdmin("Ciclo presença 4");
+        Long classId = createActiveNonFixedClassAsAdmin("Turma presença 4", cycleId);
+        Long lessonId = createLessonAsAdmin(classId, "Aula retificação");
+        publishLessonAsAdmin(lessonId, "Aula retificação");
+
+        Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Retificação", Sexo.MASCULINO);
+        Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+                .andExpect(status().isOk());
+        String body = mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(studentUser)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        Long attendanceId = objectMapper.readTree(body).get("id").asLong();
+
+        mockMvc.perform(patch(BASE + "/attendance/" + attendanceId).with(asAdmin())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"present\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.present").value(false))
+                .andExpect(jsonPath("$.selfReported").value(false));
+    }
+
+    @Test
+    @WithMockUser(roles = "BOLETIM")
+    void listAttendance_isForbiddenForNonStaffNonTeacher() throws Exception {
+        Long classId = createFixedClassAsAdmin("Turma presença forbidden");
+        Long lessonId = createLessonAsAdmin(classId, "Aula forbidden");
+
+        mockMvc.perform(get(BASE + "/lessons/" + lessonId + "/attendance"))
+                .andExpect(status().isForbidden());
     }
 
     // ===== helpers =====
