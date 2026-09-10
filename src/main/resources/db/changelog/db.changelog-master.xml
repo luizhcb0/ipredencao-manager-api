@@ -19,5 +19,6 @@
     <include file="V013__minute.sql" relativeToChangelogFile="true"/>
     <include file="V014__user_person_profiles.sql" relativeToChangelogFile="true"/>
     <include file="V015__ebd.sql" relativeToChangelogFile="true"/>
+    <include file="V016__ebd_lessons_materials.sql" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
