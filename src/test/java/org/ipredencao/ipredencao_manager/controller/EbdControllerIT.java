@@ -13,6 +13,7 @@ import org.ipredencao.ipredencao_manager.support.UsuarioFixture;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -22,11 +23,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -244,7 +248,120 @@ class EbdControllerIT extends IntegrationTestBase {
                 .andExpect(jsonPath("$.name").value("Turma visível"));
     }
 
+    // ===== aula =====
+
+    @Test
+    void enrolledStudent_seesOnlyPublishedLessons() throws Exception {
+        Long cycleId = createActiveCycleAsAdmin("Ciclo aulas 1");
+        Long classId = createActiveNonFixedClassAsAdmin("Turma aulas 1", cycleId);
+        createLessonAsAdmin(classId, "Aula rascunho");
+        Long publishedLessonId = createLessonAsAdmin(classId, "Aula publicada");
+        publishLessonAsAdmin(publishedLessonId, "Aula publicada");
+
+        Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Aulas", Sexo.MASCULINO);
+        Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get(BASE + "/classes/" + classId + "/lessons").with(asUsuario(studentUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].title").value("Aula publicada"));
+    }
+
+    @Test
+    void nonEnrolledCaller_cannotListLessons() throws Exception {
+        Long cycleId = createActiveCycleAsAdmin("Ciclo aulas 2");
+        Long classId = createActiveNonFixedClassAsAdmin("Turma aulas 2", cycleId);
+        Usuario outsider = usuarioRepository.insert(UsuarioFixture.builder().build());
+
+        mockMvc.perform(get(BASE + "/classes/" + classId + "/lessons").with(asUsuario(outsider)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "BOLETIM")
+    void createLesson_isForbiddenForNonStaffNonTeacher() throws Exception {
+        Long classId = createFixedClassAsAdmin("Turma aula forbidden");
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/lessons").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Aula X\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    // ===== material =====
+
+    @Test
+    void materialUpload_thenDownload_isAllowedForTeacher_andRejectedForOutsider() throws Exception {
+        Long classId = createFixedClassAsAdmin("Turma materiais");
+        Pessoa teacherPerson = PessoaFixture.membroComungante(pessoaService, "Professor Materiais", Sexo.FEMININO);
+        Usuario teacherUser = usuarioRepository.insert(UsuarioFixture.builder().personId(teacherPerson.getId()).build());
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"personId\":" + teacherPerson.getId() + ",\"role\":\"TEACHER\"}"))
+                .andExpect(status().isOk());
+
+        MockMultipartFile file = new MockMultipartFile("file", "apostila.pdf", "application/pdf", "conteudo".getBytes());
+        String body = mockMvc.perform(multipart(BASE + "/classes/" + classId + "/materials")
+                        .file(file).with(asUsuario(teacherUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fileName").value("apostila.pdf"))
+                .andExpect(jsonPath("$.fileSizeBytes").value("conteudo".getBytes().length))
+                .andReturn().getResponse().getContentAsString();
+        Long materialId = objectMapper.readTree(body).get("id").asLong();
+
+        mockMvc.perform(get(BASE + "/materials/" + materialId + "/download").with(asUsuario(teacherUser)))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes("conteudo".getBytes()));
+
+        Pessoa outsiderPerson = PessoaFixture.membroComungante(pessoaService, "Estranho Materiais", Sexo.MASCULINO);
+        Usuario outsiderUser = usuarioRepository.insert(UsuarioFixture.builder().personId(outsiderPerson.getId()).build());
+        mockMvc.perform(get(BASE + "/materials/" + materialId + "/download").with(asUsuario(outsiderUser)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void lessonMaterial_isHiddenFromStudent_untilLessonIsPublished() throws Exception {
+        Long cycleId = createActiveCycleAsAdmin("Ciclo material aula");
+        Long classId = createActiveNonFixedClassAsAdmin("Turma material aula", cycleId);
+        Long lessonId = createLessonAsAdmin(classId, "Aula com material");
+
+        MockMultipartFile file = new MockMultipartFile("file", "slides.pdf", "application/pdf", "slides".getBytes());
+        String body = mockMvc.perform(multipart(BASE + "/lessons/" + lessonId + "/materials").file(file).with(asAdmin()))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        Long materialId = objectMapper.readTree(body).get("id").asLong();
+
+        Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Material Aula", Sexo.FEMININO);
+        Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+                .andExpect(status().isOk());
+
+        // aula ainda em rascunho: aluno matriculado não baixa o material dela
+        mockMvc.perform(get(BASE + "/materials/" + materialId + "/download").with(asUsuario(studentUser)))
+                .andExpect(status().isForbidden());
+
+        publishLessonAsAdmin(lessonId, "Aula com material");
+
+        mockMvc.perform(get(BASE + "/materials/" + materialId + "/download").with(asUsuario(studentUser)))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes("slides".getBytes()));
+    }
+
     // ===== helpers =====
+
+    private Long createLessonAsAdmin(Long classId, String title) throws Exception {
+        String body = mockMvc.perform(post(BASE + "/classes/" + classId + "/lessons").with(asAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"" + title + "\"}"))
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readTree(body).get("id").asLong();
+    }
+
+    private void publishLessonAsAdmin(Long lessonId, String title) throws Exception {
+        mockMvc.perform(put(BASE + "/lessons/" + lessonId).with(asAdmin()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"" + title + "\",\"status\":\"PUBLISHED\"}"))
+                .andExpect(status().isOk());
+    }
 
     private Long createFixedClass(String name) throws Exception {
         String body = mockMvc.perform(post(BASE + "/classes").contentType(MediaType.APPLICATION_JSON)
