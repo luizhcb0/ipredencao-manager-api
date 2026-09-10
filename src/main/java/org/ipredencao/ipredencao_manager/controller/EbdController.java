@@ -4,13 +4,20 @@ import org.ipredencao.ipredencao_manager.config.Roles;
 import org.ipredencao.ipredencao_manager.controller.form.EbdClassForm;
 import org.ipredencao.ipredencao_manager.controller.form.EbdCycleForm;
 import org.ipredencao.ipredencao_manager.controller.form.EbdEnrollmentForm;
+import org.ipredencao.ipredencao_manager.controller.form.EbdLessonForm;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdClass;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdClassQuery;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdCycle;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdEnrollment;
+import org.ipredencao.ipredencao_manager.model.ebd.EbdLesson;
+import org.ipredencao.ipredencao_manager.model.ebd.EbdMaterial;
+import org.ipredencao.ipredencao_manager.model.ebd.EbdMaterialContent;
 import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.service.EbdService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,7 +27,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -124,5 +133,81 @@ public class EbdController {
     public ResponseEntity<Void> selfUnenroll(@PathVariable Long id) {
         service.selfUnenroll(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ===== Aula =====
+    // updateLesson/deleteLesson recebem o id da AULA, não da turma — não dá
+    // para expressar "STAFF ou professor da turma" em @PreAuthorize com esse
+    // path variable, então a checagem fica no service (EbdService.requireStaffOrTeacher).
+
+    @GetMapping("/classes/{id}/lessons")
+    @PreAuthorize(AUTHENTICATED)
+    public ResponseEntity<List<EbdLesson>> listLessons(@PathVariable Long id) {
+        return ResponseEntity.ok(service.listLessons(id));
+    }
+
+    @PostMapping("/classes/{id}/lessons")
+    @PreAuthorize(STAFF_OR_TEACHER)
+    public ResponseEntity<EbdLesson> createLesson(@PathVariable Long id, @RequestBody EbdLessonForm form) {
+        return ResponseEntity.ok(service.createLesson(id, form));
+    }
+
+    @PutMapping("/lessons/{id}")
+    @PreAuthorize(AUTHENTICATED)
+    public ResponseEntity<EbdLesson> updateLesson(@PathVariable Long id, @RequestBody EbdLessonForm form) {
+        return ResponseEntity.ok(service.updateLesson(id, form));
+    }
+
+    @DeleteMapping("/lessons/{id}")
+    @PreAuthorize(AUTHENTICATED)
+    public ResponseEntity<Void> deleteLesson(@PathVariable Long id) {
+        service.deleteLesson(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ===== Material =====
+    // Guardado como BYTEA na própria tabela (decisão do usuário — sem S3).
+
+    @GetMapping("/classes/{id}/materials")
+    @PreAuthorize(AUTHENTICATED)
+    public ResponseEntity<List<EbdMaterial>> listClassMaterials(@PathVariable Long id) {
+        return ResponseEntity.ok(service.listClassMaterials(id));
+    }
+
+    @PostMapping("/classes/{id}/materials")
+    @PreAuthorize(STAFF_OR_TEACHER)
+    public ResponseEntity<EbdMaterial> addClassMaterial(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(service.addClassMaterial(id, file));
+    }
+
+    @GetMapping("/lessons/{id}/materials")
+    @PreAuthorize(AUTHENTICATED)
+    public ResponseEntity<List<EbdMaterial>> listLessonMaterials(@PathVariable Long id) {
+        return ResponseEntity.ok(service.listLessonMaterials(id));
+    }
+
+    @PostMapping("/lessons/{id}/materials")
+    @PreAuthorize(AUTHENTICATED)
+    public ResponseEntity<EbdMaterial> addLessonMaterial(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(service.addLessonMaterial(id, file));
+    }
+
+    @DeleteMapping("/materials/{id}")
+    @PreAuthorize(AUTHENTICATED)
+    public ResponseEntity<Void> deleteMaterial(@PathVariable Long id) {
+        service.deleteMaterial(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/materials/{id}/download")
+    @PreAuthorize(AUTHENTICATED)
+    public ResponseEntity<byte[]> downloadMaterial(@PathVariable Long id) {
+        EbdMaterialContent content = service.downloadMaterial(id);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentDisposition(ContentDisposition.attachment().filename(content.fileName()).build());
+        MediaType mediaType = content.contentType() != null
+                ? MediaType.parseMediaType(content.contentType())
+                : MediaType.APPLICATION_OCTET_STREAM;
+        return ResponseEntity.ok().headers(headers).contentType(mediaType).body(content.data());
     }
 }

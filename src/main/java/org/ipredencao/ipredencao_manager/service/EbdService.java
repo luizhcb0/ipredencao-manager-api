@@ -5,6 +5,7 @@ import org.ipredencao.ipredencao_manager.config.Roles;
 import org.ipredencao.ipredencao_manager.controller.form.EbdClassForm;
 import org.ipredencao.ipredencao_manager.controller.form.EbdCycleForm;
 import org.ipredencao.ipredencao_manager.controller.form.EbdEnrollmentForm;
+import org.ipredencao.ipredencao_manager.controller.form.EbdLessonForm;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdClass;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdClassQuery;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdClassStatusEnum;
@@ -13,19 +14,30 @@ import org.ipredencao.ipredencao_manager.model.ebd.EbdCycleQuery;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdEnrollment;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdEnrollmentQuery;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdEnrollmentRoleEnum;
+import org.ipredencao.ipredencao_manager.model.ebd.EbdLesson;
+import org.ipredencao.ipredencao_manager.model.ebd.EbdLessonQuery;
+import org.ipredencao.ipredencao_manager.model.ebd.EbdLessonStatusEnum;
+import org.ipredencao.ipredencao_manager.model.ebd.EbdMaterial;
+import org.ipredencao.ipredencao_manager.model.ebd.EbdMaterialContent;
+import org.ipredencao.ipredencao_manager.model.ebd.EbdMaterialQuery;
 import org.ipredencao.ipredencao_manager.model.pagination.PageInfo;
 import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
 import org.ipredencao.ipredencao_manager.repository.EbdClassRepository;
 import org.ipredencao.ipredencao_manager.repository.EbdCycleRepository;
 import org.ipredencao.ipredencao_manager.repository.EbdEnrollmentRepository;
+import org.ipredencao.ipredencao_manager.repository.EbdLessonRepository;
+import org.ipredencao.ipredencao_manager.repository.EbdMaterialRepository;
 import org.ipredencao.ipredencao_manager.util.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -39,6 +51,10 @@ public class EbdService {
     private EbdClassRepository classRepo;
     @Autowired
     private EbdEnrollmentRepository enrollmentRepo;
+    @Autowired
+    private EbdLessonRepository lessonRepo;
+    @Autowired
+    private EbdMaterialRepository materialRepo;
     @Autowired
     private EbdAccess ebdAccess;
     @Autowired
@@ -241,6 +257,122 @@ public class EbdService {
         enrollmentRepo.delete(enrollment.id());
     }
 
+    // ===== Aula =====
+
+    @Transactional(readOnly = true)
+    public List<EbdLesson> listLessons(Long classId) {
+        requireClass(classId);
+        if (isStaff() || isTeacherOfClass(classId)) {
+            return lessonRepo.find(EbdLessonQuery.builder().classId(classId).build());
+        }
+        requireEnrolledStudent(classId);
+        return lessonRepo.find(EbdLessonQuery.builder().classId(classId).status(EbdLessonStatusEnum.PUBLISHED).build());
+    }
+
+    @Transactional
+    public EbdLesson createLesson(Long classId, EbdLessonForm form) {
+        requireClass(classId);
+        validateLessonTitle(form);
+        int order = form.displayOrder() != null ? form.displayOrder() : lessonRepo.countByClass(classId);
+        Long userId = securityUtils.getCurrentUserId();
+        // Sempre nasce DRAFT, mesmo padrão de ebd_class (ver createClass).
+        Long id = lessonRepo.insert(classId, form.title(), form.description(), form.content(), form.lessonDate(),
+                order, EbdLessonStatusEnum.DRAFT, userId);
+        return requireLesson(id);
+    }
+
+    @Transactional
+    public EbdLesson updateLesson(Long lessonId, EbdLessonForm form) {
+        EbdLesson existing = requireLesson(lessonId);
+        requireStaffOrTeacher(existing.classId());
+        validateLessonTitle(form);
+        int order = form.displayOrder() != null ? form.displayOrder() : existing.displayOrder();
+        EbdLessonStatusEnum status = form.status() != null ? form.status() : existing.status();
+        Long userId = securityUtils.getCurrentUserId();
+        lessonRepo.update(lessonId, existing.classId(), form.title(), form.description(), form.content(),
+                form.lessonDate(), order, status, userId);
+        return requireLesson(lessonId);
+    }
+
+    @Transactional
+    public void deleteLesson(Long lessonId) {
+        EbdLesson existing = requireLesson(lessonId);
+        requireStaffOrTeacher(existing.classId());
+        lessonRepo.delete(lessonId); // cascade apaga materiais da aula (V016)
+    }
+
+    // ===== Material =====
+
+    @Transactional(readOnly = true)
+    public List<EbdMaterial> listClassMaterials(Long classId) {
+        requireClass(classId);
+        if (!isStaff() && !isTeacherOfClass(classId)) {
+            requireEnrolledStudent(classId);
+        }
+        return materialRepo.find(EbdMaterialQuery.builder().classId(classId).generalOnly(true).build());
+    }
+
+    @Transactional(readOnly = true)
+    public List<EbdMaterial> listLessonMaterials(Long lessonId) {
+        EbdLesson lesson = requireLesson(lessonId);
+        if (!isStaff() && !isTeacherOfClass(lesson.classId())) {
+            requireEnrolledStudent(lesson.classId());
+            requirePublished(lesson);
+        }
+        return materialRepo.find(EbdMaterialQuery.builder().lessonId(lessonId).build());
+    }
+
+    @Transactional
+    public EbdMaterial addClassMaterial(Long classId, MultipartFile file) {
+        requireClass(classId);
+        requireStaffOrTeacher(classId);
+        return insertMaterial(classId, null, file);
+    }
+
+    @Transactional
+    public EbdMaterial addLessonMaterial(Long lessonId, MultipartFile file) {
+        EbdLesson lesson = requireLesson(lessonId);
+        requireStaffOrTeacher(lesson.classId());
+        return insertMaterial(lesson.classId(), lessonId, file);
+    }
+
+    @Transactional
+    public void deleteMaterial(Long materialId) {
+        EbdMaterial material = requireMaterial(materialId);
+        requireStaffOrTeacher(material.classId());
+        materialRepo.delete(materialId);
+    }
+
+    // Visibilidade espelha listLessonMaterials/listClassMaterials: STAFF/professor
+    // sempre; aluno matriculado só se o material for geral ou da aula publicada.
+    @Transactional(readOnly = true)
+    public EbdMaterialContent downloadMaterial(Long materialId) {
+        EbdMaterial material = requireMaterial(materialId);
+        if (!isStaff() && !isTeacherOfClass(material.classId())) {
+            requireEnrolledStudent(material.classId());
+            if (material.lessonId() != null) {
+                requirePublished(requireLesson(material.lessonId()));
+            }
+        }
+        return materialRepo.findContent(materialId);
+    }
+
+    private EbdMaterial insertMaterial(Long classId, Long lessonId, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Arquivo é obrigatório");
+        }
+        byte[] data;
+        try {
+            data = file.getBytes();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Erro ao ler o arquivo enviado", e);
+        }
+        String fileName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "arquivo";
+        Long userId = securityUtils.getCurrentUserId();
+        Long id = materialRepo.insert(classId, lessonId, fileName, file.getContentType(), file.getSize(), data, userId);
+        return requireMaterial(id);
+    }
+
     // ===== Validações / helpers =====
 
     private EbdCycle requireCycle(Long id) {
@@ -256,6 +388,45 @@ public class EbdService {
     private EbdEnrollment requireEnrollment(Long id) {
         return enrollmentRepo.find(EbdEnrollmentQuery.builder().id(id).build()).stream().findFirst()
                 .orElseThrow(() -> new NoSuchElementException("Vínculo " + id + " não encontrado"));
+    }
+
+    private EbdLesson requireLesson(Long id) {
+        return lessonRepo.find(EbdLessonQuery.builder().id(id).build()).stream().findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Aula " + id + " não encontrada"));
+    }
+
+    private EbdMaterial requireMaterial(Long id) {
+        return materialRepo.find(EbdMaterialQuery.builder().id(id).build()).stream().findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Material " + id + " não encontrado"));
+    }
+
+    private void validateLessonTitle(EbdLessonForm form) {
+        if (form == null || form.title() == null || form.title().isBlank()) {
+            throw new IllegalArgumentException("Título da aula é obrigatório");
+        }
+    }
+
+    // Reutilizado por aula e material: quem edita uma delas precisa ser STAFF ou
+    // o professor da turma dona (não dá para expressar em @PreAuthorize porque
+    // o path variable desses endpoints é o id da aula/material, não da turma).
+    private void requireStaffOrTeacher(Long classId) {
+        if (!isStaff() && !isTeacherOfClass(classId)) {
+            throw new AccessDeniedException("Apenas o professor da turma ou um administrador pode fazer isso");
+        }
+    }
+
+    private void requireEnrolledStudent(Long classId) {
+        Long personId = ebdAccess.currentPersonId(SecurityContextHolder.getContext().getAuthentication());
+        boolean enrolled = personId != null && enrollmentRepo.exists(classId, personId, EbdEnrollmentRoleEnum.STUDENT);
+        if (!enrolled) {
+            throw new AccessDeniedException("Apenas quem está matriculado nesta turma pode ver este conteúdo");
+        }
+    }
+
+    private void requirePublished(EbdLesson lesson) {
+        if (lesson.status() != EbdLessonStatusEnum.PUBLISHED) {
+            throw new AccessDeniedException("Esta aula ainda não foi publicada");
+        }
     }
 
     private void validateCycleName(EbdCycleForm form) {
