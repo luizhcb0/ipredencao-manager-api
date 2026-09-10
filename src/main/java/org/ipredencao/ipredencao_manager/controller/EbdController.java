@@ -1,10 +1,12 @@
 package org.ipredencao.ipredencao_manager.controller;
 
 import org.ipredencao.ipredencao_manager.config.Roles;
+import org.ipredencao.ipredencao_manager.controller.form.EbdAttendanceForm;
 import org.ipredencao.ipredencao_manager.controller.form.EbdClassForm;
 import org.ipredencao.ipredencao_manager.controller.form.EbdCycleForm;
 import org.ipredencao.ipredencao_manager.controller.form.EbdEnrollmentForm;
 import org.ipredencao.ipredencao_manager.controller.form.EbdLessonForm;
+import org.ipredencao.ipredencao_manager.model.ebd.EbdAttendance;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdClass;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdClassQuery;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdCycle;
@@ -22,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -209,5 +212,27 @@ public class EbdController {
                 ? MediaType.parseMediaType(content.contentType())
                 : MediaType.APPLICATION_OCTET_STREAM;
         return ResponseEntity.ok().headers(headers).contentType(mediaType).body(content.data());
+    }
+
+    // ===== Presença =====
+    // listAttendance/rectifyAttendance recebem id de aula/presença, não de
+    // turma — mesma razão de aula/material: checagem fica no service.
+
+    @PostMapping("/lessons/{id}/attendance/me")
+    @PreAuthorize(AUTHENTICATED)
+    public ResponseEntity<EbdAttendance> selfReportAttendance(@PathVariable Long id) {
+        return ResponseEntity.ok(service.selfReportAttendance(id));
+    }
+
+    @GetMapping("/lessons/{id}/attendance")
+    @PreAuthorize(AUTHENTICATED)
+    public ResponseEntity<List<EbdAttendance>> listAttendance(@PathVariable Long id) {
+        return ResponseEntity.ok(service.listAttendance(id));
+    }
+
+    @PatchMapping("/attendance/{id}")
+    @PreAuthorize(AUTHENTICATED)
+    public ResponseEntity<EbdAttendance> rectifyAttendance(@PathVariable Long id, @RequestBody EbdAttendanceForm form) {
+        return ResponseEntity.ok(service.rectifyAttendance(id, form));
     }
 }

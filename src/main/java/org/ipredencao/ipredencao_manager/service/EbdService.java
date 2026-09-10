@@ -2,10 +2,13 @@ package org.ipredencao.ipredencao_manager.service;
 
 import org.ipredencao.ipredencao_manager.config.EbdAccess;
 import org.ipredencao.ipredencao_manager.config.Roles;
+import org.ipredencao.ipredencao_manager.controller.form.EbdAttendanceForm;
 import org.ipredencao.ipredencao_manager.controller.form.EbdClassForm;
 import org.ipredencao.ipredencao_manager.controller.form.EbdCycleForm;
 import org.ipredencao.ipredencao_manager.controller.form.EbdEnrollmentForm;
 import org.ipredencao.ipredencao_manager.controller.form.EbdLessonForm;
+import org.ipredencao.ipredencao_manager.model.ebd.EbdAttendance;
+import org.ipredencao.ipredencao_manager.model.ebd.EbdAttendanceQuery;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdClass;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdClassQuery;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdClassStatusEnum;
@@ -23,6 +26,7 @@ import org.ipredencao.ipredencao_manager.model.ebd.EbdMaterialQuery;
 import org.ipredencao.ipredencao_manager.model.pagination.PageInfo;
 import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
+import org.ipredencao.ipredencao_manager.repository.EbdAttendanceRepository;
 import org.ipredencao.ipredencao_manager.repository.EbdClassRepository;
 import org.ipredencao.ipredencao_manager.repository.EbdCycleRepository;
 import org.ipredencao.ipredencao_manager.repository.EbdEnrollmentRepository;
@@ -55,6 +59,8 @@ public class EbdService {
     private EbdLessonRepository lessonRepo;
     @Autowired
     private EbdMaterialRepository materialRepo;
+    @Autowired
+    private EbdAttendanceRepository attendanceRepo;
     @Autowired
     private EbdAccess ebdAccess;
     @Autowired
@@ -373,6 +379,51 @@ public class EbdService {
         return requireMaterial(id);
     }
 
+    // ===== Presença =====
+
+    // Autodeclarada pelo aluno já matriculado, nos dois tipos de turma — a
+    // diferença fixa/não-fixa já foi resolvida na matrícula (ebd_enrollment),
+    // presença não repete essa checagem.
+    @Transactional
+    public EbdAttendance selfReportAttendance(Long lessonId) {
+        EbdLesson lesson = requireLesson(lessonId);
+        requirePublished(lesson);
+        Long personId = requireCurrentPersonId();
+        EbdEnrollment enrollment = enrollmentRepo
+                .find(EbdEnrollmentQuery.builder().classId(lesson.classId()).personId(personId)
+                        .role(EbdEnrollmentRoleEnum.STUDENT).build())
+                .stream().findFirst()
+                .orElseThrow(() -> new IllegalStateException("Você não está matriculado nesta turma"));
+        if (attendanceRepo.exists(lessonId, enrollment.id())) {
+            throw new IllegalArgumentException("Você já registrou presença nesta aula");
+        }
+        Long userId = securityUtils.getCurrentUserId();
+        Long id = attendanceRepo.insert(lessonId, enrollment.id(), true, true, userId);
+        return requireAttendance(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<EbdAttendance> listAttendance(Long lessonId) {
+        EbdLesson lesson = requireLesson(lessonId);
+        requireStaffOrTeacher(lesson.classId());
+        return attendanceRepo.find(EbdAttendanceQuery.builder().lessonId(lessonId).build());
+    }
+
+    // Retificação: STAFF/professor registrando ou corrigindo em nome do aluno
+    // (self_reported vira false, mesmo quando o valor de present não muda).
+    @Transactional
+    public EbdAttendance rectifyAttendance(Long attendanceId, EbdAttendanceForm form) {
+        EbdAttendance existing = requireAttendance(attendanceId);
+        EbdLesson lesson = requireLesson(existing.lessonId());
+        requireStaffOrTeacher(lesson.classId());
+        if (form == null || form.present() == null) {
+            throw new IllegalArgumentException("Campo obrigatório: present");
+        }
+        Long userId = securityUtils.getCurrentUserId();
+        attendanceRepo.update(attendanceId, form.present(), false, userId);
+        return requireAttendance(attendanceId);
+    }
+
     // ===== Validações / helpers =====
 
     private EbdCycle requireCycle(Long id) {
@@ -398,6 +449,11 @@ public class EbdService {
     private EbdMaterial requireMaterial(Long id) {
         return materialRepo.find(EbdMaterialQuery.builder().id(id).build()).stream().findFirst()
                 .orElseThrow(() -> new NoSuchElementException("Material " + id + " não encontrado"));
+    }
+
+    private EbdAttendance requireAttendance(Long id) {
+        return attendanceRepo.find(EbdAttendanceQuery.builder().id(id).build()).stream().findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Presença " + id + " não encontrada"));
     }
 
     private void validateLessonTitle(EbdLessonForm form) {
