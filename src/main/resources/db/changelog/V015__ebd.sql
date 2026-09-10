@@ -1,7 +1,7 @@
--- EBD (Escola Bíblica Dominical) — Fase 1: núcleo do domínio (ciclo, turma,
--- matrícula). Aulas/materiais (Fase 2) e presença (Fase 3) vêm em migrations
--- futuras. Nomenclatura em português (ebd_*) por decisão explícita, ao
--- contrário do precedente mais recente (official_act/serving_area em inglês).
+-- EBD (Escola Bíblica Dominical): ciclo, turma, matrícula (+histórico), aula,
+-- material e presença. Nomenclatura em português (ebd_*) por decisão
+-- explícita, ao contrário do precedente mais recente (official_act/
+-- serving_area em inglês).
 --
 -- Turma "fixa" (fixed = TRUE): matrícula feita pelo professor/STAFF, turma
 -- conduzida continuamente pelo professor, cycle_id opcional.
@@ -13,6 +13,7 @@
 
 CREATE TYPE ebd_class_status AS ENUM ('DRAFT', 'ACTIVE', 'CLOSED');
 CREATE TYPE ebd_enrollment_role AS ENUM ('STUDENT', 'TEACHER');
+CREATE TYPE ebd_lesson_status AS ENUM ('DRAFT', 'PUBLISHED');
 
 CREATE TABLE IF NOT EXISTS ebd_cycle (
     id BIGSERIAL PRIMARY KEY,
@@ -82,8 +83,8 @@ CREATE TRIGGER trigger_ebd_enrollment_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Histórico de matrícula: mesmo padrão completo (insert+update+delete) de
--- serving_area_member_history — presença/situação/data de saída (fases
--- futuras) dependem de auditoria de matrícula.
+-- serving_area_member_history — presença/situação/data de saída dependem de
+-- auditoria de matrícula.
 CREATE TABLE IF NOT EXISTS ebd_enrollment_history (
     history_id BIGSERIAL PRIMARY KEY,
     enrollment_id BIGINT REFERENCES ebd_enrollment(id) ON DELETE SET NULL,
@@ -176,3 +177,74 @@ CREATE TRIGGER trigger_ebd_enrollment_history_delete
     BEFORE DELETE ON ebd_enrollment
     FOR EACH ROW
     EXECUTE FUNCTION delete_ebd_enrollment_history();
+
+CREATE TABLE IF NOT EXISTS ebd_lesson (
+    id BIGSERIAL PRIMARY KEY,
+    class_id BIGINT NOT NULL REFERENCES ebd_class(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    content TEXT,
+    lesson_date DATE,
+    display_order INT NOT NULL DEFAULT 0,
+    status ebd_lesson_status NOT NULL DEFAULT 'DRAFT',
+    added_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_by BIGINT REFERENCES usuario(id) ON DELETE RESTRICT
+);
+
+CREATE INDEX IF NOT EXISTS idx_ebd_lesson_class ON ebd_lesson(class_id);
+CREATE INDEX IF NOT EXISTS idx_ebd_lesson_order ON ebd_lesson(class_id, display_order);
+
+CREATE TRIGGER trigger_ebd_lesson_updated_at
+    BEFORE UPDATE ON ebd_lesson
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Material da turma (ementa) OU de uma aula específica — lesson_id nulo =
+-- geral da turma, preenchido = específico da aula (mesmo princípio de
+-- team_id nulo/preenchido em serving_area_member). file_data é o conteúdo
+-- binário em si, guardado como BYTEA na própria linha — decisão explícita do
+-- usuário de não usar S3 para isto, diferente do padrão de foto de pessoa
+-- (S3Service.uploadFile), que continua intocado. file_size_bytes fica
+-- desnormalizado para listagem/exibição sem precisar carregar o BYTEA
+-- inteiro (ver EbdMaterialRepository: as consultas de listagem nunca
+-- selecionam file_data, só o download).
+CREATE TABLE IF NOT EXISTS ebd_material (
+    id BIGSERIAL PRIMARY KEY,
+    class_id BIGINT NOT NULL REFERENCES ebd_class(id) ON DELETE CASCADE,
+    lesson_id BIGINT REFERENCES ebd_lesson(id) ON DELETE CASCADE,
+    file_name VARCHAR(255) NOT NULL,
+    content_type VARCHAR(100),
+    file_size_bytes BIGINT NOT NULL,
+    file_data BYTEA NOT NULL,
+    added_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_by BIGINT REFERENCES usuario(id) ON DELETE RESTRICT
+);
+
+CREATE INDEX IF NOT EXISTS idx_ebd_material_class  ON ebd_material(class_id);
+CREATE INDEX IF NOT EXISTS idx_ebd_material_lesson ON ebd_material(lesson_id);
+
+-- Presença: vinculada à matrícula (ebd_enrollment), não direto à pessoa, para
+-- deixar explícito que só quem está matriculado pode ter presença — carrega
+-- turma+pessoa por transitividade. Vale igual para turma fixa e não-fixa.
+CREATE TABLE IF NOT EXISTS ebd_attendance (
+    id BIGSERIAL PRIMARY KEY,
+    lesson_id BIGINT NOT NULL REFERENCES ebd_lesson(id) ON DELETE CASCADE,
+    enrollment_id BIGINT NOT NULL REFERENCES ebd_enrollment(id) ON DELETE CASCADE,
+    present BOOLEAN NOT NULL DEFAULT TRUE,
+    -- FALSE quando um staff/professor registra ou retifica em nome do aluno.
+    self_reported BOOLEAN NOT NULL DEFAULT TRUE,
+    added_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_by BIGINT REFERENCES usuario(id) ON DELETE RESTRICT
+);
+
+-- Uma presença por matrícula por aula.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_ebd_attendance ON ebd_attendance(lesson_id, enrollment_id);
+CREATE INDEX IF NOT EXISTS idx_ebd_attendance_lesson     ON ebd_attendance(lesson_id);
+CREATE INDEX IF NOT EXISTS idx_ebd_attendance_enrollment ON ebd_attendance(enrollment_id);
+
+CREATE TRIGGER trigger_ebd_attendance_updated_at
+    BEFORE UPDATE ON ebd_attendance
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();

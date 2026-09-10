@@ -42,7 +42,7 @@ public class EbdMaterialRepository {
         dsl.deleteFrom(EBD_MATERIAL).where(EBD_MATERIAL.ID.eq(id)).execute();
     }
 
-    // Listagem: nunca seleciona file_data (ver comentário em V016).
+    // Listagem: nunca seleciona file_data (ver comentário em V015).
     public List<EbdMaterial> find(EbdMaterialQuery query) {
         Condition where = QueryConditions.reduceToAnd(buildConditions(query));
         return dsl.select(EBD_MATERIAL.ID, EBD_MATERIAL.CLASS_ID, EBD_MATERIAL.LESSON_ID, EBD_MATERIAL.FILE_NAME,

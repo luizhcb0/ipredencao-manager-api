@@ -304,7 +304,7 @@ public class EbdService {
     public void deleteLesson(Long lessonId) {
         EbdLesson existing = requireLesson(lessonId);
         requireStaffOrTeacher(existing.classId());
-        lessonRepo.delete(lessonId); // cascade apaga materiais da aula (V016)
+        lessonRepo.delete(lessonId); // cascade apaga materiais da aula (V015)
     }
 
     // ===== Material =====
