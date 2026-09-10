@@ -402,6 +402,30 @@ public class EbdService {
         return requireAttendance(id);
     }
 
+    // Consulta da própria presença — sem isto o aluno não tinha como saber, ao
+    // carregar a lista de aulas, se já tinha marcado presença numa sessão
+    // anterior (só descobria tentando marcar de novo e recebendo o 400 de
+    // duplicidade). 404 cobre "nunca marcou", "não está matriculado" e "sem
+    // usuario.person_id resolvido" da mesma forma — o chamador só precisa
+    // saber "existe ou não", não por quê.
+    @Transactional(readOnly = true)
+    public EbdAttendance getSelfAttendance(Long lessonId) {
+        EbdLesson lesson = requireLesson(lessonId);
+        Long personId = ebdAccess.currentPersonId(SecurityContextHolder.getContext().getAuthentication());
+        if (personId == null) {
+            throw new NoSuchElementException("Presença não encontrada");
+        }
+        EbdEnrollment enrollment = enrollmentRepo
+                .find(EbdEnrollmentQuery.builder().classId(lesson.classId()).personId(personId)
+                        .role(EbdEnrollmentRoleEnum.STUDENT).build())
+                .stream().findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Presença não encontrada"));
+        return attendanceRepo
+                .find(EbdAttendanceQuery.builder().lessonId(lessonId).enrollmentId(enrollment.id()).build())
+                .stream().findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Presença não encontrada"));
+    }
+
     @Transactional(readOnly = true)
     public List<EbdAttendance> listAttendance(Long lessonId) {
         EbdLesson lesson = requireLesson(lessonId);

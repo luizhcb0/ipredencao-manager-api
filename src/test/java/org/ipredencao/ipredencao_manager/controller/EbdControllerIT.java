@@ -378,6 +378,46 @@ class EbdControllerIT extends IntegrationTestBase {
     }
 
     @Test
+    void getSelfAttendance_beforeAndAfterMarking() throws Exception {
+        Long cycleId = createActiveCycleAsAdmin("Ciclo presença própria");
+        Long classId = createActiveNonFixedClassAsAdmin("Turma presença própria", cycleId);
+        Long lessonId = createLessonAsAdmin(classId, "Aula consulta presença");
+        publishLessonAsAdmin(lessonId, "Aula consulta presença");
+
+        Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Consulta Presença", Sexo.MASCULINO);
+        Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+                .andExpect(status().isOk());
+
+        // Antes de marcar: 404 (é isto que o front usa pra decidir mostrar o
+        // botão "Marcar presença" — sem isto ele não tem como saber que já
+        // tinha marcado numa sessão anterior, e mostrava o botão do mesmo jeito).
+        mockMvc.perform(get(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(studentUser)))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(studentUser)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(studentUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.present").value(true))
+                .andExpect(jsonPath("$.personId").value(student.getId()));
+    }
+
+    @Test
+    void getSelfAttendance_withoutEnrollment_isNotFound() throws Exception {
+        Long cycleId = createActiveCycleAsAdmin("Ciclo presença não matriculado");
+        Long classId = createActiveNonFixedClassAsAdmin("Turma presença não matriculado", cycleId);
+        Long lessonId = createLessonAsAdmin(classId, "Aula sem matrícula 2");
+        publishLessonAsAdmin(lessonId, "Aula sem matrícula 2");
+
+        Usuario outsiderUser = usuarioRepository.insert(UsuarioFixture.builder().build());
+
+        mockMvc.perform(get(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(outsiderUser)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void selfReportAttendance_onDraftLesson_isRejected() throws Exception {
         Long cycleId = createActiveCycleAsAdmin("Ciclo presença 2");
         Long classId = createActiveNonFixedClassAsAdmin("Turma presença 2", cycleId);

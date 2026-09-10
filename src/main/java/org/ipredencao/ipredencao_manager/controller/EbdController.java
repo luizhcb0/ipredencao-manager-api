@@ -224,6 +224,15 @@ public class EbdController {
         return ResponseEntity.ok(service.selfReportAttendance(id));
     }
 
+    // 404 quando não há registro — cobre "nunca marcou" e "não está
+    // matriculado" da mesma forma; o front só precisa saber se mostra ou não
+    // o botão de marcar presença.
+    @GetMapping("/lessons/{id}/attendance/me")
+    @PreAuthorize(AUTHENTICATED)
+    public ResponseEntity<EbdAttendance> getSelfAttendance(@PathVariable Long id) {
+        return ResponseEntity.ok(service.getSelfAttendance(id));
+    }
+
     @GetMapping("/lessons/{id}/attendance")
     @PreAuthorize(AUTHENTICATED)
     public ResponseEntity<List<EbdAttendance>> listAttendance(@PathVariable Long id) {
