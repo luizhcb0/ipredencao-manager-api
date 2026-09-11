@@ -32,21 +32,12 @@ CREATE TABLE IF NOT EXISTS ebd_cycle (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_ebd_cycle_single_active
     ON ebd_cycle ((active)) WHERE active;
 
--- Ementa é um arquivo (BYTEA, mesmo padrão de ebd_material — sem S3), não
--- mais texto livre: no máximo um por turma, guardado direto nestas colunas em
--- vez de uma linha em ebd_material (não é "material geral da turma", é uma
--- propriedade da turma em si). syllabus_file_data só é selecionado pelo
--- download (ver EbdClassRepository.findSyllabusContent); as demais colunas de
--- metadado (nome, tipo, tamanho) vêm junto do find normal.
 CREATE TABLE IF NOT EXISTS ebd_class (
     id BIGSERIAL PRIMARY KEY,
     cycle_id BIGINT NOT NULL REFERENCES ebd_cycle(id) ON DELETE RESTRICT,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    syllabus_file_name VARCHAR(255),
-    syllabus_content_type VARCHAR(100),
-    syllabus_file_size_bytes BIGINT,
-    syllabus_file_data BYTEA,
+    syllabus TEXT,
     status ebd_class_status NOT NULL DEFAULT 'DRAFT',
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),

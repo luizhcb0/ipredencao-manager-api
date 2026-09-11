@@ -9,7 +9,6 @@ import org.ipredencao.ipredencao_manager.controller.form.EbdLessonForm;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdAttendance;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdClass;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdClassQuery;
-import org.ipredencao.ipredencao_manager.model.ebd.EbdClassSyllabus;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdCycle;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdEnrollment;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdLesson;
@@ -100,31 +99,6 @@ public class EbdController {
     @PreAuthorize(STAFF)
     public ResponseEntity<EbdClass> updateClass(@PathVariable Long id, @RequestBody EbdClassForm form) {
         return ResponseEntity.ok(service.updateClass(id, form));
-    }
-
-    // Ementa: arquivo (BYTEA — sem S3), no máximo um por turma.
-    @PostMapping("/classes/{id}/syllabus")
-    @PreAuthorize(STAFF)
-    public ResponseEntity<EbdClass> uploadSyllabus(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(service.uploadSyllabus(id, file));
-    }
-
-    @GetMapping("/classes/{id}/syllabus/download")
-    @PreAuthorize(AUTHENTICATED)
-    public ResponseEntity<byte[]> downloadSyllabus(@PathVariable Long id) {
-        EbdClassSyllabus syllabus = service.downloadSyllabus(id);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentDisposition(ContentDisposition.attachment().filename(syllabus.fileName()).build());
-        MediaType mediaType = syllabus.contentType() != null
-                ? MediaType.parseMediaType(syllabus.contentType())
-                : MediaType.APPLICATION_OCTET_STREAM;
-        return ResponseEntity.ok().headers(headers).contentType(mediaType).body(syllabus.data());
-    }
-
-    @DeleteMapping("/classes/{id}/syllabus")
-    @PreAuthorize(STAFF)
-    public ResponseEntity<EbdClass> deleteSyllabus(@PathVariable Long id) {
-        return ResponseEntity.ok(service.deleteSyllabus(id));
     }
 
     // ===== Matrícula =====
