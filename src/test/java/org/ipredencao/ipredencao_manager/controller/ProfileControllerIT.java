@@ -1,6 +1,7 @@
 package org.ipredencao.ipredencao_manager.controller;
 
 import com.google.firebase.auth.FirebaseAuthException;
+import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
 import org.ipredencao.ipredencao_manager.model.user.Usuario;
 import org.ipredencao.ipredencao_manager.repository.UsuarioRepository;
 import org.ipredencao.ipredencao_manager.service.FirebaseAuthService;
@@ -50,6 +51,34 @@ class ProfileControllerIT extends IntegrationTestBase {
     void getProfile_returnsUnauthorizedWithoutToken() throws Exception {
         mockMvc.perform(get(BASE))
             .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getProfile_isAllowedForMember() throws Exception {
+        Usuario user = usuarioRepository.insert(UsuarioFixture.builder()
+            .email("member-me@test.local")
+            .firebaseUid("member-me-firebase-uid")
+            .accessProfile(PerfilAcesso.MEMBER)
+            .build());
+
+        mockMvc.perform(get(BASE)
+                .header("Authorization", "Bearer " + jwtService.generateToken(user)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value("member-me@test.local"));
+    }
+
+    @Test
+    void getProfile_isAllowedForMembershipCandidate() throws Exception {
+        Usuario user = usuarioRepository.insert(UsuarioFixture.builder()
+            .email("candidate-me@test.local")
+            .firebaseUid("candidate-me-firebase-uid")
+            .accessProfile(PerfilAcesso.MEMBERSHIP_CANDIDATE)
+            .build());
+
+        mockMvc.perform(get(BASE)
+                .header("Authorization", "Bearer " + jwtService.generateToken(user)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value("candidate-me@test.local"));
     }
 
     @Test

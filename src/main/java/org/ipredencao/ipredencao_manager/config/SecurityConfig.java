@@ -95,9 +95,16 @@ public class SecurityConfig {
 
                 .requestMatchers("/api/enderecos/**").hasAnyRole(Roles.anyNames())
 
-                // Usuários (admin) e perfil próprio
+                // Escola Dominical: MEMBER/MEMBERSHIP_CANDIDATE ficam de fora dos
+                // Roles e precisam alcançar automatrícula/presença — hasAnyRole(...)
+                // os barraria antes do @PreAuthorize (o matcher decide primeiro).
+                .requestMatchers("/api/bible-school/**").authenticated()
+
+                // Usuários (admin) e perfil próprio. /api/me é o que a SPA
+                // chama no boot (useUserData) — MEMBER/MEMBERSHIP_CANDIDATE
+                // precisam alcançar, mesmo padrão de /api/bible-school/**.
                 .requestMatchers("/api/users/**").hasAnyRole(Roles.adminNames())
-                .requestMatchers("/api/me/**").hasAnyRole(Roles.anyNames())
+                .requestMatchers("/api/me/**").authenticated()
                 
                 .anyRequest().authenticated()
             )
