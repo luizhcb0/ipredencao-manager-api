@@ -1,17 +1,12 @@
 -- EBD (Escola Bíblica Dominical): ciclo, turma, matrícula (+histórico), aula,
--- material e presença. Nomenclatura em português (ebd_*) por decisão
--- explícita, ao contrário do precedente mais recente (official_act/
--- serving_area em inglês).
+-- material e presença. Nomenclatura em português (ebd_*), diferente do
+-- padrão em inglês do restante do schema (official_act/serving_area).
 --
--- Turma: sempre pertence a um ciclo (cycle_id obrigatório) e a matrícula é
--- sempre automatrícula do aluno (POST .../enrollments, sem personId) — a
--- distinção "turma fixa" (matrícula só por professor/STAFF) existiu numa
--- versão anterior e foi removida a pedido do time em revisão do PR: toda
--- turma funciona da mesma forma. STAFF/professor também pode incluir aluno
--- manualmente em qualquer turma (POST .../enrollments com personId) — as
--- duas vias coexistem.
--- TEACHER é só um rótulo informativo em ebd_enrollment.role — nenhuma regra
--- de ativação ou permissão depende de existir um professor vinculado.
+-- Toda turma pertence a um ciclo (cycle_id obrigatório). Aluno se matricula
+-- sozinho (POST .../enrollments sem personId) ou é incluído por STAFF/
+-- professor (mesmo endpoint, com personId) — as duas vias coexistem em
+-- qualquer turma. TEACHER em ebd_enrollment.role é só um rótulo informativo,
+-- sem efeito em ativação ou permissão.
 
 CREATE TYPE ebd_class_status AS ENUM ('DRAFT', 'ACTIVE', 'CLOSED');
 CREATE TYPE ebd_enrollment_role AS ENUM ('STUDENT', 'TEACHER');
@@ -28,14 +23,12 @@ CREATE TABLE IF NOT EXISTS ebd_cycle (
     updated_by BIGINT REFERENCES usuario(id) ON DELETE RESTRICT
 );
 
--- Só um ciclo ativo por vez (decisão confirmada).
+-- Só um ciclo ativo por vez.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_ebd_cycle_single_active
     ON ebd_cycle ((active)) WHERE active;
 
--- Sem campo de ementa: a pedido do time em revisão do PR, ementa não é uma
--- propriedade própria da turma — quem quiser compartilhar uma sobe como mais
--- um item em "materiais gerais" (ebd_material, lesson_id nulo), sem marca
--- especial que a distinga dos demais.
+-- Sem campo de ementa — quem quiser compartilhar uma sobe como mais um item
+-- em "materiais gerais" (ebd_material, lesson_id nulo).
 CREATE TABLE IF NOT EXISTS ebd_class (
     id BIGSERIAL PRIMARY KEY,
     cycle_id BIGINT NOT NULL REFERENCES ebd_cycle(id) ON DELETE RESTRICT,
@@ -50,11 +43,9 @@ CREATE TABLE IF NOT EXISTS ebd_class (
 CREATE INDEX IF NOT EXISTS idx_ebd_class_cycle  ON ebd_class(cycle_id);
 CREATE INDEX IF NOT EXISTS idx_ebd_class_status ON ebd_class(status);
 
--- Matrícula (vínculo pessoa↔turma com papel) — espelha serving_area_member.
--- Sem start_date/end_date: "desde quando" não importa mais pro negócio (dá pra
--- checar presença olhando as aulas), e "até quando" já é coberto pelo
--- histórico (deleted_at em ebd_enrollment_history, no DELETE) — não precisa
--- duplicar isso numa coluna na linha viva.
+-- Vínculo pessoa↔turma com papel — espelha serving_area_member. Sem
+-- start_date/end_date: presença é checada pelas aulas, e a saída fica em
+-- ebd_enrollment_history.deleted_at.
 CREATE TABLE IF NOT EXISTS ebd_enrollment (
     id BIGSERIAL PRIMARY KEY,
     class_id BIGINT NOT NULL REFERENCES ebd_class(id) ON DELETE CASCADE,
@@ -85,9 +76,8 @@ CREATE TRIGGER trigger_ebd_enrollment_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Histórico de matrícula: mesmo padrão completo (insert+update+delete) de
--- serving_area_member_history — deleted_at (só preenchido no DELETE) é o
--- registro de "quando essa pessoa saiu da turma".
+-- Histórico de matrícula (insert+update+delete), mesmo padrão de
+-- serving_area_member_history. deleted_at só é preenchido no DELETE.
 CREATE TABLE IF NOT EXISTS ebd_enrollment_history (
     history_id BIGSERIAL PRIMARY KEY,
     enrollment_id BIGINT REFERENCES ebd_enrollment(id) ON DELETE SET NULL,
@@ -171,10 +161,8 @@ CREATE TRIGGER trigger_ebd_enrollment_history_delete
     FOR EACH ROW
     EXECUTE FUNCTION delete_ebd_enrollment_history();
 
--- Sem content nem display_order: descrição + material já bastam pro conteúdo
--- da aula, e a ordem de exibição passa a ser sempre lesson_date (por isso ela
--- é obrigatória — sem um campo de ordem manual, duas aulas sem data não têm
--- posição definida).
+-- Sem content nem display_order — descrição + material bastam pro conteúdo,
+-- ordena por lesson_date (por isso é NOT NULL).
 CREATE TABLE IF NOT EXISTS ebd_lesson (
     id BIGSERIAL PRIMARY KEY,
     class_id BIGINT NOT NULL REFERENCES ebd_class(id) ON DELETE CASCADE,
@@ -195,15 +183,9 @@ CREATE TRIGGER trigger_ebd_lesson_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Material da turma (ementa) OU de uma aula específica — lesson_id nulo =
--- geral da turma, preenchido = específico da aula (mesmo princípio de
--- team_id nulo/preenchido em serving_area_member). file_data é o conteúdo
--- binário em si, guardado como BYTEA na própria linha — decisão explícita do
--- usuário de não usar S3 para isto, diferente do padrão de foto de pessoa
--- (S3Service.uploadFile), que continua intocado. file_size_bytes fica
--- desnormalizado para listagem/exibição sem precisar carregar o BYTEA
--- inteiro (ver EbdMaterialRepository: as consultas de listagem nunca
--- selecionam file_data, só o download).
+-- Material da turma (lesson_id nulo) ou de uma aula específica (preenchido)
+-- — mesmo princípio de team_id em serving_area_member. file_data é BYTEA, sem
+-- S3. file_size_bytes fica desnormalizado pra listagem não carregar o BYTEA.
 CREATE TABLE IF NOT EXISTS ebd_material (
     id BIGSERIAL PRIMARY KEY,
     class_id BIGINT NOT NULL REFERENCES ebd_class(id) ON DELETE CASCADE,
@@ -219,10 +201,9 @@ CREATE TABLE IF NOT EXISTS ebd_material (
 CREATE INDEX IF NOT EXISTS idx_ebd_material_class  ON ebd_material(class_id);
 CREATE INDEX IF NOT EXISTS idx_ebd_material_lesson ON ebd_material(lesson_id);
 
--- Presença: vinculada à matrícula (ebd_enrollment), não direto à pessoa, para
--- deixar explícito que só quem está matriculado pode ter presença — carrega
--- turma+pessoa por transitividade. Sem self_reported: quem marcou/alterou já
--- dá pra saber por updated_by (é o próprio aluno ou é STAFF/professor).
+-- Presença vinculada à matrícula, não à pessoa direto — só quem está
+-- matriculado tem presença. Sem self_reported: quem marcou dá pra saber por
+-- updated_by.
 CREATE TABLE IF NOT EXISTS ebd_attendance (
     id BIGSERIAL PRIMARY KEY,
     lesson_id BIGINT NOT NULL REFERENCES ebd_lesson(id) ON DELETE CASCADE,
