@@ -12,6 +12,7 @@ import org.ipredencao.ipredencao_manager.model.ebd.EbdAttendanceQuery;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdClass;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdClassQuery;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdClassStatusEnum;
+import org.ipredencao.ipredencao_manager.model.ebd.EbdClassSyllabus;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdCycle;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdCycleQuery;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdEnrollment;
@@ -136,7 +137,7 @@ public class EbdService {
         requireCycle(requireCycleId(form.cycleId()));
         Long userId = securityUtils.getCurrentUserId();
         // Sempre nasce DRAFT — activar exige passar pelo fluxo de update.
-        return classRepo.insert(form.cycleId(), form.name(), form.description(), form.syllabus(),
+        return classRepo.insert(form.cycleId(), form.name(), form.description(),
                 EbdClassStatusEnum.DRAFT, userId);
     }
 
@@ -148,8 +149,48 @@ public class EbdService {
         requireCycle(cycleId);
         EbdClassStatusEnum status = form.status() != null ? form.status() : existing.status();
         Long userId = securityUtils.getCurrentUserId();
-        classRepo.update(id, cycleId, form.name(), form.description(), form.syllabus(), status, userId);
+        classRepo.update(id, cycleId, form.name(), form.description(), status, userId);
         return requireClass(id);
+    }
+
+    // Ementa: no máximo um arquivo por turma, guardado direto em ebd_class
+    // (não é "material geral da turma", é propriedade da turma em si — ver
+    // comentário na V015). Mesma visibilidade de material geral: STAFF sempre,
+    // aluno matriculado também (sem gate de aula publicada, a turma já é
+    // conhecida nesse ponto).
+    @Transactional
+    public EbdClass uploadSyllabus(Long classId, MultipartFile file) {
+        requireClass(classId);
+        requireStaff();
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Arquivo é obrigatório");
+        }
+        byte[] data;
+        try {
+            data = file.getBytes();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Erro ao ler o arquivo enviado", e);
+        }
+        String fileName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "arquivo";
+        classRepo.updateSyllabus(classId, fileName, file.getContentType(), file.getSize(), data);
+        return requireClass(classId);
+    }
+
+    @Transactional(readOnly = true)
+    public EbdClassSyllabus downloadSyllabus(Long classId) {
+        requireClass(classId);
+        if (!isStaff()) {
+            requireEnrolledStudent(classId);
+        }
+        return classRepo.findSyllabusContent(classId);
+    }
+
+    @Transactional
+    public EbdClass deleteSyllabus(Long classId) {
+        requireClass(classId);
+        requireStaff();
+        classRepo.clearSyllabus(classId);
+        return requireClass(classId);
     }
 
     // ===== Matrícula =====

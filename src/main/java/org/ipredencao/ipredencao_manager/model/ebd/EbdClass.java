@@ -11,6 +11,10 @@ import java.util.List;
 // — ver EbdService.getClassDetail. Toda turma pertence a um ciclo (cycleId
 // obrigatório) — não existe mais distinção "turma fixa" (removida a pedido
 // do time em revisão do PR).
+// Ementa é um arquivo (BYTEA), não mais texto — syllabusFileName/ContentType/
+// FileSizeBytes são só metadado (nulos quando a turma não tem ementa
+// enviada); o conteúdo binário nunca trafega aqui, só via download
+// (EbdService.downloadSyllabus / EbdClassRepository.findSyllabusContent).
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record EbdClass(
@@ -19,7 +23,9 @@ public record EbdClass(
         String cycleName,
         String name,
         String description,
-        String syllabus,
+        String syllabusFileName,
+        String syllabusContentType,
+        Long syllabusFileSizeBytes,
         EbdClassStatusEnum status,
         DateTime addedAt,
         DateTime updatedAt,
@@ -27,7 +33,7 @@ public record EbdClass(
         List<EbdEnrollment> enrollments
 ) {
     public EbdClass withEnrollments(List<EbdEnrollment> enrollments) {
-        return new EbdClass(id, cycleId, cycleName, name, description, syllabus, status,
-                addedAt, updatedAt, updatedBy, enrollments);
+        return new EbdClass(id, cycleId, cycleName, name, description, syllabusFileName, syllabusContentType,
+                syllabusFileSizeBytes, status, addedAt, updatedAt, updatedBy, enrollments);
     }
 }

@@ -338,6 +338,50 @@ class EbdControllerIT extends IntegrationTestBase {
                 .andExpect(status().isForbidden());
     }
 
+    // Ementa: arquivo em vez de texto (ver EbdClass.syllabusFileName). Mesmo
+    // formato de teste do material geral da turma, mas com upload/delete
+    // embutidos na própria turma em vez de linhas em ebd_material.
+    @Test
+    void syllabusUpload_thenDownload_isAllowedForStaff_thenDelete() throws Exception {
+        Long cycleId = createCycleAsAdmin("Ciclo ementa");
+        Long classId = createClassAsAdmin("Turma ementa", cycleId);
+
+        MockMultipartFile file = new MockMultipartFile("file", "ementa.pdf", "application/pdf", "conteudo-ementa".getBytes());
+        String body = mockMvc.perform(multipart(BASE + "/classes/" + classId + "/syllabus")
+                        .file(file).with(asAdmin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.syllabusFileName").value("ementa.pdf"))
+                .andExpect(jsonPath("$.syllabusFileSizeBytes").value("conteudo-ementa".getBytes().length))
+                .andReturn().getResponse().getContentAsString();
+        objectMapper.readTree(body).get("id").asLong();
+
+        mockMvc.perform(get(BASE + "/classes/" + classId + "/syllabus/download").with(asAdmin()))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes("conteudo-ementa".getBytes()));
+
+        Usuario outsiderUser = usuarioRepository.insert(UsuarioFixture.builder().build());
+        mockMvc.perform(get(BASE + "/classes/" + classId + "/syllabus/download").with(asUsuario(outsiderUser)))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(delete(BASE + "/classes/" + classId + "/syllabus").with(asAdmin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.syllabusFileName").doesNotExist());
+
+        mockMvc.perform(get(BASE + "/classes/" + classId + "/syllabus/download").with(asAdmin()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "BOLETIM")
+    void syllabusUpload_isForbiddenForNonStaff() throws Exception {
+        Long cycleId = createCycleAsAdmin("Ciclo ementa forbidden");
+        Long classId = createClassAsAdmin("Turma ementa forbidden", cycleId);
+
+        MockMultipartFile file = new MockMultipartFile("file", "ementa.pdf", "application/pdf", "conteudo".getBytes());
+        mockMvc.perform(multipart(BASE + "/classes/" + classId + "/syllabus").file(file))
+                .andExpect(status().isForbidden());
+    }
+
     @Test
     void lessonMaterial_isHiddenFromStudent_untilLessonIsPublished() throws Exception {
         Long cycleId = createCycleAsAdmin("Ciclo material aula");
