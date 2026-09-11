@@ -32,12 +32,15 @@ CREATE TABLE IF NOT EXISTS ebd_cycle (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_ebd_cycle_single_active
     ON ebd_cycle ((active)) WHERE active;
 
+-- Sem campo de ementa: a pedido do time em revisão do PR, ementa não é uma
+-- propriedade própria da turma — quem quiser compartilhar uma sobe como mais
+-- um item em "materiais gerais" (ebd_material, lesson_id nulo), sem marca
+-- especial que a distinga dos demais.
 CREATE TABLE IF NOT EXISTS ebd_class (
     id BIGSERIAL PRIMARY KEY,
     cycle_id BIGINT NOT NULL REFERENCES ebd_cycle(id) ON DELETE RESTRICT,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    syllabus TEXT,
     status ebd_class_status NOT NULL DEFAULT 'DRAFT',
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),

@@ -136,7 +136,7 @@ public class EbdService {
         requireCycle(requireCycleId(form.cycleId()));
         Long userId = securityUtils.getCurrentUserId();
         // Sempre nasce DRAFT — activar exige passar pelo fluxo de update.
-        return classRepo.insert(form.cycleId(), form.name(), form.description(), form.syllabus(),
+        return classRepo.insert(form.cycleId(), form.name(), form.description(),
                 EbdClassStatusEnum.DRAFT, userId);
     }
 
@@ -148,7 +148,7 @@ public class EbdService {
         requireCycle(cycleId);
         EbdClassStatusEnum status = form.status() != null ? form.status() : existing.status();
         Long userId = securityUtils.getCurrentUserId();
-        classRepo.update(id, cycleId, form.name(), form.description(), form.syllabus(), status, userId);
+        classRepo.update(id, cycleId, form.name(), form.description(), status, userId);
         return requireClass(id);
     }
 

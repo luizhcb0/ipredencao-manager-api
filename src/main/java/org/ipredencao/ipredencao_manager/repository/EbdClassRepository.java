@@ -29,19 +29,19 @@ public class EbdClassRepository {
     @Autowired
     private DSLContext dsl;
 
-    public EbdClass insert(Long cycleId, String name, String description, String syllabus,
+    public EbdClass insert(Long cycleId, String name, String description,
                            EbdClassStatusEnum status, Long updatedBy) {
         Record rec = dsl.insertInto(EBD_CLASS)
-                .set(writableColumns(cycleId, name, description, syllabus, status, updatedBy))
+                .set(writableColumns(cycleId, name, description, status, updatedBy))
                 .returning(EBD_CLASS.ID)
                 .fetchOne();
         return find(EbdClassQuery.builder().id(rec.get(EBD_CLASS.ID)).build()).getFirst();
     }
 
-    public void update(Long id, Long cycleId, String name, String description, String syllabus,
+    public void update(Long id, Long cycleId, String name, String description,
                        EbdClassStatusEnum status, Long updatedBy) {
         dsl.update(EBD_CLASS)
-                .set(writableColumns(cycleId, name, description, syllabus, status, updatedBy))
+                .set(writableColumns(cycleId, name, description, status, updatedBy))
                 .where(EBD_CLASS.ID.eq(id))
                 .execute();
     }
@@ -77,12 +77,11 @@ public class EbdClassRepository {
     }
 
     private Map<Field<?>, Object> writableColumns(Long cycleId, String name, String description,
-                                                   String syllabus, EbdClassStatusEnum status, Long updatedBy) {
+                                                   EbdClassStatusEnum status, Long updatedBy) {
         Map<Field<?>, Object> columns = new LinkedHashMap<>();
         columns.put(EBD_CLASS.CYCLE_ID, cycleId);
         columns.put(EBD_CLASS.NAME, name);
         columns.put(EBD_CLASS.DESCRIPTION, description);
-        columns.put(EBD_CLASS.SYLLABUS, syllabus);
         columns.put(EBD_CLASS.STATUS, EbdClassStatus.valueOf(status.name()));
         columns.put(EBD_CLASS.UPDATED_BY, updatedBy);
         return columns;
@@ -102,7 +101,6 @@ public class EbdClassRepository {
                 r.get("cycle_name", String.class),
                 r.get(EBD_CLASS.NAME),
                 r.get(EBD_CLASS.DESCRIPTION),
-                r.get(EBD_CLASS.SYLLABUS),
                 status != null ? EbdClassStatusEnum.valueOf(status.name()) : null,
                 DateTimeHelper.fromDb(r.get(EBD_CLASS.ADDED_AT)),
                 DateTimeHelper.fromDb(r.get(EBD_CLASS.UPDATED_AT)),

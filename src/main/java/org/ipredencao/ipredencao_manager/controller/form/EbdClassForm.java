@@ -9,6 +9,5 @@ public record EbdClassForm(
         Long cycleId,
         String name,
         String description,
-        String syllabus,
         EbdClassStatusEnum status
 ) {}

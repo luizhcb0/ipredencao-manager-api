@@ -19,7 +19,6 @@ public record EbdClass(
         String cycleName,
         String name,
         String description,
-        String syllabus,
         EbdClassStatusEnum status,
         DateTime addedAt,
         DateTime updatedAt,
@@ -27,7 +26,7 @@ public record EbdClass(
         List<EbdEnrollment> enrollments
 ) {
     public EbdClass withEnrollments(List<EbdEnrollment> enrollments) {
-        return new EbdClass(id, cycleId, cycleName, name, description, syllabus, status,
+        return new EbdClass(id, cycleId, cycleName, name, description, status,
                 addedAt, updatedAt, updatedBy, enrollments);
     }
 }
