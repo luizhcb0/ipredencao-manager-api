@@ -15,9 +15,8 @@ import java.util.NoSuchElementException;
  * TEACHER}), removido a pedido do time em revisão do PR — de início a permissão
  * de gerenciar uma turma fica só com STAFF (diácono/presbítero/admin), sem essa
  * granularidade por vínculo. O papel {@code TEACHER} em si continua existindo
- * em {@code ebd_enrollment} (turma fixa exige pelo menos um vínculo assim para
- * ativar — ver {@code EbdService.requireTeacherForActivation}), só não concede
- * mais permissão sozinho.
+ * em {@code ebd_enrollment}, mas hoje é só um rótulo informativo — não concede
+ * permissão nem condiciona nenhuma outra regra.
  */
 @Component("ebdAccess")
 public class EbdAccess {

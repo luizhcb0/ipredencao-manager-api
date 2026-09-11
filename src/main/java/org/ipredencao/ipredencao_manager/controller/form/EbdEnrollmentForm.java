@@ -2,14 +2,13 @@ package org.ipredencao.ipredencao_manager.controller.form;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdEnrollmentRoleEnum;
-import org.joda.time.LocalDate;
 
-// Usado só na matrícula administrativa (STAFF/professor) — POST .../enrollments.
-// A automatrícula (POST .../enrollments/me) não recebe body: personId/role vêm
-// do usuário logado (role fixo STUDENT).
+// Único endpoint de matrícula (POST .../enrollments) serve os dois casos:
+// personId presente = matrícula administrativa (STAFF, qualquer role); ausente
+// = automatrícula (o próprio chamador, sempre role STUDENT) — ver
+// EbdService.addEnrollment.
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record EbdEnrollmentForm(
         Long personId,
-        EbdEnrollmentRoleEnum role,
-        LocalDate startDate
+        EbdEnrollmentRoleEnum role
 ) {}

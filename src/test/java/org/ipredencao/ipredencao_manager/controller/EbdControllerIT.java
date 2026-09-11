@@ -37,18 +37,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * EBD (docs/EBD_ANALISE_E_PLANO.md): ciclo, turma, matrícula, aula, material e
- * presença. Cobre a matriz de permissões (STAFF / automatrícula / self-service)
- * e as regras confirmadas com o usuário (1 ciclo ativo por vez; turma fixa só
- * ativa com professor vinculado — vínculo, não permissão, ver
- * {@code activateFixedClass_withTeacher_isAllowed}; STUDENT só por matrícula
- * administrativa em turma fixa ou por automatrícula em turma não-fixa; gerenciar
- * uma turma é STAFF, sem a granularidade "ou o professor dela" que existiu numa
- * versão anterior — ver {@code teacherOfClass_withoutStaffRole_cannotAddStudent}).
+ * presença. Toda turma pertence a um ciclo (cycleId obrigatório) — não existe
+ * mais distinção "turma fixa" (removida a pedido do time em revisão do PR).
+ * Matrícula e presença usam endpoints únicos que servem STAFF e o próprio
+ * interessado: personId no body presente = ação administrativa (STAFF);
+ * ausente = self-service (ver EbdService.addEnrollment/markAttendance).
  */
 @Transactional
 class EbdControllerIT extends IntegrationTestBase {
 
     private static final String BASE = "/api/ebd";
+    private static final String LESSON_DATE = "\"lessonDate\":\"2026-01-01\"";
 
     @Autowired private PessoaService pessoaService;
     @Autowired private UsuarioRepository usuarioRepository;
@@ -95,44 +94,22 @@ class EbdControllerIT extends IntegrationTestBase {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void createFixedClass_withoutCycle_isAllowed() throws Exception {
+    void createClass_withoutCycle_isRejected() throws Exception {
         mockMvc.perform(post(BASE + "/classes").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Turma dos Adultos\",\"fixed\":true}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("DRAFT"))
-                .andExpect(jsonPath("$.fixed").value(true));
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    void createNonFixedClass_withoutCycle_isRejected() throws Exception {
-        mockMvc.perform(post(BASE + "/classes").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Turma do ciclo\",\"fixed\":false}"))
+                        .content("{\"name\":\"Turma sem ciclo\"}"))
                 .andExpect(status().isBadRequest());
     }
 
+    // Sem exigência de professor vinculado pra ativar — essa regra existia só
+    // pra turma fixa (conceito removido); toda turma agora ativa direto, como
+    // as não-fixas de antes.
     @Test
-    @WithMockUser(roles = "ADMIN")
-    void activateFixedClass_withoutTeacher_isRejected() throws Exception {
-        Long classId = createFixedClass("Sem professor");
+    void activateClass_withoutTeacher_isAllowed() throws Exception {
+        Long cycleId = createCycleAsAdmin("Ciclo ativação");
+        Long classId = createClassAsAdmin("Turma sem professor", cycleId);
 
-        mockMvc.perform(put(BASE + "/classes/" + classId).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Sem professor\",\"fixed\":true,\"status\":\"ACTIVE\"}"))
-                .andExpect(status().isConflict());
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    void activateFixedClass_withTeacher_isAllowed() throws Exception {
-        Long classId = createFixedClass("Com professor");
-        Pessoa teacher = PessoaFixture.membroComungante(pessoaService, "Professor API", Sexo.MASCULINO);
-
-        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"personId\":" + teacher.getId() + ",\"role\":\"TEACHER\"}"))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(put(BASE + "/classes/" + classId).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Com professor\",\"fixed\":true,\"status\":\"ACTIVE\"}"))
+        mockMvc.perform(put(BASE + "/classes/" + classId).with(asAdmin()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Turma sem professor\",\"cycleId\":" + cycleId + ",\"status\":\"ACTIVE\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("ACTIVE"));
     }
@@ -142,7 +119,8 @@ class EbdControllerIT extends IntegrationTestBase {
     @Test
     @WithMockUser(roles = "BOLETIM")
     void addTeacher_isForbiddenForNonStaff() throws Exception {
-        Long classId = createFixedClassAsAdmin("Turma professor forbidden");
+        Long cycleId = createCycleAsAdmin("Ciclo professor forbidden");
+        Long classId = createClassAsAdmin("Turma professor forbidden", cycleId);
         Pessoa person = PessoaFixture.membroComungante(pessoaService, "Alguem", Sexo.FEMININO);
 
         mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").contentType(MediaType.APPLICATION_JSON)
@@ -150,16 +128,20 @@ class EbdControllerIT extends IntegrationTestBase {
                 .andExpect(status().isForbidden());
     }
 
+    // Prova a correção do gap relatado em revisão: STAFF/professor consegue
+    // incluir um aluno manualmente em qualquer turma (antes disso era rejeitado
+    // fora da "turma fixa", conceito removido).
     @Test
-    @WithMockUser(roles = "ADMIN")
-    void addStudent_toNonFixedClass_viaAdminEndpoint_isRejected() throws Exception {
-        Long cycleId = createActiveCycleAsAdmin("Ciclo matrícula");
-        Long classId = createNonFixedClassAsAdmin("Turma não-fixa", cycleId);
+    void addStudent_viaAdminEndpoint_isAllowed() throws Exception {
+        Long cycleId = createCycleAsAdmin("Ciclo matrícula admin");
+        Long classId = createClassAsAdmin("Turma matrícula admin", cycleId);
         Pessoa person = PessoaFixture.membroComungante(pessoaService, "Aluno via admin", Sexo.MASCULINO);
 
-        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"personId\":" + person.getId() + "}"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.role").value("STUDENT"));
     }
 
     @Test
@@ -167,20 +149,19 @@ class EbdControllerIT extends IntegrationTestBase {
         // Simplificação pedida em revisão do PR: o vínculo TEACHER, sozinho, não
         // concede mais permissão de gerenciar a turma — só STAFF (diácono/
         // presbítero/admin) gerencia, mesmo sendo o professor dela.
-        Long classId = createFixedClassAsAdmin("Turma com professor logado");
+        Long cycleId = createCycleAsAdmin("Ciclo professor não-staff");
+        Long classId = createClassAsAdmin("Turma com professor logado", cycleId);
         Pessoa teacherPerson = PessoaFixture.membroComungante(pessoaService, "Professor Logado", Sexo.MASCULINO);
         Usuario teacherUser = usuarioRepository.insert(UsuarioFixture.builder()
                 .accessProfile(PerfilAcesso.BOLETIM) // não-STAFF
                 .personId(teacherPerson.getId())
                 .build());
 
-        // ADMIN associa a pessoa como professora da turma.
         mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"personId\":" + teacherPerson.getId() + ",\"role\":\"TEACHER\"}"))
                 .andExpect(status().isOk());
 
-        // O professor (BOLETIM, não-STAFF) tenta incluir um aluno na própria turma: barrado.
         Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno via professor", Sexo.FEMININO);
         mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(teacherUser))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -188,51 +169,71 @@ class EbdControllerIT extends IntegrationTestBase {
                 .andExpect(status().isForbidden());
     }
 
-    // ===== automatrícula (turma não-fixa) =====
+    // ===== automatrícula =====
 
     @Test
     void selfEnroll_withoutPersonLinked_isRejected() throws Exception {
-        Long cycleId = createActiveCycleAsAdmin("Ciclo automatrícula 1");
-        Long classId = createActiveNonFixedClassAsAdmin("Turma automatrícula 1", cycleId);
+        Long cycleId = createCycleAsAdmin("Ciclo automatrícula 1");
+        Long classId = createActiveClassAsAdmin("Turma automatrícula 1", cycleId);
         Usuario noPersonUser = usuarioRepository.insert(UsuarioFixture.builder().personId(null).build());
 
-        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(noPersonUser)))
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(noPersonUser)))
                 .andExpect(status().isConflict());
     }
 
     @Test
-    void selfEnroll_thenDuplicate_isRejected_andSelfUnenroll_removesIt() throws Exception {
-        Long cycleId = createActiveCycleAsAdmin("Ciclo automatrícula 2");
-        Long classId = createActiveNonFixedClassAsAdmin("Turma automatrícula 2", cycleId);
+    void selfEnroll_thenDuplicate_isRejected_andSelfDelete_removesIt() throws Exception {
+        Long cycleId = createCycleAsAdmin("Ciclo automatrícula 2");
+        Long classId = createActiveClassAsAdmin("Turma automatrícula 2", cycleId);
         Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Automatrícula", Sexo.FEMININO);
         Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder()
                 .accessProfile(PerfilAcesso.MEMBER)
                 .personId(student.getId())
                 .build());
 
-        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+        String body = mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(studentUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.role").value("STUDENT"));
+                .andExpect(jsonPath("$.role").value("STUDENT"))
+                .andReturn().getResponse().getContentAsString();
+        Long enrollmentId = objectMapper.readTree(body).get("id").asLong();
 
-        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(studentUser)))
                 .andExpect(status().isBadRequest());
 
-        mockMvc.perform(delete(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+        // Remove pelo endpoint colapsado (id direto), não só pelo atalho /me —
+        // prova que o aluno também pode usar a mesma rota administrativa na
+        // própria matrícula.
+        mockMvc.perform(delete(BASE + "/classes/" + classId + "/enrollments/" + enrollmentId).with(asUsuario(studentUser)))
                 .andExpect(status().isNoContent());
 
         // Depois de cancelar, matricula de novo com sucesso (prova que o delete funcionou).
-        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(studentUser)))
                 .andExpect(status().isOk());
     }
 
     @Test
-    void selfEnroll_intoFixedClass_isRejected() throws Exception {
-        Long classId = createFixedClassAsAdmin("Turma fixa automatrícula");
-        Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Turma Fixa", Sexo.MASCULINO);
+    void selfEnroll_intoInactiveClass_isRejected() throws Exception {
+        Long cycleId = createCycleAsAdmin("Ciclo automatrícula inativa");
+        Long classId = createClassAsAdmin("Turma rascunho automatrícula", cycleId);
+        Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Turma Rascunho", Sexo.MASCULINO);
         Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
 
-        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
-                .andExpect(status().isBadRequest());
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(studentUser)))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void selfUnenroll_removesOwnEnrollment() throws Exception {
+        Long cycleId = createCycleAsAdmin("Ciclo automatrícula /me");
+        Long classId = createActiveClassAsAdmin("Turma automatrícula /me", cycleId);
+        Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno /me", Sexo.FEMININO);
+        Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
+
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(studentUser)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+                .andExpect(status().isNoContent());
     }
 
     // ===== visibilidade =====
@@ -240,15 +241,16 @@ class EbdControllerIT extends IntegrationTestBase {
     @Test
     @WithMockUser(roles = "BOLETIM")
     void getDraftClass_isNotFoundForNonPrivilegedCaller() throws Exception {
-        Long classId = createFixedClassAsAdmin("Turma rascunho oculta");
+        Long cycleId = createCycleAsAdmin("Ciclo turma rascunho");
+        Long classId = createClassAsAdmin("Turma rascunho oculta", cycleId);
         mockMvc.perform(get(BASE + "/classes/" + classId)).andExpect(status().isNotFound());
     }
 
     @Test
     @WithMockUser(roles = "BOLETIM")
     void getActiveClass_isVisibleToAnyAuthenticated() throws Exception {
-        Long cycleId = createActiveCycleAsAdmin("Ciclo visibilidade");
-        Long classId = createActiveNonFixedClassAsAdmin("Turma visível", cycleId);
+        Long cycleId = createCycleAsAdmin("Ciclo turma visível");
+        Long classId = createActiveClassAsAdmin("Turma visível", cycleId);
         mockMvc.perform(get(BASE + "/classes/" + classId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Turma visível"));
@@ -258,15 +260,15 @@ class EbdControllerIT extends IntegrationTestBase {
 
     @Test
     void enrolledStudent_seesOnlyPublishedLessons() throws Exception {
-        Long cycleId = createActiveCycleAsAdmin("Ciclo aulas 1");
-        Long classId = createActiveNonFixedClassAsAdmin("Turma aulas 1", cycleId);
+        Long cycleId = createCycleAsAdmin("Ciclo aulas 1");
+        Long classId = createActiveClassAsAdmin("Turma aulas 1", cycleId);
         createLessonAsAdmin(classId, "Aula rascunho");
         Long publishedLessonId = createLessonAsAdmin(classId, "Aula publicada");
         publishLessonAsAdmin(publishedLessonId, "Aula publicada");
 
         Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Aulas", Sexo.MASCULINO);
         Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
-        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(studentUser)))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get(BASE + "/classes/" + classId + "/lessons").with(asUsuario(studentUser)))
@@ -277,8 +279,8 @@ class EbdControllerIT extends IntegrationTestBase {
 
     @Test
     void nonEnrolledCaller_cannotListLessons() throws Exception {
-        Long cycleId = createActiveCycleAsAdmin("Ciclo aulas 2");
-        Long classId = createActiveNonFixedClassAsAdmin("Turma aulas 2", cycleId);
+        Long cycleId = createCycleAsAdmin("Ciclo aulas 2");
+        Long classId = createActiveClassAsAdmin("Turma aulas 2", cycleId);
         Usuario outsider = usuarioRepository.insert(UsuarioFixture.builder().build());
 
         mockMvc.perform(get(BASE + "/classes/" + classId + "/lessons").with(asUsuario(outsider)))
@@ -288,17 +290,29 @@ class EbdControllerIT extends IntegrationTestBase {
     @Test
     @WithMockUser(roles = "BOLETIM")
     void createLesson_isForbiddenForNonStaff() throws Exception {
-        Long classId = createFixedClassAsAdmin("Turma aula forbidden");
+        Long cycleId = createCycleAsAdmin("Ciclo aula forbidden");
+        Long classId = createClassAsAdmin("Turma aula forbidden", cycleId);
         mockMvc.perform(post(BASE + "/classes/" + classId + "/lessons").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":\"Aula X\"}"))
+                        .content("{\"title\":\"Aula X\"," + LESSON_DATE + "}"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void createLesson_withoutLessonDate_isRejected() throws Exception {
+        Long cycleId = createCycleAsAdmin("Ciclo aula sem data");
+        Long classId = createClassAsAdmin("Turma aula sem data", cycleId);
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/lessons").with(asAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Aula sem data\"}"))
+                .andExpect(status().isBadRequest());
     }
 
     // ===== material =====
 
     @Test
     void materialUpload_thenDownload_isAllowedForStaff_andRejectedForOutsider() throws Exception {
-        Long classId = createFixedClassAsAdmin("Turma materiais");
+        Long cycleId = createCycleAsAdmin("Ciclo materiais");
+        Long classId = createClassAsAdmin("Turma materiais", cycleId);
         Pessoa staffPerson = PessoaFixture.membroComungante(pessoaService, "Diácono Materiais", Sexo.FEMININO);
         Usuario staffUser = usuarioRepository.insert(UsuarioFixture.builder()
                 .accessProfile(PerfilAcesso.DIACONO)
@@ -326,8 +340,8 @@ class EbdControllerIT extends IntegrationTestBase {
 
     @Test
     void lessonMaterial_isHiddenFromStudent_untilLessonIsPublished() throws Exception {
-        Long cycleId = createActiveCycleAsAdmin("Ciclo material aula");
-        Long classId = createActiveNonFixedClassAsAdmin("Turma material aula", cycleId);
+        Long cycleId = createCycleAsAdmin("Ciclo material aula");
+        Long classId = createActiveClassAsAdmin("Turma material aula", cycleId);
         Long lessonId = createLessonAsAdmin(classId, "Aula com material");
 
         MockMultipartFile file = new MockMultipartFile("file", "slides.pdf", "application/pdf", "slides".getBytes());
@@ -338,7 +352,7 @@ class EbdControllerIT extends IntegrationTestBase {
 
         Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Material Aula", Sexo.FEMININO);
         Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
-        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(studentUser)))
                 .andExpect(status().isOk());
 
         // aula ainda em rascunho: aluno matriculado não baixa o material dela
@@ -355,24 +369,23 @@ class EbdControllerIT extends IntegrationTestBase {
     // ===== presença =====
 
     @Test
-    void selfReportAttendance_thenDuplicate_isRejected_andStaffSeesIt() throws Exception {
-        Long cycleId = createActiveCycleAsAdmin("Ciclo presença 1");
-        Long classId = createActiveNonFixedClassAsAdmin("Turma presença 1", cycleId);
+    void markAttendance_thenDuplicate_isRejected_andStaffSeesIt() throws Exception {
+        Long cycleId = createCycleAsAdmin("Ciclo presença 1");
+        Long classId = createActiveClassAsAdmin("Turma presença 1", cycleId);
         Long lessonId = createLessonAsAdmin(classId, "Aula com presença");
         publishLessonAsAdmin(lessonId, "Aula com presença");
 
         Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Presença", Sexo.FEMININO);
         Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
-        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(studentUser)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(studentUser)))
+        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance").with(asUsuario(studentUser)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.present").value(true))
-                .andExpect(jsonPath("$.selfReported").value(true))
                 .andExpect(jsonPath("$.personId").value(student.getId()));
 
-        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(studentUser)))
+        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance").with(asUsuario(studentUser)))
                 .andExpect(status().isBadRequest());
 
         mockMvc.perform(get(BASE + "/lessons/" + lessonId + "/attendance").with(asAdmin()))
@@ -381,16 +394,63 @@ class EbdControllerIT extends IntegrationTestBase {
                 .andExpect(jsonPath("$[0].present").value(true));
     }
 
+    // Ponto levantado em revisão do PR: o professor/STAFF também pode marcar
+    // presença em nome do aluno (personId no body), não só o próprio aluno.
+    @Test
+    void markAttendance_byStaffForStudent_isAllowed() throws Exception {
+        Long cycleId = createCycleAsAdmin("Ciclo presença staff");
+        Long classId = createActiveClassAsAdmin("Turma presença staff", cycleId);
+        Long lessonId = createLessonAsAdmin(classId, "Aula presença staff");
+        publishLessonAsAdmin(lessonId, "Aula presença staff");
+
+        Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Marcado Por Staff", Sexo.MASCULINO);
+        Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(studentUser)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance").with(asAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"personId\":" + student.getId() + "}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.personId").value(student.getId()));
+    }
+
+    // Ponto levantado em revisão do PR: o aluno também pode remover a própria
+    // presença a qualquer momento (antes só existia marcar, nunca desmarcar).
+    @Test
+    void markAttendance_thenSelfDelete_isAllowed() throws Exception {
+        Long cycleId = createCycleAsAdmin("Ciclo presença remoção");
+        Long classId = createActiveClassAsAdmin("Turma presença remoção", cycleId);
+        Long lessonId = createLessonAsAdmin(classId, "Aula presença remoção");
+        publishLessonAsAdmin(lessonId, "Aula presença remoção");
+
+        Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Remove Presença", Sexo.FEMININO);
+        Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(studentUser)))
+                .andExpect(status().isOk());
+
+        String body = mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance").with(asUsuario(studentUser)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        Long attendanceId = objectMapper.readTree(body).get("id").asLong();
+
+        mockMvc.perform(delete(BASE + "/attendance/" + attendanceId).with(asUsuario(studentUser)))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(studentUser)))
+                .andExpect(status().isNotFound());
+    }
+
     @Test
     void getSelfAttendance_beforeAndAfterMarking() throws Exception {
-        Long cycleId = createActiveCycleAsAdmin("Ciclo presença própria");
-        Long classId = createActiveNonFixedClassAsAdmin("Turma presença própria", cycleId);
+        Long cycleId = createCycleAsAdmin("Ciclo presença própria");
+        Long classId = createActiveClassAsAdmin("Turma presença própria", cycleId);
         Long lessonId = createLessonAsAdmin(classId, "Aula consulta presença");
         publishLessonAsAdmin(lessonId, "Aula consulta presença");
 
         Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Consulta Presença", Sexo.MASCULINO);
         Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
-        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(studentUser)))
                 .andExpect(status().isOk());
 
         // Antes de marcar: 404 (é isto que o front usa pra decidir mostrar o
@@ -399,7 +459,7 @@ class EbdControllerIT extends IntegrationTestBase {
         mockMvc.perform(get(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(studentUser)))
                 .andExpect(status().isNotFound());
 
-        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(studentUser)))
+        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance").with(asUsuario(studentUser)))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(studentUser)))
@@ -410,8 +470,8 @@ class EbdControllerIT extends IntegrationTestBase {
 
     @Test
     void getSelfAttendance_withoutEnrollment_isNotFound() throws Exception {
-        Long cycleId = createActiveCycleAsAdmin("Ciclo presença não matriculado");
-        Long classId = createActiveNonFixedClassAsAdmin("Turma presença não matriculado", cycleId);
+        Long cycleId = createCycleAsAdmin("Ciclo presença não matriculado");
+        Long classId = createActiveClassAsAdmin("Turma presença não matriculado", cycleId);
         Long lessonId = createLessonAsAdmin(classId, "Aula sem matrícula 2");
         publishLessonAsAdmin(lessonId, "Aula sem matrícula 2");
 
@@ -422,46 +482,46 @@ class EbdControllerIT extends IntegrationTestBase {
     }
 
     @Test
-    void selfReportAttendance_onDraftLesson_isRejected() throws Exception {
-        Long cycleId = createActiveCycleAsAdmin("Ciclo presença 2");
-        Long classId = createActiveNonFixedClassAsAdmin("Turma presença 2", cycleId);
+    void markAttendance_onDraftLesson_isRejected() throws Exception {
+        Long cycleId = createCycleAsAdmin("Ciclo presença 2");
+        Long classId = createActiveClassAsAdmin("Turma presença 2", cycleId);
         Long lessonId = createLessonAsAdmin(classId, "Aula rascunho presença");
 
         Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Presença Rascunho", Sexo.MASCULINO);
         Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
-        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(studentUser)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(studentUser)))
+        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance").with(asUsuario(studentUser)))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    void selfReportAttendance_withoutEnrollment_isRejected() throws Exception {
-        Long cycleId = createActiveCycleAsAdmin("Ciclo presença 3");
-        Long classId = createActiveNonFixedClassAsAdmin("Turma presença 3", cycleId);
+    void markAttendance_withoutEnrollment_isRejected() throws Exception {
+        Long cycleId = createCycleAsAdmin("Ciclo presença 3");
+        Long classId = createActiveClassAsAdmin("Turma presença 3", cycleId);
         Long lessonId = createLessonAsAdmin(classId, "Aula sem matrícula");
         publishLessonAsAdmin(lessonId, "Aula sem matrícula");
 
         Pessoa outsider = PessoaFixture.membroComungante(pessoaService, "Não Matriculado", Sexo.FEMININO);
         Usuario outsiderUser = usuarioRepository.insert(UsuarioFixture.builder().personId(outsider.getId()).build());
 
-        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(outsiderUser)))
+        mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance").with(asUsuario(outsiderUser)))
                 .andExpect(status().isConflict());
     }
 
     @Test
-    void rectifyAttendance_asStaff_flipsPresentAndClearsSelfReported() throws Exception {
-        Long cycleId = createActiveCycleAsAdmin("Ciclo presença 4");
-        Long classId = createActiveNonFixedClassAsAdmin("Turma presença 4", cycleId);
+    void updateAttendance_asStaff_flipsPresent() throws Exception {
+        Long cycleId = createCycleAsAdmin("Ciclo presença 4");
+        Long classId = createActiveClassAsAdmin("Turma presença 4", cycleId);
         Long lessonId = createLessonAsAdmin(classId, "Aula retificação");
         publishLessonAsAdmin(lessonId, "Aula retificação");
 
         Pessoa student = PessoaFixture.membroComungante(pessoaService, "Aluno Retificação", Sexo.MASCULINO);
         Usuario studentUser = usuarioRepository.insert(UsuarioFixture.builder().personId(student.getId()).build());
-        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments/me").with(asUsuario(studentUser)))
+        mockMvc.perform(post(BASE + "/classes/" + classId + "/enrollments").with(asUsuario(studentUser)))
                 .andExpect(status().isOk());
-        String body = mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance/me").with(asUsuario(studentUser)))
+        String body = mockMvc.perform(post(BASE + "/lessons/" + lessonId + "/attendance").with(asUsuario(studentUser)))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         Long attendanceId = objectMapper.readTree(body).get("id").asLong();
@@ -469,14 +529,14 @@ class EbdControllerIT extends IntegrationTestBase {
         mockMvc.perform(patch(BASE + "/attendance/" + attendanceId).with(asAdmin())
                         .contentType(MediaType.APPLICATION_JSON).content("{\"present\":false}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.present").value(false))
-                .andExpect(jsonPath("$.selfReported").value(false));
+                .andExpect(jsonPath("$.present").value(false));
     }
 
     @Test
     @WithMockUser(roles = "BOLETIM")
     void listAttendance_isForbiddenForNonStaff() throws Exception {
-        Long classId = createFixedClassAsAdmin("Turma presença forbidden");
+        Long cycleId = createCycleAsAdmin("Ciclo presença forbidden");
+        Long classId = createClassAsAdmin("Turma presença forbidden", cycleId);
         Long lessonId = createLessonAsAdmin(classId, "Aula forbidden");
 
         mockMvc.perform(get(BASE + "/lessons/" + lessonId + "/attendance"))
@@ -488,57 +548,43 @@ class EbdControllerIT extends IntegrationTestBase {
     private Long createLessonAsAdmin(Long classId, String title) throws Exception {
         String body = mockMvc.perform(post(BASE + "/classes/" + classId + "/lessons").with(asAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":\"" + title + "\"}"))
+                        .content("{\"title\":\"" + title + "\"," + LESSON_DATE + "}"))
                 .andReturn().getResponse().getContentAsString();
         return objectMapper.readTree(body).get("id").asLong();
     }
 
     private void publishLessonAsAdmin(Long lessonId, String title) throws Exception {
         mockMvc.perform(put(BASE + "/lessons/" + lessonId).with(asAdmin()).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":\"" + title + "\",\"status\":\"PUBLISHED\"}"))
+                        .content("{\"title\":\"" + title + "\"," + LESSON_DATE + ",\"status\":\"PUBLISHED\"}"))
                 .andExpect(status().isOk());
     }
 
-    private Long createFixedClass(String name) throws Exception {
-        String body = mockMvc.perform(post(BASE + "/classes").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"" + name + "\",\"fixed\":true}"))
-                .andReturn().getResponse().getContentAsString();
-        return objectMapper.readTree(body).get("id").asLong();
-    }
-
-    private RequestPostProcessor asAdmin() {
-        Usuario admin = usuarioRepository.insert(UsuarioFixture.builder().accessProfile(PerfilAcesso.ADMIN).build());
-        return asUsuario(admin);
-    }
-
-    private Long createFixedClassAsAdmin(String name) throws Exception {
-        String body = mockMvc.perform(post(BASE + "/classes").with(asAdmin()).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"" + name + "\",\"fixed\":true}"))
-                .andReturn().getResponse().getContentAsString();
-        return objectMapper.readTree(body).get("id").asLong();
-    }
-
-    private Long createActiveCycleAsAdmin(String name) throws Exception {
+    private Long createCycleAsAdmin(String name) throws Exception {
         String body = mockMvc.perform(post(BASE + "/cycles").with(asAdmin()).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"" + name + "\"}"))
                 .andReturn().getResponse().getContentAsString();
         return objectMapper.readTree(body).get("id").asLong();
     }
 
-    private Long createNonFixedClassAsAdmin(String name, Long cycleId) throws Exception {
+
+    private Long createClassAsAdmin(String name, Long cycleId) throws Exception {
         String body = mockMvc.perform(post(BASE + "/classes").with(asAdmin()).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"" + name + "\",\"fixed\":false,\"cycleId\":" + cycleId + "}"))
+                        .content("{\"name\":\"" + name + "\",\"cycleId\":" + cycleId + "}"))
                 .andReturn().getResponse().getContentAsString();
         return objectMapper.readTree(body).get("id").asLong();
     }
 
-    private Long createActiveNonFixedClassAsAdmin(String name, Long cycleId) throws Exception {
-        Long classId = createNonFixedClassAsAdmin(name, cycleId);
+    private Long createActiveClassAsAdmin(String name, Long cycleId) throws Exception {
+        Long classId = createClassAsAdmin(name, cycleId);
         mockMvc.perform(put(BASE + "/classes/" + classId).with(asAdmin()).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"" + name + "\",\"fixed\":false,\"cycleId\":" + cycleId
-                                + ",\"status\":\"ACTIVE\"}"))
+                        .content("{\"name\":\"" + name + "\",\"cycleId\":" + cycleId + ",\"status\":\"ACTIVE\"}"))
                 .andExpect(status().isOk());
         return classId;
+    }
+
+    private RequestPostProcessor asAdmin() {
+        Usuario admin = usuarioRepository.insert(UsuarioFixture.builder().accessProfile(PerfilAcesso.ADMIN).build());
+        return asUsuario(admin);
     }
 
     private RequestPostProcessor asUsuario(Usuario usuario) {

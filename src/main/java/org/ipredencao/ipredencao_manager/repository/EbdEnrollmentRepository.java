@@ -10,7 +10,6 @@ import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.SelectJoinStep;
-import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -30,9 +29,9 @@ public class EbdEnrollmentRepository {
     private DSLContext dsl;
 
     // Retorna o id gerado; o service recarrega o vínculo (com JOINs) via find.
-    public Long insert(Long classId, Long personId, EbdEnrollmentRoleEnum role, LocalDate startDate, Long updatedBy) {
+    public Long insert(Long classId, Long personId, EbdEnrollmentRoleEnum role, Long updatedBy) {
         return dsl.insertInto(EBD_ENROLLMENT)
-                .set(writableColumns(classId, personId, role, startDate, updatedBy))
+                .set(writableColumns(classId, personId, role, updatedBy))
                 .returning(EBD_ENROLLMENT.ID)
                 .fetchOne(EBD_ENROLLMENT.ID);
     }
@@ -42,19 +41,13 @@ public class EbdEnrollmentRepository {
     }
 
     // Consulta genérica: cobre um vínculo por id, vínculos da turma, vínculos
-    // da pessoa e a checagem "é professor desta turma" (EbdAccess).
+    // da pessoa e a checagem "já existe esse vínculo" (find + isEmpty no
+    // service, em vez de um exists dedicado).
     public List<EbdEnrollment> find(EbdEnrollmentQuery query) {
         return baseSelect()
                 .where(QueryConditions.reduceToAnd(buildConditions(query)))
                 .orderBy(EBD_ENROLLMENT.ROLE.asc(), PESSOA.NOME.asc(), EBD_ENROLLMENT.ID.asc())
                 .fetch(this::fromRecord);
-    }
-
-    public boolean exists(Long classId, Long personId, EbdEnrollmentRoleEnum role) {
-        return dsl.fetchExists(dsl.selectOne().from(EBD_ENROLLMENT)
-                .where(EBD_ENROLLMENT.CLASS_ID.eq(classId))
-                .and(EBD_ENROLLMENT.PERSON_ID.eq(personId))
-                .and(EBD_ENROLLMENT.ROLE.eq(EbdEnrollmentRole.valueOf(role.name()))));
     }
 
     private List<Condition> buildConditions(EbdEnrollmentQuery q) {
@@ -68,12 +61,11 @@ public class EbdEnrollmentRepository {
     }
 
     private Map<Field<?>, Object> writableColumns(Long classId, Long personId, EbdEnrollmentRoleEnum role,
-                                                   LocalDate startDate, Long updatedBy) {
+                                                   Long updatedBy) {
         Map<Field<?>, Object> columns = new LinkedHashMap<>();
         columns.put(EBD_ENROLLMENT.CLASS_ID, classId);
         columns.put(EBD_ENROLLMENT.PERSON_ID, personId);
         columns.put(EBD_ENROLLMENT.ROLE, EbdEnrollmentRole.valueOf(role.name()));
-        if (startDate != null) columns.put(EBD_ENROLLMENT.START_DATE, DateTimeHelper.toDbDate(startDate));
         columns.put(EBD_ENROLLMENT.UPDATED_BY, updatedBy);
         return columns;
     }
@@ -97,8 +89,6 @@ public class EbdEnrollmentRepository {
                 r.get(EBD_ENROLLMENT.PERSON_ID),
                 r.get("person_name", String.class),
                 role != null ? EbdEnrollmentRoleEnum.valueOf(role.name()) : null,
-                DateTimeHelper.fromDbDate(r.get(EBD_ENROLLMENT.START_DATE)),
-                DateTimeHelper.fromDbDate(r.get(EBD_ENROLLMENT.END_DATE)),
                 DateTimeHelper.fromDb(r.get(EBD_ENROLLMENT.ADDED_AT)),
                 DateTimeHelper.fromDb(r.get(EBD_ENROLLMENT.UPDATED_AT)),
                 r.get(EBD_ENROLLMENT.UPDATED_BY));

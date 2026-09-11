@@ -1,20 +1,18 @@
 package org.ipredencao.ipredencao_manager.repository;
 
+import org.ipredencao.ipredencao_manager.jooq.tables.records.EbdCycleRecord;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdCycle;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdCycleQuery;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
-import org.jooq.Field;
 import org.jooq.Record;
 import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.ipredencao.ipredencao_manager.jooq.Tables.EBD_CYCLE;
 
@@ -27,7 +25,7 @@ public class EbdCycleRepository {
     public EbdCycle insert(String name, LocalDate startDate, LocalDate endDate,
                            boolean active, Long updatedBy) {
         Record rec = dsl.insertInto(EBD_CYCLE)
-                .set(writableColumns(name, startDate, endDate, active, updatedBy))
+                .set(toRecord(name, startDate, endDate, active, updatedBy))
                 .returning()
                 .fetchOne();
         return fromRecord(rec);
@@ -36,24 +34,9 @@ public class EbdCycleRepository {
     public void update(Long id, String name, LocalDate startDate, LocalDate endDate,
                        boolean active, Long updatedBy) {
         dsl.update(EBD_CYCLE)
-                .set(writableColumns(name, startDate, endDate, active, updatedBy))
+                .set(toRecord(name, startDate, endDate, active, updatedBy))
                 .where(EBD_CYCLE.ID.eq(id))
                 .execute();
-    }
-
-    public boolean existsByName(String name, Long excludeId) {
-        if (name == null) return false;
-        Condition cond = EBD_CYCLE.NAME.eq(name);
-        if (excludeId != null) cond = cond.and(EBD_CYCLE.ID.ne(excludeId));
-        return dsl.fetchExists(dsl.selectOne().from(EBD_CYCLE).where(cond));
-    }
-
-    // Espelha o índice único parcial (só 1 ciclo active por vez) para devolver
-    // 400 em PT em vez de deixar a violação de constraint virar 500 genérico.
-    public boolean existsOtherActive(Long excludeId) {
-        Condition cond = EBD_CYCLE.ACTIVE.isTrue();
-        if (excludeId != null) cond = cond.and(EBD_CYCLE.ID.ne(excludeId));
-        return dsl.fetchExists(dsl.selectOne().from(EBD_CYCLE).where(cond));
     }
 
     public List<EbdCycle> find(EbdCycleQuery query) {
@@ -68,19 +51,21 @@ public class EbdCycleRepository {
         List<Condition> conditions = new ArrayList<>();
         if (query == null) return conditions;
         if (query.id() != null) conditions.add(EBD_CYCLE.ID.eq(query.id()));
+        if (query.excludeId() != null) conditions.add(EBD_CYCLE.ID.ne(query.excludeId()));
+        if (query.name() != null) conditions.add(EBD_CYCLE.NAME.eq(query.name()));
         if (query.active() != null) conditions.add(EBD_CYCLE.ACTIVE.eq(query.active()));
         return conditions;
     }
 
-    private Map<Field<?>, Object> writableColumns(String name, LocalDate startDate,
-                                                   LocalDate endDate, boolean active, Long updatedBy) {
-        Map<Field<?>, Object> columns = new LinkedHashMap<>();
-        columns.put(EBD_CYCLE.NAME, name);
-        columns.put(EBD_CYCLE.START_DATE, DateTimeHelper.toDbDate(startDate));
-        columns.put(EBD_CYCLE.END_DATE, DateTimeHelper.toDbDate(endDate));
-        columns.put(EBD_CYCLE.ACTIVE, active);
-        columns.put(EBD_CYCLE.UPDATED_BY, updatedBy);
-        return columns;
+    private EbdCycleRecord toRecord(String name, LocalDate startDate, LocalDate endDate,
+                                    boolean active, Long updatedBy) {
+        EbdCycleRecord rec = new EbdCycleRecord();
+        rec.setName(name);
+        rec.setStartDate(DateTimeHelper.toDbDate(startDate));
+        rec.setEndDate(DateTimeHelper.toDbDate(endDate));
+        rec.setActive(active);
+        rec.setUpdatedBy(updatedBy);
+        return rec;
     }
 
     private EbdCycle fromRecord(Record r) {

@@ -29,19 +29,19 @@ public class EbdClassRepository {
     @Autowired
     private DSLContext dsl;
 
-    public EbdClass insert(Long cycleId, boolean fixed, String name, String description, String syllabus,
+    public EbdClass insert(Long cycleId, String name, String description, String syllabus,
                            EbdClassStatusEnum status, Long updatedBy) {
         Record rec = dsl.insertInto(EBD_CLASS)
-                .set(writableColumns(cycleId, fixed, name, description, syllabus, status, updatedBy))
+                .set(writableColumns(cycleId, name, description, syllabus, status, updatedBy))
                 .returning(EBD_CLASS.ID)
                 .fetchOne();
         return find(EbdClassQuery.builder().id(rec.get(EBD_CLASS.ID)).build()).getFirst();
     }
 
-    public void update(Long id, Long cycleId, boolean fixed, String name, String description, String syllabus,
+    public void update(Long id, Long cycleId, String name, String description, String syllabus,
                        EbdClassStatusEnum status, Long updatedBy) {
         dsl.update(EBD_CLASS)
-                .set(writableColumns(cycleId, fixed, name, description, syllabus, status, updatedBy))
+                .set(writableColumns(cycleId, name, description, syllabus, status, updatedBy))
                 .where(EBD_CLASS.ID.eq(id))
                 .execute();
     }
@@ -71,17 +71,15 @@ public class EbdClassRepository {
         if (query == null) return conditions;
         if (query.id() != null) conditions.add(EBD_CLASS.ID.eq(query.id()));
         QueryConditions.addUnaccentedLike(conditions, EBD_CLASS.NAME, query.name());
-        if (query.fixed() != null) conditions.add(EBD_CLASS.FIXED.eq(query.fixed()));
         if (query.cycleId() != null) conditions.add(EBD_CLASS.CYCLE_ID.eq(query.cycleId()));
         if (query.status() != null) conditions.add(EBD_CLASS.STATUS.eq(EbdClassStatus.valueOf(query.status().name())));
         return conditions;
     }
 
-    private Map<Field<?>, Object> writableColumns(Long cycleId, boolean fixed, String name, String description,
+    private Map<Field<?>, Object> writableColumns(Long cycleId, String name, String description,
                                                    String syllabus, EbdClassStatusEnum status, Long updatedBy) {
         Map<Field<?>, Object> columns = new LinkedHashMap<>();
         columns.put(EBD_CLASS.CYCLE_ID, cycleId);
-        columns.put(EBD_CLASS.FIXED, fixed);
         columns.put(EBD_CLASS.NAME, name);
         columns.put(EBD_CLASS.DESCRIPTION, description);
         columns.put(EBD_CLASS.SYLLABUS, syllabus);
@@ -102,7 +100,6 @@ public class EbdClassRepository {
                 r.get(EBD_CLASS.ID),
                 r.get(EBD_CLASS.CYCLE_ID),
                 r.get("cycle_name", String.class),
-                r.get(EBD_CLASS.FIXED),
                 r.get(EBD_CLASS.NAME),
                 r.get(EBD_CLASS.DESCRIPTION),
                 r.get(EBD_CLASS.SYLLABUS),

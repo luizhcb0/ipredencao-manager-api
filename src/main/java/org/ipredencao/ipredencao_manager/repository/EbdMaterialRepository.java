@@ -1,7 +1,6 @@
 package org.ipredencao.ipredencao_manager.repository;
 
 import org.ipredencao.ipredencao_manager.model.ebd.EbdMaterial;
-import org.ipredencao.ipredencao_manager.model.ebd.EbdMaterialContent;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdMaterialQuery;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
 import org.jooq.Condition;
@@ -42,7 +41,8 @@ public class EbdMaterialRepository {
         dsl.deleteFrom(EBD_MATERIAL).where(EBD_MATERIAL.ID.eq(id)).execute();
     }
 
-    // Listagem: nunca seleciona file_data (ver comentário em V015).
+    // Listagem: nunca seleciona file_data (EbdMaterial.data fica null) — só
+    // findWithData carrega o BYTEA, usado exclusivamente pelo download.
     public List<EbdMaterial> find(EbdMaterialQuery query) {
         Condition where = QueryConditions.reduceToAnd(buildConditions(query));
         return dsl.select(EBD_MATERIAL.ID, EBD_MATERIAL.CLASS_ID, EBD_MATERIAL.LESSON_ID, EBD_MATERIAL.FILE_NAME,
@@ -51,25 +51,16 @@ public class EbdMaterialRepository {
                 .from(EBD_MATERIAL)
                 .where(where)
                 .orderBy(EBD_MATERIAL.ADDED_AT.asc(), EBD_MATERIAL.ID.asc())
-                .fetch(this::fromMetadataRecord);
+                .fetch(r -> fromRecord(r, false));
     }
 
     // Único ponto do repositório que carrega o BYTEA — só o download passa por aqui.
-    public EbdMaterialContent findContent(Long id) {
-        Record r = dsl.select(EBD_MATERIAL.CLASS_ID, EBD_MATERIAL.LESSON_ID, EBD_MATERIAL.FILE_NAME,
-                        EBD_MATERIAL.CONTENT_TYPE, EBD_MATERIAL.FILE_DATA)
-                .from(EBD_MATERIAL)
-                .where(EBD_MATERIAL.ID.eq(id))
-                .fetchOne();
+    public EbdMaterial findWithData(Long id) {
+        Record r = dsl.selectFrom(EBD_MATERIAL).where(EBD_MATERIAL.ID.eq(id)).fetchOne();
         if (r == null) {
             throw new NoSuchElementException("Material " + id + " não encontrado");
         }
-        return new EbdMaterialContent(
-                r.get(EBD_MATERIAL.CLASS_ID),
-                r.get(EBD_MATERIAL.LESSON_ID),
-                r.get(EBD_MATERIAL.FILE_NAME),
-                r.get(EBD_MATERIAL.CONTENT_TYPE),
-                r.get(EBD_MATERIAL.FILE_DATA));
+        return fromRecord(r, true);
     }
 
     private List<Condition> buildConditions(EbdMaterialQuery query) {
@@ -82,7 +73,7 @@ public class EbdMaterialRepository {
         return conditions;
     }
 
-    private EbdMaterial fromMetadataRecord(Record r) {
+    private EbdMaterial fromRecord(Record r, boolean withData) {
         return new EbdMaterial(
                 r.get(EBD_MATERIAL.ID),
                 r.get(EBD_MATERIAL.CLASS_ID),
@@ -90,6 +81,7 @@ public class EbdMaterialRepository {
                 r.get(EBD_MATERIAL.FILE_NAME),
                 r.get(EBD_MATERIAL.CONTENT_TYPE),
                 r.get(EBD_MATERIAL.FILE_SIZE_BYTES),
+                withData ? r.get(EBD_MATERIAL.FILE_DATA) : null,
                 DateTimeHelper.fromDb(r.get(EBD_MATERIAL.ADDED_AT)),
                 r.get(EBD_MATERIAL.UPDATED_BY));
     }

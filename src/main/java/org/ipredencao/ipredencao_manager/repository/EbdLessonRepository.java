@@ -26,18 +26,18 @@ public class EbdLessonRepository {
     @Autowired
     private DSLContext dsl;
 
-    public Long insert(Long classId, String title, String description, String content, LocalDate lessonDate,
-                       int displayOrder, EbdLessonStatusEnum status, Long updatedBy) {
+    public Long insert(Long classId, String title, String description, LocalDate lessonDate,
+                       EbdLessonStatusEnum status, Long updatedBy) {
         return dsl.insertInto(EBD_LESSON)
-                .set(writableColumns(classId, title, description, content, lessonDate, displayOrder, status, updatedBy))
+                .set(writableColumns(classId, title, description, lessonDate, status, updatedBy))
                 .returning(EBD_LESSON.ID)
                 .fetchOne(EBD_LESSON.ID);
     }
 
-    public void update(Long id, Long classId, String title, String description, String content, LocalDate lessonDate,
-                       int displayOrder, EbdLessonStatusEnum status, Long updatedBy) {
+    public void update(Long id, Long classId, String title, String description, LocalDate lessonDate,
+                       EbdLessonStatusEnum status, Long updatedBy) {
         dsl.update(EBD_LESSON)
-                .set(writableColumns(classId, title, description, content, lessonDate, displayOrder, status, updatedBy))
+                .set(writableColumns(classId, title, description, lessonDate, status, updatedBy))
                 .where(EBD_LESSON.ID.eq(id))
                 .execute();
     }
@@ -46,16 +46,12 @@ public class EbdLessonRepository {
         dsl.deleteFrom(EBD_LESSON).where(EBD_LESSON.ID.eq(id)).execute();
     }
 
-    public int countByClass(Long classId) {
-        Integer total = dsl.selectCount().from(EBD_LESSON).where(EBD_LESSON.CLASS_ID.eq(classId)).fetchOne(0, Integer.class);
-        return total != null ? total : 0;
-    }
-
+    // Ordenada por lesson_date — não há mais campo de ordem manual (ver V015).
     public List<EbdLesson> find(EbdLessonQuery query) {
         Condition where = QueryConditions.reduceToAnd(buildConditions(query));
         return dsl.selectFrom(EBD_LESSON)
                 .where(where)
-                .orderBy(EBD_LESSON.DISPLAY_ORDER.asc(), EBD_LESSON.ID.asc())
+                .orderBy(EBD_LESSON.LESSON_DATE.asc(), EBD_LESSON.ID.asc())
                 .fetch(this::fromRecord);
     }
 
@@ -68,16 +64,14 @@ public class EbdLessonRepository {
         return conditions;
     }
 
-    private Map<Field<?>, Object> writableColumns(Long classId, String title, String description, String content,
-                                                   LocalDate lessonDate, int displayOrder, EbdLessonStatusEnum status,
+    private Map<Field<?>, Object> writableColumns(Long classId, String title, String description,
+                                                   LocalDate lessonDate, EbdLessonStatusEnum status,
                                                    Long updatedBy) {
         Map<Field<?>, Object> columns = new LinkedHashMap<>();
         columns.put(EBD_LESSON.CLASS_ID, classId);
         columns.put(EBD_LESSON.TITLE, title);
         columns.put(EBD_LESSON.DESCRIPTION, description);
-        columns.put(EBD_LESSON.CONTENT, content);
         columns.put(EBD_LESSON.LESSON_DATE, DateTimeHelper.toDbDate(lessonDate));
-        columns.put(EBD_LESSON.DISPLAY_ORDER, displayOrder);
         columns.put(EBD_LESSON.STATUS, EbdLessonStatus.valueOf(status.name()));
         columns.put(EBD_LESSON.UPDATED_BY, updatedBy);
         return columns;
@@ -90,9 +84,7 @@ public class EbdLessonRepository {
                 r.get(EBD_LESSON.CLASS_ID),
                 r.get(EBD_LESSON.TITLE),
                 r.get(EBD_LESSON.DESCRIPTION),
-                r.get(EBD_LESSON.CONTENT),
                 DateTimeHelper.fromDbDate(r.get(EBD_LESSON.LESSON_DATE)),
-                r.get(EBD_LESSON.DISPLAY_ORDER),
                 status != null ? EbdLessonStatusEnum.valueOf(status.name()) : null,
                 DateTimeHelper.fromDb(r.get(EBD_LESSON.ADDED_AT)),
                 DateTimeHelper.fromDb(r.get(EBD_LESSON.UPDATED_AT)),

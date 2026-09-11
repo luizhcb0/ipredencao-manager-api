@@ -13,7 +13,6 @@ import org.ipredencao.ipredencao_manager.model.ebd.EbdCycle;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdEnrollment;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdLesson;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdMaterial;
-import org.ipredencao.ipredencao_manager.model.ebd.EbdMaterialContent;
 import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.service.EbdService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,9 +39,9 @@ import java.util.List;
 // MEMBER/MEMBERSHIP_CANDIDATE (V014) ficam de fora de todos os grupos de
 // Roles, mas precisam alcançar os endpoints de automatrícula/presença — um
 // matcher hasAnyRole(...) os barraria antes de chegar aqui. Toda autorização
-// real vive em @PreAuthorize por método: STAFF nos endpoints administrativos,
-// isAuthenticated() nos de leitura/self-service ("/me"), com a diferença fina
-// entre "STAFF vê tudo" e "aluno matriculado só vê o que pode" resolvida no
+// real vive em @PreAuthorize por método: STAFF nos endpoints puramente
+// administrativos, isAuthenticated() nos que servem os dois papéis (matrícula,
+// presença) ou só leitura/self-service, com a distinção fina resolvida no
 // service quando o @PreAuthorize sozinho não dá conta.
 @RestController
 @RequestMapping("/api/ebd")
@@ -75,6 +74,8 @@ public class EbdController {
     }
 
     // ===== Turma =====
+    // Toda turma pertence a um ciclo (cycleId obrigatório) — sem distinção
+    // "turma fixa" (removida a pedido do time em revisão do PR).
 
     @PostMapping("/classes/search")
     @PreAuthorize(AUTHENTICATED)
@@ -100,9 +101,13 @@ public class EbdController {
         return ResponseEntity.ok(service.updateClass(id, form));
     }
 
-    // ===== Matrícula administrativa (STAFF) =====
-    // A checagem fina — TEACHER só por STAFF, STUDENT só em turma fixa — fica
-    // no service (não dá para expressar "olhe o role do body" em @PreAuthorize).
+    // ===== Matrícula =====
+    // POST/DELETE .../enrollments[/{id}] servem os dois casos: personId no
+    // body presente = matrícula administrativa (STAFF, qualquer role); ausente
+    // = automatrícula (qualquer autenticado com pessoa vinculada, sempre
+    // STUDENT) — decidido no service, que também resolve "é o próprio aluno
+    // removendo a própria matrícula" no DELETE. .../enrollments/me continua só
+    // pro DELETE, como atalho pra quem não sabe o próprio enrollmentId.
 
     @GetMapping("/classes/{id}/enrollments")
     @PreAuthorize(STAFF)
@@ -111,24 +116,16 @@ public class EbdController {
     }
 
     @PostMapping("/classes/{id}/enrollments")
-    @PreAuthorize(STAFF)
-    public ResponseEntity<EbdEnrollment> addEnrollment(@PathVariable Long id, @RequestBody EbdEnrollmentForm form) {
+    @PreAuthorize(AUTHENTICATED)
+    public ResponseEntity<EbdEnrollment> addEnrollment(@PathVariable Long id, @RequestBody(required = false) EbdEnrollmentForm form) {
         return ResponseEntity.ok(service.addEnrollment(id, form));
     }
 
     @DeleteMapping("/classes/{id}/enrollments/{enrollmentId}")
-    @PreAuthorize(STAFF)
+    @PreAuthorize(AUTHENTICATED)
     public ResponseEntity<Void> removeEnrollment(@PathVariable Long id, @PathVariable Long enrollmentId) {
         service.removeEnrollment(id, enrollmentId);
         return ResponseEntity.noContent().build();
-    }
-
-    // ===== Automatrícula (turma não-fixa) =====
-
-    @PostMapping("/classes/{id}/enrollments/me")
-    @PreAuthorize(AUTHENTICATED)
-    public ResponseEntity<EbdEnrollment> selfEnroll(@PathVariable Long id) {
-        return ResponseEntity.ok(service.selfEnroll(id));
     }
 
     @DeleteMapping("/classes/{id}/enrollments/me")
@@ -206,23 +203,27 @@ public class EbdController {
     @GetMapping("/materials/{id}/download")
     @PreAuthorize(AUTHENTICATED)
     public ResponseEntity<byte[]> downloadMaterial(@PathVariable Long id) {
-        EbdMaterialContent content = service.downloadMaterial(id);
+        EbdMaterial material = service.downloadMaterial(id);
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentDisposition(ContentDisposition.attachment().filename(content.fileName()).build());
-        MediaType mediaType = content.contentType() != null
-                ? MediaType.parseMediaType(content.contentType())
+        headers.setContentDisposition(ContentDisposition.attachment().filename(material.fileName()).build());
+        MediaType mediaType = material.contentType() != null
+                ? MediaType.parseMediaType(material.contentType())
                 : MediaType.APPLICATION_OCTET_STREAM;
-        return ResponseEntity.ok().headers(headers).contentType(mediaType).body(content.data());
+        return ResponseEntity.ok().headers(headers).contentType(mediaType).body(material.data());
     }
 
     // ===== Presença =====
-    // listAttendance/rectifyAttendance recebem id de aula/presença, não de
-    // turma — mesma razão de aula/material: checagem fica no service.
+    // POST .../attendance cria, PATCH/DELETE .../attendance/{id} atualiza ou
+    // remove — servem professor e aluno: personId no body (só STAFF pode
+    // informar) marca/altera em nome de outra pessoa; sem personId, é sempre em
+    // nome de quem chama. listAttendance/updateAttendance/deleteAttendance
+    // recebem id de aula/presença, não de turma — mesma razão de aula/material:
+    // a parte que é STAFF-only fica no service.
 
-    @PostMapping("/lessons/{id}/attendance/me")
+    @PostMapping("/lessons/{id}/attendance")
     @PreAuthorize(AUTHENTICATED)
-    public ResponseEntity<EbdAttendance> selfReportAttendance(@PathVariable Long id) {
-        return ResponseEntity.ok(service.selfReportAttendance(id));
+    public ResponseEntity<EbdAttendance> markAttendance(@PathVariable Long id, @RequestBody(required = false) EbdAttendanceForm form) {
+        return ResponseEntity.ok(service.markAttendance(id, form));
     }
 
     // 404 quando não há registro — cobre "nunca marcou" e "não está
@@ -242,7 +243,14 @@ public class EbdController {
 
     @PatchMapping("/attendance/{id}")
     @PreAuthorize(AUTHENTICATED)
-    public ResponseEntity<EbdAttendance> rectifyAttendance(@PathVariable Long id, @RequestBody EbdAttendanceForm form) {
-        return ResponseEntity.ok(service.rectifyAttendance(id, form));
+    public ResponseEntity<EbdAttendance> updateAttendance(@PathVariable Long id, @RequestBody EbdAttendanceForm form) {
+        return ResponseEntity.ok(service.updateAttendance(id, form));
+    }
+
+    @DeleteMapping("/attendance/{id}")
+    @PreAuthorize(AUTHENTICATED)
+    public ResponseEntity<Void> deleteAttendance(@PathVariable Long id) {
+        service.deleteAttendance(id);
+        return ResponseEntity.noContent().build();
     }
 }

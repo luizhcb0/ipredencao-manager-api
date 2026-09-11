@@ -3,13 +3,15 @@
 -- explícita, ao contrário do precedente mais recente (official_act/
 -- serving_area em inglês).
 --
--- Turma "fixa" (fixed = TRUE): matrícula feita pelo professor/STAFF, turma
--- conduzida continuamente pelo professor, cycle_id opcional.
--- Turma "não-fixa" (fixed = FALSE): matrícula feita pelo próprio aluno,
--- sempre pertence a um ciclo (cycle_id obrigatório — validado no service, não
--- por CHECK, pois turma fixa pode ou não ter ciclo).
--- Turma fixa não pode ser ativada sem professor vinculado — validado no
--- service (mesmo princípio de "regra de uso" em serving_area: ver V010).
+-- Turma: sempre pertence a um ciclo (cycle_id obrigatório) e a matrícula é
+-- sempre automatrícula do aluno (POST .../enrollments, sem personId) — a
+-- distinção "turma fixa" (matrícula só por professor/STAFF) existiu numa
+-- versão anterior e foi removida a pedido do time em revisão do PR: toda
+-- turma funciona da mesma forma. STAFF/professor também pode incluir aluno
+-- manualmente em qualquer turma (POST .../enrollments com personId) — as
+-- duas vias coexistem.
+-- TEACHER é só um rótulo informativo em ebd_enrollment.role — nenhuma regra
+-- de ativação ou permissão depende de existir um professor vinculado.
 
 CREATE TYPE ebd_class_status AS ENUM ('DRAFT', 'ACTIVE', 'CLOSED');
 CREATE TYPE ebd_enrollment_role AS ENUM ('STUDENT', 'TEACHER');
@@ -32,8 +34,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_ebd_cycle_single_active
 
 CREATE TABLE IF NOT EXISTS ebd_class (
     id BIGSERIAL PRIMARY KEY,
-    cycle_id BIGINT REFERENCES ebd_cycle(id) ON DELETE RESTRICT,
-    fixed BOOLEAN NOT NULL,
+    cycle_id BIGINT NOT NULL REFERENCES ebd_cycle(id) ON DELETE RESTRICT,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     syllabus TEXT,
@@ -47,16 +48,15 @@ CREATE INDEX IF NOT EXISTS idx_ebd_class_cycle  ON ebd_class(cycle_id);
 CREATE INDEX IF NOT EXISTS idx_ebd_class_status ON ebd_class(status);
 
 -- Matrícula (vínculo pessoa↔turma com papel) — espelha serving_area_member.
--- Serve para os dois tipos de turma; quem tem permissão de criar a linha
--- (professor/STAFF vs. o próprio aluno) é decidido no service conforme
--- ebd_class.fixed, não pela forma da tabela.
+-- Sem start_date/end_date: "desde quando" não importa mais pro negócio (dá pra
+-- checar presença olhando as aulas), e "até quando" já é coberto pelo
+-- histórico (deleted_at em ebd_enrollment_history, no DELETE) — não precisa
+-- duplicar isso numa coluna na linha viva.
 CREATE TABLE IF NOT EXISTS ebd_enrollment (
     id BIGSERIAL PRIMARY KEY,
     class_id BIGINT NOT NULL REFERENCES ebd_class(id) ON DELETE CASCADE,
     person_id BIGINT NOT NULL REFERENCES pessoa(pessoa_id) ON DELETE CASCADE,
     role ebd_enrollment_role NOT NULL DEFAULT 'STUDENT',
-    start_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    end_date DATE,
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_by BIGINT REFERENCES usuario(id) ON DELETE RESTRICT
@@ -83,16 +83,14 @@ CREATE TRIGGER trigger_ebd_enrollment_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Histórico de matrícula: mesmo padrão completo (insert+update+delete) de
--- serving_area_member_history — presença/situação/data de saída dependem de
--- auditoria de matrícula.
+-- serving_area_member_history — deleted_at (só preenchido no DELETE) é o
+-- registro de "quando essa pessoa saiu da turma".
 CREATE TABLE IF NOT EXISTS ebd_enrollment_history (
     history_id BIGSERIAL PRIMARY KEY,
     enrollment_id BIGINT REFERENCES ebd_enrollment(id) ON DELETE SET NULL,
     class_id BIGINT NOT NULL,
     person_id BIGINT NOT NULL,
     role ebd_enrollment_role NOT NULL,
-    start_date DATE,
-    end_date DATE,
     added_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     updated_by BIGINT REFERENCES usuario(id) ON DELETE RESTRICT,
@@ -116,8 +114,6 @@ BEGIN
         class_id,
         person_id,
         role,
-        start_date,
-        end_date,
         added_at,
         updated_at,
         updated_by,
@@ -127,8 +123,6 @@ BEGIN
         NEW.class_id,
         NEW.person_id,
         NEW.role,
-        NEW.start_date,
-        NEW.end_date,
         NEW.added_at,
         NEW.updated_at,
         NEW.updated_by,
@@ -151,8 +145,6 @@ BEGIN
         class_id,
         person_id,
         role,
-        start_date,
-        end_date,
         added_at,
         updated_at,
         updated_by,
@@ -162,8 +154,6 @@ BEGIN
         OLD.class_id,
         OLD.person_id,
         OLD.role,
-        OLD.start_date,
-        OLD.end_date,
         OLD.added_at,
         OLD.updated_at,
         OLD.updated_by,
@@ -178,14 +168,16 @@ CREATE TRIGGER trigger_ebd_enrollment_history_delete
     FOR EACH ROW
     EXECUTE FUNCTION delete_ebd_enrollment_history();
 
+-- Sem content nem display_order: descrição + material já bastam pro conteúdo
+-- da aula, e a ordem de exibição passa a ser sempre lesson_date (por isso ela
+-- é obrigatória — sem um campo de ordem manual, duas aulas sem data não têm
+-- posição definida).
 CREATE TABLE IF NOT EXISTS ebd_lesson (
     id BIGSERIAL PRIMARY KEY,
     class_id BIGINT NOT NULL REFERENCES ebd_class(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    content TEXT,
-    lesson_date DATE,
-    display_order INT NOT NULL DEFAULT 0,
+    lesson_date DATE NOT NULL,
     status ebd_lesson_status NOT NULL DEFAULT 'DRAFT',
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -193,7 +185,7 @@ CREATE TABLE IF NOT EXISTS ebd_lesson (
 );
 
 CREATE INDEX IF NOT EXISTS idx_ebd_lesson_class ON ebd_lesson(class_id);
-CREATE INDEX IF NOT EXISTS idx_ebd_lesson_order ON ebd_lesson(class_id, display_order);
+CREATE INDEX IF NOT EXISTS idx_ebd_lesson_date  ON ebd_lesson(class_id, lesson_date);
 
 CREATE TRIGGER trigger_ebd_lesson_updated_at
     BEFORE UPDATE ON ebd_lesson
@@ -226,14 +218,13 @@ CREATE INDEX IF NOT EXISTS idx_ebd_material_lesson ON ebd_material(lesson_id);
 
 -- Presença: vinculada à matrícula (ebd_enrollment), não direto à pessoa, para
 -- deixar explícito que só quem está matriculado pode ter presença — carrega
--- turma+pessoa por transitividade. Vale igual para turma fixa e não-fixa.
+-- turma+pessoa por transitividade. Sem self_reported: quem marcou/alterou já
+-- dá pra saber por updated_by (é o próprio aluno ou é STAFF/professor).
 CREATE TABLE IF NOT EXISTS ebd_attendance (
     id BIGSERIAL PRIMARY KEY,
     lesson_id BIGINT NOT NULL REFERENCES ebd_lesson(id) ON DELETE CASCADE,
     enrollment_id BIGINT NOT NULL REFERENCES ebd_enrollment(id) ON DELETE CASCADE,
     present BOOLEAN NOT NULL DEFAULT TRUE,
-    -- FALSE quando um staff/professor registra ou retifica em nome do aluno.
-    self_reported BOOLEAN NOT NULL DEFAULT TRUE,
     added_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_by BIGINT REFERENCES usuario(id) ON DELETE RESTRICT

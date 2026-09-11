@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.joda.time.DateTime;
 
-// Só metadado — o conteúdo binário (ebd_material.file_data) nunca trafega
-// aqui; ver EbdMaterialContent, usado exclusivamente pelo download.
+// data (o BYTEA em si) fica null nas consultas de listagem — só o download
+// (EbdMaterialRepository.findWithContent) o carrega. @JsonInclude NON_NULL
+// evita expor um array vazio/gigante à toa; o controller de download nem
+// serializa este record como JSON, monta um ResponseEntity<byte[]> direto.
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record EbdMaterial(
@@ -15,6 +17,7 @@ public record EbdMaterial(
         String fileName,
         String contentType,
         Long fileSizeBytes,
+        byte[] data,
         DateTime addedAt,
         Long updatedBy
 ) {}

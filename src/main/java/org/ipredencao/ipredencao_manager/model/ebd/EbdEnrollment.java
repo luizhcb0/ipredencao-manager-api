@@ -3,9 +3,10 @@ package org.ipredencao.ipredencao_manager.model.ebd;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
 
-// className/personName são derivados de JOIN.
+// className/personName são derivados de JOIN. Sem startDate/endDate — "desde
+// quando"/"até quando" não importam mais pro negócio (ver comentário em V015);
+// quando o vínculo é removido, ebd_enrollment_history.deletedAt registra isso.
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record EbdEnrollment(
@@ -15,8 +16,6 @@ public record EbdEnrollment(
         Long personId,
         String personName,
         EbdEnrollmentRoleEnum role,
-        LocalDate startDate,
-        LocalDate endDate,
         DateTime addedAt,
         DateTime updatedAt,
         Long updatedBy

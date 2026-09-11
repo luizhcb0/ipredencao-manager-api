@@ -21,7 +21,6 @@ import org.ipredencao.ipredencao_manager.model.ebd.EbdLesson;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdLessonQuery;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdLessonStatusEnum;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdMaterial;
-import org.ipredencao.ipredencao_manager.model.ebd.EbdMaterialContent;
 import org.ipredencao.ipredencao_manager.model.ebd.EbdMaterialQuery;
 import org.ipredencao.ipredencao_manager.model.pagination.PageInfo;
 import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
@@ -79,9 +78,7 @@ public class EbdService {
         validateCycleName(form);
         boolean active = form.active() != null && form.active();
         assertSingleActiveCycle(active, null);
-        if (cycleRepo.existsByName(form.name(), null)) {
-            throw new IllegalArgumentException("Já existe um ciclo com o nome \"" + form.name() + "\"");
-        }
+        assertUniqueCycleName(form.name(), null);
         Long userId = securityUtils.getCurrentUserId();
         return cycleRepo.insert(form.name(), form.startDate(), form.endDate(), active, userId);
     }
@@ -92,9 +89,7 @@ public class EbdService {
         validateCycleName(form);
         boolean active = form.active() != null ? form.active() : existing.active();
         assertSingleActiveCycle(active, id);
-        if (cycleRepo.existsByName(form.name(), id)) {
-            throw new IllegalArgumentException("Já existe um ciclo com o nome \"" + form.name() + "\"");
-        }
+        assertUniqueCycleName(form.name(), id);
         Long userId = securityUtils.getCurrentUserId();
         cycleRepo.update(id, form.name(), form.startDate(), form.endDate(), active, userId);
         return requireCycle(id);
@@ -112,7 +107,6 @@ public class EbdService {
         EbdClassQuery effectiveQuery = EbdClassQuery.builder()
                 .id(query.id())
                 .name(query.name())
-                .fixed(query.fixed())
                 .cycleId(query.cycleId())
                 .status(status)
                 .pagination(pagination)
@@ -139,15 +133,10 @@ public class EbdService {
     @Transactional
     public EbdClass createClass(EbdClassForm form) {
         validateClassName(form);
-        if (form.fixed() == null) {
-            throw new IllegalArgumentException("Campo obrigatório: fixed (turma fixa ou não-fixa)");
-        }
-        boolean fixed = form.fixed();
-        validateCycleRequirement(fixed, form.cycleId());
+        requireCycle(requireCycleId(form.cycleId()));
         Long userId = securityUtils.getCurrentUserId();
-        // Sempre nasce DRAFT — activar exige passar pelo fluxo de update (e, se
-        // fixa, ter professor vinculado; ver requireTeacherForActivation).
-        return classRepo.insert(form.cycleId(), fixed, form.name(), form.description(), form.syllabus(),
+        // Sempre nasce DRAFT — activar exige passar pelo fluxo de update.
+        return classRepo.insert(form.cycleId(), form.name(), form.description(), form.syllabus(),
                 EbdClassStatusEnum.DRAFT, userId);
     }
 
@@ -155,19 +144,22 @@ public class EbdService {
     public EbdClass updateClass(Long id, EbdClassForm form) {
         EbdClass existing = requireClass(id);
         validateClassName(form);
-        boolean fixed = form.fixed() != null ? form.fixed() : existing.fixed();
         Long cycleId = form.cycleId() != null ? form.cycleId() : existing.cycleId();
-        validateCycleRequirement(fixed, cycleId);
+        requireCycle(cycleId);
         EbdClassStatusEnum status = form.status() != null ? form.status() : existing.status();
-        if (fixed && status == EbdClassStatusEnum.ACTIVE) {
-            requireTeacherForActivation(id);
-        }
         Long userId = securityUtils.getCurrentUserId();
-        classRepo.update(id, cycleId, fixed, form.name(), form.description(), form.syllabus(), status, userId);
+        classRepo.update(id, cycleId, form.name(), form.description(), form.syllabus(), status, userId);
         return requireClass(id);
     }
 
-    // ===== Matrícula (administrativa: STAFF) =====
+    // ===== Matrícula =====
+    // Um único endpoint (POST/DELETE .../enrollments[/{id}]) serve tanto a
+    // matrícula administrativa (STAFF, qualquer role) quanto a automatrícula
+    // (qualquer autenticado com pessoa vinculada, sempre STUDENT) — a diferença
+    // é decidida no service, não dá pra expressar "olhe o personId do body" em
+    // @PreAuthorize. .../enrollments/me continua existindo só pro DELETE, como
+    // atalho pra quem não sabe o próprio enrollmentId (resolve e delega pro
+    // mesmo removeEnrollment).
 
     @Transactional(readOnly = true)
     public List<EbdEnrollment> listEnrollments(Long classId) {
@@ -178,20 +170,29 @@ public class EbdService {
     @Transactional
     public EbdEnrollment addEnrollment(Long classId, EbdEnrollmentForm form) {
         EbdClass klass = requireClass(classId);
-        if (form.personId() == null) {
-            throw new IllegalArgumentException("Pessoa (personId) é obrigatória");
+        Long personId;
+        EbdEnrollmentRoleEnum role;
+        String duplicateMessage;
+        if (form != null && form.personId() != null) {
+            requireStaff();
+            pessoaService.findById(form.personId());
+            personId = form.personId();
+            role = form.role() != null ? form.role() : EbdEnrollmentRoleEnum.STUDENT;
+            duplicateMessage = "Esta pessoa já está vinculada a esta turma com este papel";
+        } else {
+            if (klass.status() != EbdClassStatusEnum.ACTIVE) {
+                throw new IllegalStateException("Só é possível se matricular em uma turma ativa");
+            }
+            personId = requireCurrentPersonId();
+            role = EbdEnrollmentRoleEnum.STUDENT;
+            duplicateMessage = "Você já está matriculado nesta turma";
         }
-        EbdEnrollmentRoleEnum role = form.role() != null ? form.role() : EbdEnrollmentRoleEnum.STUDENT;
-        if (role != EbdEnrollmentRoleEnum.TEACHER && !klass.fixed()) {
-            throw new IllegalArgumentException(
-                    "Turma não-fixa: o aluno se matricula sozinho (POST /api/ebd/classes/{id}/enrollments/me)");
-        }
-        pessoaService.findById(form.personId());
-        if (enrollmentRepo.exists(classId, form.personId(), role)) {
-            throw new IllegalArgumentException("Esta pessoa já está vinculada a esta turma com este papel");
+        if (!enrollmentRepo.find(EbdEnrollmentQuery.builder().classId(classId).personId(personId).role(role).build())
+                .isEmpty()) {
+            throw new IllegalArgumentException(duplicateMessage);
         }
         Long userId = securityUtils.getCurrentUserId();
-        Long id = enrollmentRepo.insert(classId, form.personId(), role, form.startDate(), userId);
+        Long id = enrollmentRepo.insert(classId, personId, role, userId);
         return requireEnrollment(id);
     }
 
@@ -201,44 +202,26 @@ public class EbdService {
         if (!enrollment.classId().equals(classId)) {
             throw new NoSuchElementException("Vínculo " + enrollmentId + " não encontrado nesta turma");
         }
+        if (!isStaff()) {
+            Long personId = requireCurrentPersonId();
+            boolean isOwnStudentEnrollment = enrollment.role() == EbdEnrollmentRoleEnum.STUDENT
+                    && enrollment.personId().equals(personId);
+            if (!isOwnStudentEnrollment) {
+                throw new AccessDeniedException("Apenas o próprio aluno ou um administrador pode remover esta matrícula");
+            }
+        }
         enrollmentRepo.delete(enrollmentId);
-    }
-
-    // ===== Matrícula (automatrícula — turma não-fixa) =====
-
-    @Transactional
-    public EbdEnrollment selfEnroll(Long classId) {
-        EbdClass klass = requireClass(classId);
-        if (klass.fixed()) {
-            throw new IllegalArgumentException(
-                    "Turma fixa: a matrícula é feita pelo professor ou por um administrador");
-        }
-        if (klass.status() != EbdClassStatusEnum.ACTIVE) {
-            throw new IllegalStateException("Só é possível se matricular em uma turma ativa");
-        }
-        Long personId = requireCurrentPersonId();
-        if (enrollmentRepo.exists(classId, personId, EbdEnrollmentRoleEnum.STUDENT)) {
-            throw new IllegalArgumentException("Você já está matriculado nesta turma");
-        }
-        Long userId = securityUtils.getCurrentUserId();
-        Long id = enrollmentRepo.insert(classId, personId, EbdEnrollmentRoleEnum.STUDENT, null, userId);
-        return requireEnrollment(id);
     }
 
     @Transactional
     public void selfUnenroll(Long classId) {
-        EbdClass klass = requireClass(classId);
-        if (klass.fixed()) {
-            throw new IllegalArgumentException(
-                    "Turma fixa: o cancelamento é feito pelo professor ou por um administrador");
-        }
         Long personId = requireCurrentPersonId();
         EbdEnrollment enrollment = enrollmentRepo
                 .find(EbdEnrollmentQuery.builder().classId(classId).personId(personId)
                         .role(EbdEnrollmentRoleEnum.STUDENT).build())
                 .stream().findFirst()
                 .orElseThrow(() -> new NoSuchElementException("Você não está matriculado nesta turma"));
-        enrollmentRepo.delete(enrollment.id());
+        removeEnrollment(classId, enrollment.id());
     }
 
     // ===== Aula =====
@@ -256,12 +239,11 @@ public class EbdService {
     @Transactional
     public EbdLesson createLesson(Long classId, EbdLessonForm form) {
         requireClass(classId);
-        validateLessonTitle(form);
-        int order = form.displayOrder() != null ? form.displayOrder() : lessonRepo.countByClass(classId);
+        validateLessonForm(form);
         Long userId = securityUtils.getCurrentUserId();
         // Sempre nasce DRAFT, mesmo padrão de ebd_class (ver createClass).
-        Long id = lessonRepo.insert(classId, form.title(), form.description(), form.content(), form.lessonDate(),
-                order, EbdLessonStatusEnum.DRAFT, userId);
+        Long id = lessonRepo.insert(classId, form.title(), form.description(), form.lessonDate(),
+                EbdLessonStatusEnum.DRAFT, userId);
         return requireLesson(id);
     }
 
@@ -269,18 +251,17 @@ public class EbdService {
     public EbdLesson updateLesson(Long lessonId, EbdLessonForm form) {
         EbdLesson existing = requireLesson(lessonId);
         requireStaff();
-        validateLessonTitle(form);
-        int order = form.displayOrder() != null ? form.displayOrder() : existing.displayOrder();
+        validateLessonForm(form);
         EbdLessonStatusEnum status = form.status() != null ? form.status() : existing.status();
         Long userId = securityUtils.getCurrentUserId();
-        lessonRepo.update(lessonId, existing.classId(), form.title(), form.description(), form.content(),
-                form.lessonDate(), order, status, userId);
+        lessonRepo.update(lessonId, existing.classId(), form.title(), form.description(), form.lessonDate(),
+                status, userId);
         return requireLesson(lessonId);
     }
 
     @Transactional
     public void deleteLesson(Long lessonId) {
-        EbdLesson existing = requireLesson(lessonId);
+        requireLesson(lessonId);
         requireStaff();
         lessonRepo.delete(lessonId); // cascade apaga materiais da aula (V015)
     }
@@ -321,7 +302,7 @@ public class EbdService {
 
     @Transactional
     public void deleteMaterial(Long materialId) {
-        EbdMaterial material = requireMaterial(materialId);
+        requireMaterial(materialId);
         requireStaff();
         materialRepo.delete(materialId);
     }
@@ -329,7 +310,7 @@ public class EbdService {
     // Visibilidade espelha listLessonMaterials/listClassMaterials: STAFF sempre;
     // aluno matriculado só se o material for geral ou da aula publicada.
     @Transactional(readOnly = true)
-    public EbdMaterialContent downloadMaterial(Long materialId) {
+    public EbdMaterial downloadMaterial(Long materialId) {
         EbdMaterial material = requireMaterial(materialId);
         if (!isStaff()) {
             requireEnrolledStudent(material.classId());
@@ -337,7 +318,7 @@ public class EbdService {
                 requirePublished(requireLesson(material.lessonId()));
             }
         }
-        return materialRepo.findContent(materialId);
+        return materialRepo.findWithData(materialId);
     }
 
     private EbdMaterial insertMaterial(Long classId, Long lessonId, MultipartFile file) {
@@ -357,26 +338,53 @@ public class EbdService {
     }
 
     // ===== Presença =====
+    // Um único par de endpoints (POST .../lessons/{id}/attendance cria, PATCH
+    // .../attendance/{id} atualiza, DELETE .../attendance/{id} remove) serve
+    // professor e aluno: personId no body (só STAFF pode informar) marca/altera
+    // em nome de outra pessoa; sem personId, é sempre em nome de quem chama.
 
-    // Autodeclarada pelo aluno já matriculado, nos dois tipos de turma — a
-    // diferença fixa/não-fixa já foi resolvida na matrícula (ebd_enrollment),
-    // presença não repete essa checagem.
     @Transactional
-    public EbdAttendance selfReportAttendance(Long lessonId) {
+    public EbdAttendance markAttendance(Long lessonId, EbdAttendanceForm form) {
         EbdLesson lesson = requireLesson(lessonId);
         requirePublished(lesson);
-        Long personId = requireCurrentPersonId();
+        Long personId;
+        if (form != null && form.personId() != null) {
+            requireStaff();
+            personId = form.personId();
+        } else {
+            personId = requireCurrentPersonId();
+        }
         EbdEnrollment enrollment = enrollmentRepo
                 .find(EbdEnrollmentQuery.builder().classId(lesson.classId()).personId(personId)
                         .role(EbdEnrollmentRoleEnum.STUDENT).build())
                 .stream().findFirst()
-                .orElseThrow(() -> new IllegalStateException("Você não está matriculado nesta turma"));
+                .orElseThrow(() -> new IllegalStateException("Esta pessoa não está matriculada nesta turma"));
         if (attendanceRepo.exists(lessonId, enrollment.id())) {
-            throw new IllegalArgumentException("Você já registrou presença nesta aula");
+            throw new IllegalArgumentException("Presença já registrada nesta aula");
+        }
+        boolean present = form == null || form.present() == null || form.present();
+        Long userId = securityUtils.getCurrentUserId();
+        Long id = attendanceRepo.insert(lessonId, enrollment.id(), present, userId);
+        return requireAttendance(id);
+    }
+
+    @Transactional
+    public EbdAttendance updateAttendance(Long attendanceId, EbdAttendanceForm form) {
+        EbdAttendance existing = requireAttendance(attendanceId);
+        requireOwnAttendanceOrStaff(existing);
+        if (form == null || form.present() == null) {
+            throw new IllegalArgumentException("Campo obrigatório: present");
         }
         Long userId = securityUtils.getCurrentUserId();
-        Long id = attendanceRepo.insert(lessonId, enrollment.id(), true, true, userId);
-        return requireAttendance(id);
+        attendanceRepo.update(attendanceId, form.present(), userId);
+        return requireAttendance(attendanceId);
+    }
+
+    @Transactional
+    public void deleteAttendance(Long attendanceId) {
+        EbdAttendance existing = requireAttendance(attendanceId);
+        requireOwnAttendanceOrStaff(existing);
+        attendanceRepo.delete(attendanceId);
     }
 
     // Consulta da própria presença — sem isto o aluno não tinha como saber, ao
@@ -410,19 +418,12 @@ public class EbdService {
         return attendanceRepo.find(EbdAttendanceQuery.builder().lessonId(lessonId).build());
     }
 
-    // Retificação: STAFF registrando ou corrigindo em nome do aluno (self_reported
-    // vira false, mesmo quando o valor de present não muda).
-    @Transactional
-    public EbdAttendance rectifyAttendance(Long attendanceId, EbdAttendanceForm form) {
-        EbdAttendance existing = requireAttendance(attendanceId);
-        requireLesson(existing.lessonId());
-        requireStaff();
-        if (form == null || form.present() == null) {
-            throw new IllegalArgumentException("Campo obrigatório: present");
+    private void requireOwnAttendanceOrStaff(EbdAttendance attendance) {
+        if (isStaff()) return;
+        Long personId = ebdAccess.currentPersonId(SecurityContextHolder.getContext().getAuthentication());
+        if (personId == null || !personId.equals(attendance.personId())) {
+            throw new AccessDeniedException("Apenas o próprio aluno ou um administrador pode fazer isso");
         }
-        Long userId = securityUtils.getCurrentUserId();
-        attendanceRepo.update(attendanceId, form.present(), false, userId);
-        return requireAttendance(attendanceId);
     }
 
     // ===== Validações / helpers =====
@@ -457,15 +458,25 @@ public class EbdService {
                 .orElseThrow(() -> new NoSuchElementException("Presença " + id + " não encontrada"));
     }
 
-    private void validateLessonTitle(EbdLessonForm form) {
+    private Long requireCycleId(Long cycleId) {
+        if (cycleId == null) {
+            throw new IllegalArgumentException("Campo obrigatório: cycleId (toda turma pertence a um ciclo)");
+        }
+        return cycleId;
+    }
+
+    private void validateLessonForm(EbdLessonForm form) {
         if (form == null || form.title() == null || form.title().isBlank()) {
             throw new IllegalArgumentException("Título da aula é obrigatório");
         }
+        if (form.lessonDate() == null) {
+            throw new IllegalArgumentException("Data da aula é obrigatória");
+        }
     }
 
-    // Reutilizado pelos endpoints de aula/presença/material cujo path variable é
-    // o id da aula/presença/material, não o da turma (não dá para expressar
-    // STAFF em @PreAuthorize sem esse id) — ver comentário em EbdController.
+    // Reutilizado pelos endpoints de aula/material cujo path variable é o id da
+    // aula/material, não o da turma (não dá para expressar STAFF em
+    // @PreAuthorize sem esse id) — ver comentário em EbdController.
     private void requireStaff() {
         if (!isStaff()) {
             throw new AccessDeniedException("Apenas um administrador pode fazer isso");
@@ -474,7 +485,9 @@ public class EbdService {
 
     private void requireEnrolledStudent(Long classId) {
         Long personId = ebdAccess.currentPersonId(SecurityContextHolder.getContext().getAuthentication());
-        boolean enrolled = personId != null && enrollmentRepo.exists(classId, personId, EbdEnrollmentRoleEnum.STUDENT);
+        boolean enrolled = personId != null
+                && !enrollmentRepo.find(EbdEnrollmentQuery.builder().classId(classId).personId(personId)
+                        .role(EbdEnrollmentRoleEnum.STUDENT).build()).isEmpty();
         if (!enrolled) {
             throw new AccessDeniedException("Apenas quem está matriculado nesta turma pode ver este conteúdo");
         }
@@ -492,40 +505,23 @@ public class EbdService {
         }
     }
 
+    private void assertUniqueCycleName(String name, Long excludeId) {
+        if (!cycleRepo.find(EbdCycleQuery.builder().name(name).excludeId(excludeId).build()).isEmpty()) {
+            throw new IllegalArgumentException("Já existe um ciclo com o nome \"" + name + "\"");
+        }
+    }
+
     private void validateClassName(EbdClassForm form) {
         if (form == null || form.name() == null || form.name().isBlank()) {
             throw new IllegalArgumentException("Nome da turma é obrigatório");
         }
     }
 
-    // Não-fixa sempre pertence a um ciclo; fixa pode ou não (ver V015). Quando
-    // um cycleId é informado (em qualquer um dos dois casos) ele precisa existir.
-    private void validateCycleRequirement(boolean fixed, Long cycleId) {
-        if (!fixed && cycleId == null) {
-            throw new IllegalArgumentException("Turma não-fixa precisa de um ciclo (cycleId)");
-        }
-        if (cycleId != null) {
-            requireCycle(cycleId);
-        }
-    }
-
     // Espelha o índice único parcial de V015 (uq_ebd_cycle_single_active) para
     // devolver 400 em PT em vez de deixar a violação de constraint virar 500.
     private void assertSingleActiveCycle(boolean active, Long excludeId) {
-        if (active && cycleRepo.existsOtherActive(excludeId)) {
+        if (active && !cycleRepo.find(EbdCycleQuery.builder().active(true).excludeId(excludeId).build()).isEmpty()) {
             throw new IllegalArgumentException("Já existe um ciclo ativo; desative-o antes de ativar outro");
-        }
-    }
-
-    // Decisão confirmada com o usuário: turma fixa não pode ser ativada sem
-    // professor vinculado. Continua sendo uma exigência de dado (existe ao
-    // menos um vínculo TEACHER), não de autorização — não depende de quem é o
-    // professor, só de que exista um.
-    private void requireTeacherForActivation(Long classId) {
-        boolean hasTeacher = !enrollmentRepo.find(EbdEnrollmentQuery.builder()
-                .classId(classId).role(EbdEnrollmentRoleEnum.TEACHER).build()).isEmpty();
-        if (!hasTeacher) {
-            throw new IllegalStateException("Turma fixa não pode ser ativada sem professor vinculado");
         }
     }
 
@@ -533,9 +529,9 @@ public class EbdService {
         return SecurityUtils.hasAnyRole(Roles.staffNames());
     }
 
-    // Usado pelas ações de autoatendimento (matricular-se/cancelar). O vínculo
-    // usuario.person_id em si é gerenciado fora da EBD (V014) — aqui só se exige
-    // que ele já esteja resolvido.
+    // Usado pelas ações de autoatendimento (matricular-se/marcar presença/
+    // cancelar). O vínculo usuario.person_id em si é gerenciado fora da EBD
+    // (V014) — aqui só se exige que ele já esteja resolvido.
     private Long requireCurrentPersonId() {
         Long personId = ebdAccess.currentPersonId(SecurityContextHolder.getContext().getAuthentication());
         if (personId == null) {
