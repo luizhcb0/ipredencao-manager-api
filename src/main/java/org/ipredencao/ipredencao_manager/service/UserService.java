@@ -14,6 +14,7 @@ import org.ipredencao.ipredencao_manager.model.user.dto.UserSummaryResponse;
 import org.ipredencao.ipredencao_manager.repository.SessaoUsuarioRepository;
 import org.ipredencao.ipredencao_manager.repository.UsuarioRepository;
 import org.ipredencao.ipredencao_manager.service.firebase.FirebaseUser;
+import org.ipredencao.ipredencao_manager.util.SecurityUtils;
 import org.joda.time.DateTime;
 import org.jooq.exception.IntegrityConstraintViolationException;
 import org.slf4j.Logger;
@@ -53,6 +54,9 @@ public class UserService {
     @Autowired
     private PessoaService pessoaService;
 
+    @Autowired
+    private SecurityUtils securityUtils;
+
     public List<UserSummaryResponse> listUsers(Boolean active, PerfilAcesso profile, String search) {
         UsuarioQuery.Builder builder = UsuarioQuery.builder();
         if (active != null) {
@@ -72,6 +76,17 @@ public class UserService {
     public UserSummaryResponse getUser(Long id) {
         Usuario usuario = requireUsuario(id);
         return UserSummaryResponse.from(usuario);
+    }
+
+    /** {@code usuario.person_id} do chamador; {@code null} se não autenticado, sem usuário ou sem vínculo. */
+    public Long currentPersonId() {
+        Long userId = securityUtils.getCurrentUserId();
+        if (userId == null) return null;
+        try {
+            return getUser(userId).personId();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
     public UserSummaryResponse createUser(CreateUserRequest request) {

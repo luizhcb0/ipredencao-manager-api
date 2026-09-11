@@ -95,23 +95,16 @@ public class SecurityConfig {
 
                 .requestMatchers("/api/enderecos/**").hasAnyRole(Roles.anyNames())
 
-                // EBD: explícito (em vez de cair no catch-all) pra deixar claro que a
-                // rota foi pensada, não esquecida — mas só isAuthenticated(), não
-                // hasAnyRole(...). MEMBER/MEMBERSHIP_CANDIDATE (V014) ficam de fora de
-                // TODOS os grupos de Roles e precisam alcançar automatrícula/presença
-                // (endpoints "/me"); um hasAnyRole(...) aqui os barraria antes mesmo de
-                // chegar no @PreAuthorize do controller (matcher decide primeiro — ver
-                // nota de "Role groups" acima). A distinção real de permissão (STAFF nos
-                // endpoints administrativos, aluno matriculado nos de leitura) não é
-                // uniforme por método HTTP nem por prefixo de path — ex.: GET
-                // /lessons/{id}/attendance é STAFF, GET /lessons/{id}/attendance/me é
-                // qualquer autenticado — então fica inteira no @PreAuthorize por método
-                // em EbdController, que é o único lugar que enxerga isso corretamente.
-                .requestMatchers("/api/ebd/**").authenticated()
+                // Escola Dominical: MEMBER/MEMBERSHIP_CANDIDATE ficam de fora dos
+                // Roles e precisam alcançar automatrícula/presença — hasAnyRole(...)
+                // os barraria antes do @PreAuthorize (o matcher decide primeiro).
+                .requestMatchers("/api/bible-school/**").authenticated()
 
-                // Usuários (admin) e perfil próprio
+                // Usuários (admin) e perfil próprio. /api/me é o que a SPA
+                // chama no boot (useUserData) — MEMBER/MEMBERSHIP_CANDIDATE
+                // precisam alcançar, mesmo padrão de /api/bible-school/**.
                 .requestMatchers("/api/users/**").hasAnyRole(Roles.adminNames())
-                .requestMatchers("/api/me/**").hasAnyRole(Roles.anyNames())
+                .requestMatchers("/api/me/**").authenticated()
                 
                 .anyRequest().authenticated()
             )
