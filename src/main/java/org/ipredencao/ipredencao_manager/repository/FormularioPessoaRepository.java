@@ -43,6 +43,12 @@ public class FormularioPessoaRepository {
         return fromRepository(updated);
     }
 
+    public void delete(Long id) {
+        dsl.deleteFrom(FORMULARIO_PESSOA)
+                .where(FORMULARIO_PESSOA.FORMULARIO_PESSOA_ID.eq(id))
+                .execute();
+    }
+
     public List<FormularioPessoa> findAll() {
         return dsl.selectFrom(FORMULARIO_PESSOA)
                 .fetch()

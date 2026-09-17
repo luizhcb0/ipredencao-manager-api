@@ -57,8 +57,16 @@ docker buildx build --platform linux/amd64 --load \
     -t "${IMAGE_URI}:${GIT_SHA}" \
     .
 
-echo "🧹 Limpando imagens orfas..."
+# Rollback e tag SHA ficam no ECR. No Mac so latest + sha deste build.
+echo "🧹 Removendo tags locais antigas desta imagem..."
+docker images --filter "reference=${IMAGE_URI}" --format '{{.Tag}}' | while IFS= read -r tag; do
+    case "$tag" in
+        latest|"${GIT_SHA}"|"") continue ;;
+    esac
+    docker rmi "${IMAGE_URI}:${tag}" || true
+done
 docker image prune -f
+docker builder prune -f --keep-storage 8GB
 
 echo ""
 echo "✅ Build concluido. Para testar este mesmo artefato localmente:"

@@ -19,13 +19,12 @@ RUN gradle clean build -x test -x composeUp -x update -x generateJooq --no-daemo
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Copy jar from build stage
-COPY --from=build /app/build/libs/*.jar app.jar
-
-# Create non-root user
+# User antes do COPY: --chown no COPY nao duplica a camada do JAR (RUN chown sim).
 RUN addgroup -g 1001 appuser && \
-    adduser -D -u 1001 -G appuser appuser && \
-    chown -R appuser:appuser /app
+    adduser -D -u 1001 -G appuser appuser
+
+# *-SNAPSHOT.jar e o boot jar; *-SNAPSHOT-plain.jar nao casa neste glob.
+COPY --from=build --chown=appuser:appuser /app/build/libs/*-SNAPSHOT.jar app.jar
 
 USER appuser
 

@@ -423,6 +423,7 @@ public class PessoaRepository {
         if (query.getIds() != null && !query.getIds().isEmpty()) conditions.add(PESSOA.PESSOA_ID.in(query.getIds()));
         QueryConditions.addUnaccentedLike(conditions, PESSOA.NOME, query.getNome());
         QueryConditions.addUnaccentedLike(conditions, PESSOA.APELIDO, query.getApelido());
+        QueryConditions.addUnaccentedLikeAny(conditions, PESSOA.PROFISSAO, query.getProfissao());
         QueryConditions.addEqIfNotBlank(conditions, PESSOA.EMAIL, query.getEmail());
         QueryConditions.addEqIfNotBlank(conditions, PESSOA.TELEFONE, query.getTelefone());
         QueryConditions.addEqIfNotBlank(conditions, PESSOA.CPF, query.getCpf());

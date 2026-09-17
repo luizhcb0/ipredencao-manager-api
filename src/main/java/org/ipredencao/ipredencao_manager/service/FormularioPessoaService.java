@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -61,6 +62,27 @@ public class FormularioPessoaService {
 
     public FormularioPessoa update(FormularioPessoa formulario) {
         return repository.update(formulario);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        FormularioPessoa formulario = findById(id);
+        if (ownsPhoto(formulario)) {
+            s3Service.deleteFile(formulario.getFotoUrl());
+        }
+        repository.delete(id);
+    }
+
+    private boolean ownsPhoto(FormularioPessoa formulario) {
+        String fotoUrl = formulario.getFotoUrl();
+        if (fotoUrl == null || fotoUrl.isBlank()) return false;
+        if (formulario.getPessoaId() == null) return true;
+        try {
+            Pessoa pessoa = pessoaService.findById(formulario.getPessoaId());
+            return !fotoUrl.equals(pessoa.getFotoUrl());
+        } catch (NoSuchElementException e) {
+            return true;
+        }
     }
 
     public FormularioPessoa findById(Long id) {

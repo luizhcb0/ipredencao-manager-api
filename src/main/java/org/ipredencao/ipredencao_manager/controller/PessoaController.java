@@ -14,6 +14,7 @@ import org.ipredencao.ipredencao_manager.controller.form.PregnancyUpdateForm;
 import org.ipredencao.ipredencao_manager.repository.PersonNoteRepository;
 import org.ipredencao.ipredencao_manager.service.PregnancyService;
 import org.ipredencao.ipredencao_manager.service.PessoaService;
+import org.ipredencao.ipredencao_manager.util.SecurityUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -85,11 +86,15 @@ public class PessoaController {
     @PreAuthorize(Roles.STAFF_EXPR)
     public ResponseEntity<Pessoa> updatePerson(@PathVariable Long id, @RequestBody Pessoa pessoa) {
         pessoa.setId(id);
+        // processForm/pregnancy still set categoria via the service; this door is the ficha.
+        if (!SecurityUtils.hasAnyRole(Roles.elderNames())) {
+            pessoa.setCategoria(pessoaService.findById(id).getCategoria());
+        }
         return ResponseEntity.ok(pessoaService.update(pessoa));
     }
 
     @PatchMapping("/{id}/categoria")
-    @PreAuthorize(Roles.STAFF_EXPR)
+    @PreAuthorize(Roles.ELDER_EXPR)
     public ResponseEntity<Pessoa> updateCategory(
             @PathVariable Long id,
             @RequestBody PersonCategoryUpdateForm form) {

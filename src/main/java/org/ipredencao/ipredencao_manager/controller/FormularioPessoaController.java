@@ -60,4 +60,11 @@ public class FormularioPessoaController {
     public ResponseEntity<ProcessarFormularioResponse> processForm(@RequestBody ProcessarFormularioRequest request) {
         return ResponseEntity.ok(service.processForm(request));
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize(Roles.STAFF_EXPR)
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }

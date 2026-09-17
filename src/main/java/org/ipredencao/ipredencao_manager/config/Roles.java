@@ -30,7 +30,7 @@ public final class Roles {
         return names(ANY);
     }
 
-    /** DIACONO+: escrita de pessoa/endereço/serviço, filtro de pendência e leitura de formulários. */
+    /** DIACONO+: escrita de pessoa/endereço/serviço, formulários e filtro de pendência. */
     public static String[] staffNames() {
         return names(STAFF);
     }

@@ -34,6 +34,18 @@ public final class QueryConditions {
     }
 
     /**
+     * Mesmo {@link #unaccentedLike} sobre os elementos de um {@code varchar[]}.
+     */
+    public static void addUnaccentedLikeAny(List<Condition> conditions, Field<?> arrayColumn, String value) {
+        if (value != null && !value.trim().isEmpty()) {
+            conditions.add(unaccentedLike(
+                DSL.field("array_to_string({0}, ' ')", String.class, arrayColumn),
+                value.trim()
+            ));
+        }
+    }
+
+    /**
      * Adiciona condição {@code column.eq(value)} à lista somente se o valor não for nulo nem em branco.
      */
     public static void addEqIfNotBlank(List<Condition> conditions, Field<String> column, String value) {
