@@ -21,7 +21,7 @@ public final class QueryConditions {
      */
     public static Condition unaccentedLike(Field<String> column, String value) {
         return DSL.lower(DSL.function("unaccent", String.class, column))
-            .like(DSL.lower(DSL.function("unaccent", String.class, DSL.inline("%" + value + "%"))));
+            .like(DSL.lower(DSL.function("unaccent", String.class, DSL.inline("%" + value.trim() + "%"))));
     }
 
     /**
@@ -36,11 +36,11 @@ public final class QueryConditions {
     /**
      * Mesmo {@link #unaccentedLike} sobre os elementos de um {@code varchar[]}.
      */
-    public static void addUnaccentedLikeAny(List<Condition> conditions, Field<?> arrayColumn, String value) {
+    public static void addUnaccentedLikeAny(List<Condition> conditions, Field<String[]> arrayColumn, String value) {
         if (value != null && !value.trim().isEmpty()) {
             conditions.add(unaccentedLike(
                 DSL.field("array_to_string({0}, ' ')", String.class, arrayColumn),
-                value.trim()
+                value
             ));
         }
     }

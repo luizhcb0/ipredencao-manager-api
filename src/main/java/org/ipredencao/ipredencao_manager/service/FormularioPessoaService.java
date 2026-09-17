@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -64,13 +63,14 @@ public class FormularioPessoaService {
         return repository.update(formulario);
     }
 
-    @Transactional
     public void delete(Long id) {
         FormularioPessoa formulario = findById(id);
-        if (ownsPhoto(formulario)) {
+        boolean removePhoto = ownsPhoto(formulario);
+        repository.delete(id);
+        // S3 depois do DELETE: arquivo órfão se recupera, linha apontando para foto apagada não.
+        if (removePhoto) {
             s3Service.deleteFile(formulario.getFotoUrl());
         }
-        repository.delete(id);
     }
 
     private boolean ownsPhoto(FormularioPessoa formulario) {
@@ -81,7 +81,8 @@ public class FormularioPessoaService {
             Pessoa pessoa = pessoaService.findById(formulario.getPessoaId());
             return !fotoUrl.equals(pessoa.getFotoUrl());
         } catch (NoSuchElementException e) {
-            return true;
+            // Pessoa invisível (sigilo) ou removida: não apagar o que talvez ainda esteja em uso.
+            return false;
         }
     }
 
