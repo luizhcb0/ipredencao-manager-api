@@ -77,4 +77,26 @@ class PessoaRepositoryIT extends IntegrationTestBase {
         assertThat(endereco.getAddedAt()).isNotNull();
         assertThat(endereco.getUpdatedAt()).isNotNull();
     }
+
+    @Test
+    void find_filtersByProfissao_accentInsensitive() {
+        Pessoa nurse = PessoaFixture.builder(pessoaService)
+                .nome("Ana Enfermeira").sexo(Sexo.FEMININO)
+                .categoria(CategoriaEnum.MEMBRO_COMUNGANTE)
+                .profissao("Enfermeira")
+                .build();
+        Pessoa teacher = PessoaFixture.builder(pessoaService)
+                .nome("Bruno Professor").sexo(Sexo.MASCULINO)
+                .categoria(CategoriaEnum.MEMBRO_COMUNGANTE)
+                .profissao("Professor")
+                .build();
+
+        List<Pessoa> people = pessoaRepository.find(
+                PessoaQuery.builder()
+                        .ids(List.of(nurse.getId(), teacher.getId()))
+                        .profissao("enfermeira")
+                        .build());
+
+        assertThat(people).extracting(Pessoa::getId).containsExactly(nurse.getId());
+    }
 }

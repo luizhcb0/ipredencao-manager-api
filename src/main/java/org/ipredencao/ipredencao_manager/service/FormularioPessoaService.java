@@ -63,6 +63,29 @@ public class FormularioPessoaService {
         return repository.update(formulario);
     }
 
+    public void delete(Long id) {
+        FormularioPessoa formulario = findById(id);
+        boolean removePhoto = ownsPhoto(formulario);
+        repository.delete(id);
+        // S3 depois do DELETE: arquivo órfão se recupera, linha apontando para foto apagada não.
+        if (removePhoto) {
+            s3Service.deleteFile(formulario.getFotoUrl());
+        }
+    }
+
+    private boolean ownsPhoto(FormularioPessoa formulario) {
+        String fotoUrl = formulario.getFotoUrl();
+        if (fotoUrl == null || fotoUrl.isBlank()) return false;
+        if (formulario.getPessoaId() == null) return true;
+        try {
+            Pessoa pessoa = pessoaService.findById(formulario.getPessoaId());
+            return !fotoUrl.equals(pessoa.getFotoUrl());
+        } catch (NoSuchElementException e) {
+            // Pessoa invisível (sigilo) ou removida: não apagar o que talvez ainda esteja em uso.
+            return false;
+        }
+    }
+
     public FormularioPessoa findById(Long id) {
         try {
             return repository.find(FormularioPessoaQuery.builder().id(id).build()).getFirst();

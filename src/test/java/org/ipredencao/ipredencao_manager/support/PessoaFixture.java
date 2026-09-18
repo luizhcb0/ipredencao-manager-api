@@ -8,6 +8,8 @@ import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
 import org.ipredencao.ipredencao_manager.service.PessoaService;
 import org.joda.time.DateTime;
 
+import java.util.List;
+
 /** Builds and persists {@link Pessoa} instances for integration tests. */
 public final class PessoaFixture {
 
@@ -59,6 +61,7 @@ public final class PessoaFixture {
         public Builder bookmark(boolean bookmark) { pessoa.setBookmark(bookmark); return this; }
         public Builder dataBatismo(DateTime dataBatismo) { pessoa.setDataBatismo(dataBatismo); return this; }
         public Builder dataProfissaoDeFe(DateTime dataProfissaoDeFe) { pessoa.setDataProfissaoDeFe(dataProfissaoDeFe); return this; }
+        public Builder profissao(String... values) { pessoa.setProfissao(List.of(values)); return this; }
         public Builder igrejaAnterior(String igrejaAnterior) { pessoa.setIgrejaAnterior(igrejaAnterior); return this; }
 
         public Builder enderecoPadrao() {

@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -88,6 +89,35 @@ class PessoaCategoryControllerIT extends IntegrationTestBase {
     }
 
     @Test
+    @WithMockUser(roles = "DIACONO")
+    void updateCategory_appliesForDeacon() throws Exception {
+        Pessoa pessoa = PessoaFixture.membroComungante(pessoaService, "Diácono Categoria", Sexo.MASCULINO);
+
+        mockMvc.perform(patch(BASE + "/" + pessoa.getId() + "/categoria")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"categoriaId": 7}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.categoria.id").value(CategoriaEnum.MEMBRO_NAO_COMUNGANTE.getId()));
+    }
+
+    @Test
+    @WithMockUser(roles = "DIACONO")
+    void updatePerson_appliesCategoriaFromDeacon() throws Exception {
+        Pessoa pessoa = PessoaFixture.membroComungante(pessoaService, "Diácono PUT", Sexo.FEMININO);
+
+        mockMvc.perform(put(BASE + "/" + pessoa.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(personPutBody(pessoa, CategoriaEnum.MEMBRO_NAO_COMUNGANTE)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.categoria.id").value(CategoriaEnum.MEMBRO_NAO_COMUNGANTE.getId()));
+
+        assertThat(pessoaService.findById(pessoa.getId()).getCategoria())
+                .isEqualTo(CategoriaEnum.MEMBRO_NAO_COMUNGANTE);
+    }
+
+    @Test
     @WithMockUser(roles = "BOLETIM")
     void updateCategory_returnsForbiddenForNonStaff() throws Exception {
         mockMvc.perform(patch(BASE + "/1/categoria")
@@ -106,5 +136,17 @@ class PessoaCategoryControllerIT extends IntegrationTestBase {
                                 {"categoriaId": 14}
                                 """))
                 .andExpect(status().isUnauthorized());
+    }
+
+    private String personPutBody(Pessoa pessoa, CategoriaEnum categoria) throws Exception {
+        var node = objectMapper.createObjectNode();
+        node.put("id", pessoa.getId());
+        node.put("nome", pessoa.getNome());
+        node.put("sexo", pessoa.getSexo().name());
+        node.put("dataNascimento", pessoa.getDataNascimento().toString());
+        node.put("estadoCivil", pessoa.getEstadoCivil().name());
+        node.put("categoria", categoria.getId());
+        node.put("campus", pessoa.getCampus() != null ? pessoa.getCampus() : "SEDE");
+        return objectMapper.writeValueAsString(node);
     }
 }

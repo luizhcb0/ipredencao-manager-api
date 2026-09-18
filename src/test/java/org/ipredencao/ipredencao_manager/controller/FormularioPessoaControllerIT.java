@@ -33,13 +33,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -181,6 +184,72 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
         assertNull(findUserByEmail("falha@exemplo.com"));
     }
 
+    @Test
+    @WithMockUser(roles = "DIACONO")
+    void delete_returnsNoContentAndRemovesForm() throws Exception {
+        long formId = createForm("Para Excluir", "excluir@exemplo.com", null);
+
+        mockMvc.perform(delete(BASE + "/{id}", formId))
+            .andExpect(status().isNoContent());
+
+        mockMvc.perform(get(BASE + "/{id}", formId))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "DIACONO")
+    void delete_removesS3PhotoWhenFormOwnsIt() throws Exception {
+        long formId = createForm("Com Foto", "comfoto@exemplo.com", null);
+        String photoUrl = "https://s3.amazonaws.com/test-bucket/form-photo.jpg";
+        setFormPhoto(formId, photoUrl);
+
+        mockMvc.perform(delete(BASE + "/{id}", formId))
+            .andExpect(status().isNoContent());
+
+        verify(amazonS3).deleteObject("test-bucket", "form-photo.jpg");
+    }
+
+    @Test
+    @WithMockUser(roles = "DIACONO")
+    void delete_keepsS3PhotoAndPersonWhenProcessed() throws Exception {
+        long formId = createForm("Foto Copiada", "fotocopiada@exemplo.com", CategoriaEnum.MEMBRO_COMUNGANTE);
+        String photoUrl = "https://s3.amazonaws.com/test-bucket/shared-photo.jpg";
+        setFormPhoto(formId, photoUrl);
+
+        String body = process(formId, null)
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        long pessoaId = objectMapper.readTree(body).at("/pessoaPrincipal/id").asLong();
+
+        mockMvc.perform(delete(BASE + "/{id}", formId))
+            .andExpect(status().isNoContent());
+
+        verify(amazonS3, never()).deleteObject(anyString(), anyString());
+        Pessoa pessoa = pessoaService.findById(pessoaId);
+        assertNotNull(pessoa);
+        assertEquals(photoUrl, pessoa.getFotoUrl());
+    }
+
+    @Test
+    @WithMockUser(roles = "BOLETIM")
+    void delete_returnsForbiddenForBoletim() throws Exception {
+        mockMvc.perform(delete(BASE + "/{id}", 1))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void delete_returnsUnauthorizedWithoutAuthentication() throws Exception {
+        mockMvc.perform(delete(BASE + "/{id}", 1))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "DIACONO")
+    void delete_returnsNotFoundForUnknownId() throws Exception {
+        mockMvc.perform(delete(BASE + "/{id}", 999_999_999L))
+            .andExpect(status().isNotFound());
+    }
+
     private ResultActions process(long formId, Long pessoaId) throws Exception {
         return mockMvc.perform(post(BASE + "/processar")
             .contentType(MediaType.APPLICATION_JSON)
@@ -229,5 +298,20 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
             node.put("categoria", categoria.getId());
         }
         return objectMapper.writeValueAsString(node);
+    }
+
+    private void setFormPhoto(long formId, String photoUrl) throws Exception {
+        String json = mockMvc.perform(get(BASE + "/{id}", formId))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        ObjectNode node = (ObjectNode) objectMapper.readTree(json);
+        if (node.has("categoria") && node.get("categoria").isObject()) {
+            node.put("categoria", node.get("categoria").get("id").asLong());
+        }
+        node.put("fotoUrl", photoUrl);
+        mockMvc.perform(put(BASE + "/{id}", formId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(node)))
+            .andExpect(status().isOk());
     }
 }

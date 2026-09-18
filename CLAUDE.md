@@ -18,6 +18,8 @@ Java 21, Docker + Compose v2. Docker Engine 29+ only works because `support/Inte
 | `./gradlew test` | full integration suite (Testcontainers; failFast, -Xmx512m) |
 | `./gradlew test --tests '*.repository.PessoaRepositoryIT'` | one test class |
 | `make restart` / `make clean` | recreate DB (clean also prunes volumes) |
+| `make build` | image `linux/amd64` loaded as `:latest` + `:<sha>` (`scripts/quick-rebuild.sh --no-push`) |
+| `make deploy` | same build, then push both tags to ECR (App Runner auto-deploys `:latest`) |
 
 ## Hard rules
 
@@ -39,6 +41,7 @@ Java 21, Docker + Compose v2. Docker Engine 29+ only works because `support/Inte
 - Tests are integration-only (no mock-based unit tests — the domain is coupled to JOOQ/Liquibase/triggers). Base: `support/IntegrationTestBase`; fixtures: `support/*Fixture`; controller auth via `@WithMockUser(roles = "PRESBITERO"|"ADMIN"|…)`.
 - `src/main/resources/IPR_Dump/` ships thousands of seed photos into the jar — don't glob or relocate it casually.
 - Windows: use `run.bat` / `make win-*` targets.
+- `make build` keeps only `:latest` and the current `:<sha>` locally, then `docker builder prune --keep-storage 8GB`. Older SHA tags and unused BuildKit cache go away; do not add `docker image prune -a` there (it would drop idle images from other projects). Rollback tags live in ECR, not on the Mac.
 
 ## Pointers
 
