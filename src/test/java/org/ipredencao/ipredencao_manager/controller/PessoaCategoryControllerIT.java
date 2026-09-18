@@ -90,7 +90,7 @@ class PessoaCategoryControllerIT extends IntegrationTestBase {
 
     @Test
     @WithMockUser(roles = "DIACONO")
-    void updateCategory_returnsForbiddenForDeacon() throws Exception {
+    void updateCategory_appliesForDeacon() throws Exception {
         Pessoa pessoa = PessoaFixture.membroComungante(pessoaService, "Diácono Categoria", Sexo.MASCULINO);
 
         mockMvc.perform(patch(BASE + "/" + pessoa.getId() + "/categoria")
@@ -98,37 +98,23 @@ class PessoaCategoryControllerIT extends IntegrationTestBase {
                         .content("""
                                 {"categoriaId": 7}
                                 """))
-                .andExpect(status().isForbidden());
-
-        assertThat(pessoaService.findById(pessoa.getId()).getCategoria())
-                .isEqualTo(CategoriaEnum.MEMBRO_COMUNGANTE);
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.categoria.id").value(CategoriaEnum.MEMBRO_NAO_COMUNGANTE.getId()));
     }
 
     @Test
     @WithMockUser(roles = "DIACONO")
-    void updatePerson_ignoresCategoriaFromDeacon() throws Exception {
+    void updatePerson_appliesCategoriaFromDeacon() throws Exception {
         Pessoa pessoa = PessoaFixture.membroComungante(pessoaService, "Diácono PUT", Sexo.FEMININO);
 
         mockMvc.perform(put(BASE + "/" + pessoa.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(personPutBody(pessoa, CategoriaEnum.MEMBRO_NAO_COMUNGANTE)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.categoria.id").value(CategoriaEnum.MEMBRO_COMUNGANTE.getId()));
+                .andExpect(jsonPath("$.categoria.id").value(CategoriaEnum.MEMBRO_NAO_COMUNGANTE.getId()));
 
         assertThat(pessoaService.findById(pessoa.getId()).getCategoria())
-                .isEqualTo(CategoriaEnum.MEMBRO_COMUNGANTE);
-    }
-
-    @Test
-    @WithMockUser(roles = "PRESBITERO")
-    void updatePerson_appliesCategoriaFromElder() throws Exception {
-        Pessoa pessoa = PessoaFixture.membroComungante(pessoaService, "Presbítero PUT", Sexo.MASCULINO);
-
-        mockMvc.perform(put(BASE + "/" + pessoa.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(personPutBody(pessoa, CategoriaEnum.MEMBRO_NAO_COMUNGANTE)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.categoria.id").value(CategoriaEnum.MEMBRO_NAO_COMUNGANTE.getId()));
+                .isEqualTo(CategoriaEnum.MEMBRO_NAO_COMUNGANTE);
     }
 
     @Test

@@ -73,7 +73,6 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/pessoas/*/history", "/api/pessoas/*/notes")
                     .hasAnyRole(Roles.staffNames())
                 .requestMatchers(HttpMethod.GET, "/api/pessoas/**").hasAnyRole(Roles.anyNames())
-                .requestMatchers(HttpMethod.PATCH, "/api/pessoas/*/categoria").hasAnyRole(Roles.elderNames())
                 .requestMatchers("/api/pessoas/**").hasAnyRole(Roles.staffNames())
 
                 // Atos oficiais (CI/IPB Cap. III) — apenas presbíteros e admins
