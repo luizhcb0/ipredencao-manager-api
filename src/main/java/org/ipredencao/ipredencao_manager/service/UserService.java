@@ -125,8 +125,15 @@ public class UserService {
     private record FirebaseIdentity(FirebaseUser user, boolean created) {}
 
     private FirebaseIdentity resolveFirebaseIdentity(String email, String name) {
+        return resolveFirebaseIdentity(email, name, null);
+    }
+
+    private FirebaseIdentity resolveFirebaseIdentity(String email, String name, String password) {
         try {
-            return new FirebaseIdentity(firebaseAuthService.createUserWithoutPassword(email, name), true);
+            FirebaseUser created = (password == null || password.isBlank())
+                ? firebaseAuthService.createUserWithoutPassword(email, name)
+                : firebaseAuthService.createUser(email, password, name);
+            return new FirebaseIdentity(created, true);
         } catch (FirebaseAuthException | RuntimeException e) {
             if (!FirebaseAuthService.isEmailAlreadyExists(e)) {
                 throw firebaseInviteFailure(e);
@@ -342,10 +349,7 @@ public class UserService {
             || usuario.getEmail().toLowerCase().contains(term);
     }
 
-    /**
-     * Cria ou vincula um usuário inativo para pessoa elegível (agregadores 2, 3 ou 5) com e-mail.
-     * Idempotente: vínculo já existente ou usuário do mesmo e-mail livre é só associado.
-     */
+    /** Usuário inativo no banco; Firebase habilitado com senha = CPF quando houver. */
     @Transactional
     public void ensureInactiveUserForPerson(Pessoa person) {
         PerfilAcesso profile = profileForEligiblePerson(person);
@@ -366,20 +370,19 @@ public class UserService {
             return;
         }
 
-        FirebaseIdentity identity = resolveFirebaseIdentity(email, person.getNome());
-
-        try {
-            firebaseAuthService.setUserDisabled(identity.user().uid(), true);
-        } catch (FirebaseAuthException e) {
-            if (identity.created()) {
-                compensateFirebaseCreate(identity.user().uid());
-            }
-            throw firebaseInviteFailure(e);
-        }
+        FirebaseIdentity identity = resolveFirebaseIdentity(
+            email, person.getNome(), passwordFromCpf(person.getCpf()));
 
         Usuario usuario = newEmailUser(identity.user().uid(), email, person.getNome(), profile, false);
         usuario.setPersonId(person.getId());
         insertCompensating(usuario, identity);
+    }
+
+    /** Dígitos do CPF; Firebase exige 6+ caracteres. */
+    private static String passwordFromCpf(String cpf) {
+        if (cpf == null || cpf.isBlank()) return null;
+        String digits = cpf.replaceAll("\\D", "");
+        return digits.length() >= 6 ? digits : null;
     }
 
     private static PerfilAcesso profileForEligiblePerson(Pessoa person) {

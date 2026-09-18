@@ -42,14 +42,14 @@ Revise `skipped` (`email_collision`, `person_collision`, `no_email`) antes do ap
 
 ### 3. Apply
 
-Cria identidade Firebase **sem senha e desativada**, insere `usuario` `active=false` `provider=EMAIL`, ou só faz `UPDATE person_id` quando o e-mail já pertence a um usuário livre. Retomável: `already_done` / `linked` não duplicam. Se o INSERT falhar após criar o Firebase, o script tenta apagar a identidade nova.
+Cria identidade Firebase **habilitada**, com senha inicial = CPF só dígitos quando a pessoa tem CPF utilizável (6+ dígitos). Sem CPF, a conta nasce sem senha e ainda habilitada. Insere `usuario` `active=false` `provider=EMAIL`, ou só faz `UPDATE person_id` quando o e-mail já pertence a um usuário livre. E-mail já existente no Firebase é reaproveitado **sem** gravar senha e **sem** desativar. Retomável: `already_done` / `linked` não duplicam e não reescrevem senha. Se o INSERT falhar após criar o Firebase, o script tenta apagar a identidade nova. O CSV traz `password_set=yes` quando a senha foi definida; nunca grava o CPF.
 
 ```bash
 export FIREBASE_SERVICE_ACCOUNT_KEY_PATH=/caminho/ipredencao-manager-api-firebase-adminsdk.json
 python3 backfill.py --apply --csv user_backfill_apply.csv
 ```
 
-Não dispare convites em massa. Ativação = admin liga `active` e usa **Reenviar convite**.
+Não dispare convites em massa. Ativação no app = admin liga `active`. A senha inicial no Firebase é o CPF (números); a pessoa troca depois por **Esqueci minha senha**. Um apply anterior que já criou contas disabled/sem senha **não** é reparado.
 
 ### 4. Conferência
 

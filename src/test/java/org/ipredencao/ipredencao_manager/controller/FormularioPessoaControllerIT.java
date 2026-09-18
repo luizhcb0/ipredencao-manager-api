@@ -33,8 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -62,9 +62,8 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() throws FirebaseAuthException {
-        when(firebaseAuthService.createUserWithoutPassword(any(), any()))
-            .thenReturn(new FirebaseUser("form-firebase-uid", "captacao@exemplo.com", "Nome", false, null, true));
-        doNothing().when(firebaseAuthService).setUserDisabled(any(), eq(true));
+        when(firebaseAuthService.createUser(any(), any(), any()))
+            .thenReturn(new FirebaseUser("form-firebase-uid", "captacao@exemplo.com", "Nome", false, null, false));
         doNothing().when(firebaseAuthService).deleteUser(any());
     }
 
@@ -95,7 +94,19 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
         assertNotNull(user);
         assertFalse(user.getActive());
         assertEquals(PerfilAcesso.MEMBER, user.getAccessProfile());
-        verify(firebaseAuthService).setUserDisabled("form-firebase-uid", true);
+        verify(firebaseAuthService).createUser("membro@exemplo.com", "00000000000", "Membro Novo");
+        verify(firebaseAuthService, never()).setUserDisabled(any(), anyBoolean());
+    }
+
+    @Test
+    @WithMockUser(roles = "DIACONO")
+    void process_usesCpfDigitsAsFirebasePassword() throws Exception {
+        long formId = createForm("Membro Formatado", "formatado@exemplo.com", CategoriaEnum.MEMBRO_COMUNGANTE, "000.000.000-00");
+
+        process(formId, null).andExpect(status().isOk());
+
+        verify(firebaseAuthService).createUser("formatado@exemplo.com", "00000000000", "Membro Formatado");
+        verify(firebaseAuthService, never()).setUserDisabled(any(), anyBoolean());
     }
 
     @Test
@@ -119,7 +130,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
         process(formId, null).andExpect(status().isOk());
 
         assertNull(findUserByEmail("pastor@exemplo.com"));
-        verify(firebaseAuthService, never()).createUserWithoutPassword(any(), any());
+        verify(firebaseAuthService, never()).createUser(any(), any(), any());
     }
 
     @Test
@@ -162,13 +173,13 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
         Usuario user = findUserByPersonId(pessoa.getId());
         assertEquals(PerfilAcesso.BOLETIM, user.getAccessProfile());
         assertEquals(Boolean.TRUE, user.getActive());
-        verify(firebaseAuthService, never()).createUserWithoutPassword(any(), any());
+        verify(firebaseAuthService, never()).createUser(any(), any(), any());
     }
 
     @Test
     @WithMockUser(roles = "DIACONO")
     void process_returnsWarningWhenFirebaseFails() throws Exception {
-        when(firebaseAuthService.createUserWithoutPassword(any(), any()))
+        when(firebaseAuthService.createUser(any(), any(), any()))
             .thenThrow(new RuntimeException("Firebase indisponível"));
 
         long formId = createForm("Falha Firebase", "falha@exemplo.com", CategoriaEnum.MEMBRO_NAO_COMUNGANTE);
@@ -271,9 +282,13 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
     }
 
     private long createForm(String nome, String email, CategoriaEnum categoria) throws Exception {
+        return createForm(nome, email, categoria, "00000000000");
+    }
+
+    private long createForm(String nome, String email, CategoriaEnum categoria, String cpf) throws Exception {
         String created = mockMvc.perform(post(BASE)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(publicFormBody(nome, email, categoria)))
+                .content(publicFormBody(nome, email, categoria, cpf)))
             .andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
         return objectMapper.readTree(created).get("id").asLong();
@@ -281,6 +296,10 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
 
     /** Só os campos NOT NULL da tabela, mais categoria quando o processamento cria pessoa. */
     private String publicFormBody(String nome, String email, CategoriaEnum categoria) throws Exception {
+        return publicFormBody(nome, email, categoria, "00000000000");
+    }
+
+    private String publicFormBody(String nome, String email, CategoriaEnum categoria, String cpf) throws Exception {
         FormularioPessoa form = new FormularioPessoa();
         form.setNome(nome);
         form.setSexo(Sexo.FEMININO);
@@ -288,7 +307,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
         form.setTelefone("81999990000");
         form.setCampus("SEDE");
         form.setDataNascimento(DateTime.now().minusYears(30).withTimeAtStartOfDay());
-        form.setCpf("00000000000");
+        form.setCpf(cpf);
         form.setRg("0000000");
         form.setEnderecoCep("50000-000");
         form.setEnderecoLogradouro("Rua da Captação");

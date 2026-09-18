@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Optional
 
@@ -22,6 +23,7 @@ class PersonRow:
     nome: str
     email: Optional[str]
     aggregator_id: int
+    cpf: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -43,6 +45,14 @@ class Action:
     profile: Optional[str]
     reason: str
     usuario_id: Optional[int] = None
+    password_set: bool = False
+
+
+def password_from_cpf(cpf: Optional[str]) -> Optional[str]:
+    if cpf is None:
+        return None
+    digits = re.sub(r"\D", "", cpf)
+    return digits if len(digits) >= 6 else None
 
 
 def normalize_email(email: Optional[str]) -> Optional[str]:
@@ -114,6 +124,9 @@ def classify(people: list[PersonRow], users: list[UserRow]) -> list[Action]:
             actions.append(Action(LINKED, person.pessoa_id, person.nome, email, profile, "link_existing", existing.id))
             continue
 
-        actions.append(Action(CREATED, person.pessoa_id, person.nome, email, profile, "create_inactive"))
+        actions.append(Action(
+            CREATED, person.pessoa_id, person.nome, email, profile, "create_inactive",
+            password_set=password_from_cpf(person.cpf) is not None,
+        ))
 
     return actions

@@ -24,10 +24,11 @@ from classify import (
     PersonRow,
     UserRow,
     classify,
+    password_from_cpf,
 )
 
 PEOPLE_SQL = """
-SELECT p.pessoa_id, p.nome, p.email, c.agregador_categoria_id
+SELECT p.pessoa_id, p.nome, p.email, c.agregador_categoria_id, p.cpf
 FROM pessoa p
 JOIN categoria c ON c.id = p.categoria_id
 WHERE c.agregador_categoria_id IN (2, 3, 5)
@@ -56,7 +57,7 @@ def database_url() -> str:
 def fetch_rows(conn) -> tuple[list[PersonRow], list[UserRow]]:
     with conn.cursor() as cur:
         cur.execute(PEOPLE_SQL)
-        people = [PersonRow(r[0], r[1], r[2], r[3]) for r in cur.fetchall()]
+        people = [PersonRow(r[0], r[1], r[2], r[3], r[4]) for r in cur.fetchall()]
         cur.execute(USERS_SQL)
         users = [UserRow(r[0], r[1], r[2], r[3], r[4], r[5]) for r in cur.fetchall()]
     return people, users
@@ -65,7 +66,7 @@ def fetch_rows(conn) -> tuple[list[PersonRow], list[UserRow]]:
 def write_csv(actions: list[Action], path: Path) -> None:
     with path.open("w", newline="") as fh:
         writer = csv.writer(fh)
-        writer.writerow(["outcome", "pessoa_id", "nome", "email", "profile", "reason", "usuario_id"])
+        writer.writerow(["outcome", "pessoa_id", "nome", "email", "profile", "reason", "usuario_id", "password_set"])
         for action in actions:
             writer.writerow([
                 action.outcome,
@@ -75,6 +76,7 @@ def write_csv(actions: list[Action], path: Path) -> None:
                 action.profile or "",
                 action.reason,
                 action.usuario_id or "",
+                "yes" if action.password_set else "",
             ])
 
 
@@ -92,17 +94,18 @@ def init_firebase():
     firebase_admin.initialize_app(credentials.Certificate(key_path))
 
 
-def firebase_uid_for(email: str, display_name: str) -> tuple[str, bool]:
+def firebase_uid_for(email: str, display_name: str, password: str | None) -> tuple[str, bool]:
     """Retorna (uid, created). created=True só quando a identidade foi criada agora."""
     from firebase_admin import auth
 
+    create_kwargs = {"email": email, "display_name": display_name}
+    if password:
+        create_kwargs["password"] = password
     try:
-        user = auth.create_user(email=email, display_name=display_name, disabled=True)
+        user = auth.create_user(**create_kwargs)
         return user.uid, True
     except auth.EmailAlreadyExistsError:
         existing = auth.get_user_by_email(email)
-        if not existing.disabled:
-            auth.update_user(existing.uid, disabled=True)
         return existing.uid, False
 
 
@@ -115,8 +118,9 @@ def compensate_firebase(uid: str) -> None:
         print(f"aviso: não foi possível compensar Firebase {uid}: {exc}", file=sys.stderr)
 
 
-def apply_actions(conn, actions: list[Action]) -> list[Action]:
+def apply_actions(conn, actions: list[Action], people: list[PersonRow]) -> list[Action]:
     init_firebase()
+    cpf_by_id = {person.pessoa_id: person.cpf for person in people}
     applied: list[Action] = []
     with conn.cursor() as cur:
         for action in actions:
@@ -127,7 +131,9 @@ def apply_actions(conn, actions: list[Action]) -> list[Action]:
                 cur.execute(LINK_SQL, (action.pessoa_id, action.usuario_id))
                 applied.append(action)
                 continue
-            uid, created = firebase_uid_for(action.email, action.nome)
+            uid, created = firebase_uid_for(
+                action.email, action.nome, password_from_cpf(cpf_by_id.get(action.pessoa_id))
+            )
             try:
                 cur.execute(INSERT_SQL, (uid, action.email, action.nome, action.profile, action.pessoa_id))
                 usuario_id = cur.fetchone()[0]
@@ -136,7 +142,8 @@ def apply_actions(conn, actions: list[Action]) -> list[Action]:
                     compensate_firebase(uid)
                 raise
             applied.append(Action(
-                CREATED, action.pessoa_id, action.nome, action.email, action.profile, action.reason, usuario_id
+                CREATED, action.pessoa_id, action.nome, action.email, action.profile, action.reason,
+                usuario_id, action.password_set,
             ))
     conn.commit()
     return applied
@@ -165,7 +172,7 @@ def main() -> int:
         actions = classify(people, users)
         csv_path = Path(args.csv)
         if args.apply:
-            actions = apply_actions(conn, actions)
+            actions = apply_actions(conn, actions, people)
             write_csv(actions, csv_path)
             print(f"apply gravado em {csv_path}")
         else:
