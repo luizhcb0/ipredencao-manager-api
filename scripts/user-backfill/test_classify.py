@@ -10,6 +10,7 @@ from classify import (
     UserRow,
     classify,
     normalize_email,
+    password_from_cpf,
     profile_for_aggregator,
 )
 
@@ -76,6 +77,22 @@ class ClassifyTest(unittest.TestCase):
     def test_candidate_profile(self):
         people = [PersonRow(1, "João", "joao@igreja.com", 5)]
         self.assertEqual(classify(people, [])[0].profile, "MEMBERSHIP_CANDIDATE")
+
+    def test_password_from_cpf_strips_punctuation(self):
+        formatted = "000.000.000-00"
+        digits = "".join(ch for ch in formatted if ch.isdigit())
+        self.assertEqual(password_from_cpf(formatted), digits)
+        self.assertEqual(password_from_cpf(digits), digits)
+
+    def test_password_from_cpf_rejects_short_or_blank(self):
+        self.assertIsNone(password_from_cpf(None))
+        self.assertIsNone(password_from_cpf("  "))
+        self.assertIsNone(password_from_cpf("12345"))
+        self.assertIsNone(password_from_cpf("12.345"))
+
+    def test_create_sets_password_flag_when_cpf_usable(self):
+        people = [PersonRow(1, "Ana", "ana@igreja.com", 2, "000.000.000-00")]
+        self.assertTrue(classify(people, [])[0].password_set)
 
 
 if __name__ == "__main__":
