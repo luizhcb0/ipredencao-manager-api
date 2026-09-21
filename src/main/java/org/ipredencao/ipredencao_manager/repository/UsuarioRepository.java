@@ -3,6 +3,7 @@ package org.ipredencao.ipredencao_manager.repository;
 import org.ipredencao.ipredencao_manager.jooq.tables.records.UsuarioRecord;
 import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
 import org.ipredencao.ipredencao_manager.model.auth.ProviderAutenticacao;
+import org.ipredencao.ipredencao_manager.model.pagination.SortDirection;
 import org.ipredencao.ipredencao_manager.model.user.Usuario;
 import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
@@ -76,19 +77,21 @@ public class UsuarioRepository {
             .execute();
     }
     
-    /** Só `lastLogin` e `active`; qualquer outro valor (ou vazio) cai no nome. */
+    /** LAST_LOGIN (NULLS LAST) e ACTIVE; omitido cai no nome. ID desempata a página. */
     private List<SortField<?>> orderBy(UsuarioQuery query) {
-        boolean desc = query.getDir() != null && query.getDir().equalsIgnoreCase("desc");
-        String sort = query.getSort();
-        if ("lastLogin".equals(sort)) {
-            SortField<?> lastLogin = desc ? USUARIO.LAST_LOGIN.desc() : USUARIO.LAST_LOGIN.asc();
-            return List.of(lastLogin.nullsLast(), USUARIO.NAME.asc());
-        }
-        if ("active".equals(sort)) {
-            SortField<?> active = desc ? USUARIO.ACTIVE.desc() : USUARIO.ACTIVE.asc();
-            return List.of(active, USUARIO.NAME.asc());
-        }
-        return List.of(USUARIO.NAME.asc());
+        boolean desc = query.getDir() == SortDirection.DESC;
+        SortField<?> id = USUARIO.ID.asc();
+        return switch (query.getSort()) {
+            case LAST_LOGIN -> {
+                SortField<?> lastLogin = desc ? USUARIO.LAST_LOGIN.desc() : USUARIO.LAST_LOGIN.asc();
+                yield List.of(lastLogin.nullsLast(), USUARIO.NAME.asc(), id);
+            }
+            case ACTIVE -> {
+                SortField<?> active = desc ? USUARIO.ACTIVE.desc() : USUARIO.ACTIVE.asc();
+                yield List.of(active, USUARIO.NAME.asc(), id);
+            }
+            case null -> List.of(USUARIO.NAME.asc(), id);
+        };
     }
 
     private Condition conditions(UsuarioQuery query) {

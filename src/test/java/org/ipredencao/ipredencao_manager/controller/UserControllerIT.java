@@ -6,6 +6,7 @@ import org.ipredencao.ipredencao_manager.model.ErrorResponse;
 import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
 import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
 import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
+import org.ipredencao.ipredencao_manager.model.pagination.SortDirection;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
 import org.ipredencao.ipredencao_manager.model.user.Usuario;
@@ -203,6 +204,27 @@ class UserControllerIT extends IntegrationTestBase {
 
     @Test
     @WithMockUser(roles = "ADMIN")
+    void search_breaksNameTiesById() throws Exception {
+        Usuario first = usuarioRepository.insert(UsuarioFixture.builder()
+            .email("empate-a@test.local")
+            .name("Empate Nome")
+            .build());
+        Usuario second = usuarioRepository.insert(UsuarioFixture.builder()
+            .email("empate-b@test.local")
+            .name("Empate Nome")
+            .build());
+
+        PagedResponse<UserSummaryResponse> page0 = searchOk(
+            UsuarioQuery.builder().name("Empate Nome").pagination(new PaginationParameters(1, 0)).build());
+        PagedResponse<UserSummaryResponse> page1 = searchOk(
+            UsuarioQuery.builder().name("Empate Nome").pagination(new PaginationParameters(1, 1)).build());
+
+        assertEquals(first.getId(), page0.getData().get(0).id());
+        assertEquals(second.getId(), page1.getData().get(0).id());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     void search_ordersByLastLoginDesc() throws Exception {
         DateTime recent = DateTime.now().minusHours(1);
         DateTime older = DateTime.now().minusDays(3);
@@ -222,7 +244,10 @@ class UserControllerIT extends IntegrationTestBase {
             .build());
 
         PagedResponse<UserSummaryResponse> page = searchOk(
-            UsuarioQuery.builder().name("Ordem Login").sort("lastLogin").dir("desc").build());
+            UsuarioQuery.builder().name("Ordem Login")
+                .sort(UsuarioQuery.Sort.LAST_LOGIN)
+                .dir(SortDirection.DESC)
+                .build());
         assertEquals(3, page.getData().size());
         assertEquals("login-recente@test.local", page.getData().get(0).email());
         assertEquals("login-antigo@test.local", page.getData().get(1).email());
@@ -243,7 +268,10 @@ class UserControllerIT extends IntegrationTestBase {
             .build());
 
         PagedResponse<UserSummaryResponse> page = searchOk(
-            UsuarioQuery.builder().name("Ordem Status").sort("active").dir("desc").build());
+            UsuarioQuery.builder().name("Ordem Status")
+                .sort(UsuarioQuery.Sort.ACTIVE)
+                .dir(SortDirection.DESC)
+                .build());
         assertEquals(2, page.getData().size());
         assertEquals("status-ativo@test.local", page.getData().get(0).email());
         assertEquals("status-inativo@test.local", page.getData().get(1).email());

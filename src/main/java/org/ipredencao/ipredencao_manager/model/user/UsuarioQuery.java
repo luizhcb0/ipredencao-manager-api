@@ -3,8 +3,11 @@ package org.ipredencao.ipredencao_manager.model.user;
 import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
 import org.ipredencao.ipredencao_manager.model.auth.ProviderAutenticacao;
 import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
+import org.ipredencao.ipredencao_manager.model.pagination.SortDirection;
 
 public class UsuarioQuery {
+    public enum Sort { LAST_LOGIN, ACTIVE }
+
     private Long id;
     private String email;
     private String firebaseUid;
@@ -14,8 +17,8 @@ public class UsuarioQuery {
     private ProviderAutenticacao provider;
     private Long personId;
     private PaginationParameters pagination;
-    private String sort;
-    private String dir;
+    private Sort sort;
+    private SortDirection dir;
 
     public UsuarioQuery() {}
 
@@ -71,12 +74,12 @@ public class UsuarioQuery {
             return this;
         }
 
-        public Builder sort(String sort) {
+        public Builder sort(Sort sort) {
             query.sort = sort;
             return this;
         }
 
-        public Builder dir(String dir) {
+        public Builder dir(SortDirection dir) {
             query.dir = dir;
             return this;
         }
@@ -122,11 +125,11 @@ public class UsuarioQuery {
         return pagination;
     }
 
-    public String getSort() {
+    public Sort getSort() {
         return sort;
     }
 
-    public String getDir() {
+    public SortDirection getDir() {
         return dir;
     }
 
@@ -166,11 +169,11 @@ public class UsuarioQuery {
         this.pagination = pagination;
     }
 
-    public void setSort(String sort) {
+    public void setSort(Sort sort) {
         this.sort = sort;
     }
 
-    public void setDir(String dir) {
+    public void setDir(SortDirection dir) {
         this.dir = dir;
     }
 }
