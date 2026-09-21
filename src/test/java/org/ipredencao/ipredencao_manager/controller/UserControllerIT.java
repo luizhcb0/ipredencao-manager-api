@@ -1,8 +1,12 @@
 package org.ipredencao.ipredencao_manager.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.firebase.auth.FirebaseAuthException;
 import org.ipredencao.ipredencao_manager.model.ErrorResponse;
 import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
+import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
+import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
+import org.ipredencao.ipredencao_manager.model.pagination.SortDirection;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.pessoa.Sexo;
 import org.ipredencao.ipredencao_manager.model.user.Usuario;
@@ -18,6 +22,7 @@ import org.ipredencao.ipredencao_manager.service.firebase.FirebaseUser;
 import org.ipredencao.ipredencao_manager.support.IntegrationTestBase;
 import org.ipredencao.ipredencao_manager.support.PessoaFixture;
 import org.ipredencao.ipredencao_manager.support.UsuarioFixture;
+import org.joda.time.DateTime;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +46,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -50,6 +54,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class UserControllerIT extends IntegrationTestBase {
 
     private static final String BASE = "/api/users";
+    private static final TypeReference<PagedResponse<UserSummaryResponse>> PAGE_TYPE = new TypeReference<>() {};
 
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -80,28 +85,196 @@ class UserControllerIT extends IntegrationTestBase {
     }
 
     @Test
-    void list_returnsUnauthorizedWithoutAuth() throws Exception {
-        mockMvc.perform(get(BASE))
-            .andExpect(status().isUnauthorized());
+    void search_returnsUnauthorizedWithoutAuth() throws Exception {
+        searchUsers(new UsuarioQuery()).andExpect(status().isUnauthorized());
     }
 
     @Test
     @WithMockUser(roles = "PRESBITERO")
-    void list_returnsForbiddenForNonAdmin() throws Exception {
-        mockMvc.perform(get(BASE))
-            .andExpect(status().isForbidden());
+    void search_returnsForbiddenForNonAdmin() throws Exception {
+        searchUsers(new UsuarioQuery()).andExpect(status().isForbidden());
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void list_returnsUsersForAdmin() throws Exception {
+    void search_returnsPagedUsersForAdmin() throws Exception {
         usuarioRepository.insert(UsuarioFixture.builder()
             .email("boletim@test.local")
+            .name("Boletim Listagem")
             .accessProfile(PerfilAcesso.BOLETIM)
             .build());
 
-        UserSummaryResponse[] users = read(mockMvc.perform(get(BASE)).andExpect(status().isOk()), UserSummaryResponse[].class);
-        assertTrue(users.length >= 2);
+        PagedResponse<UserSummaryResponse> page = searchOk(new UsuarioQuery());
+        assertTrue(page.getData().size() >= 2);
+        assertTrue(page.getPage().getTotal() >= 2);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void search_filtersByName() throws Exception {
+        usuarioRepository.insert(UsuarioFixture.builder()
+            .email("ana@test.local")
+            .name("Ana Silva")
+            .build());
+        usuarioRepository.insert(UsuarioFixture.builder()
+            .email("bruno@test.local")
+            .name("Bruno Costa")
+            .build());
+
+        PagedResponse<UserSummaryResponse> page = searchOk(UsuarioQuery.builder().name("ana").build());
+        assertEquals(1, page.getData().size());
+        assertEquals("ana@test.local", page.getData().get(0).email());
+        assertEquals(1, page.getPage().getTotal());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void search_filtersByEmail() throws Exception {
+        usuarioRepository.insert(UsuarioFixture.builder()
+            .email("filtro-email@test.local")
+            .name("Filtro Email")
+            .build());
+
+        PagedResponse<UserSummaryResponse> page = searchOk(UsuarioQuery.builder().email("filtro-email").build());
+        assertEquals(1, page.getData().size());
+        assertEquals("filtro-email@test.local", page.getData().get(0).email());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void search_filtersByNameAndEmail() throws Exception {
+        usuarioRepository.insert(UsuarioFixture.builder()
+            .email("and-match@test.local")
+            .name("Carla Mendes")
+            .build());
+        usuarioRepository.insert(UsuarioFixture.builder()
+            .email("and-other@test.local")
+            .name("Carla Souza")
+            .build());
+
+        PagedResponse<UserSummaryResponse> page = searchOk(
+            UsuarioQuery.builder().name("Carla").email("and-match").build());
+        assertEquals(1, page.getData().size());
+        assertEquals("and-match@test.local", page.getData().get(0).email());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void search_filtersByActive() throws Exception {
+        usuarioRepository.insert(UsuarioFixture.builder()
+            .email("inativo@test.local")
+            .name("Usuario Inativo")
+            .active(false)
+            .build());
+
+        PagedResponse<UserSummaryResponse> page = searchOk(UsuarioQuery.builder().active(false).build());
+        assertEquals(1, page.getData().size());
+        assertEquals("inativo@test.local", page.getData().get(0).email());
+        assertEquals(1, page.getPage().getTotal());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void search_filtersByAccessProfile() throws Exception {
+        usuarioRepository.insert(UsuarioFixture.builder()
+            .email("membro-search@test.local")
+            .name("Membro Search")
+            .accessProfile(PerfilAcesso.MEMBER)
+            .build());
+
+        PagedResponse<UserSummaryResponse> page = searchOk(
+            UsuarioQuery.builder().accessProfile(PerfilAcesso.MEMBER).build());
+        assertEquals(1, page.getData().size());
+        assertEquals("membro-search@test.local", page.getData().get(0).email());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void search_paginates() throws Exception {
+        usuarioRepository.insert(UsuarioFixture.builder().email("page-a@test.local").name("Aaa Page").build());
+        usuarioRepository.insert(UsuarioFixture.builder().email("page-b@test.local").name("Bbb Page").build());
+
+        PagedResponse<UserSummaryResponse> page = searchOk(
+            UsuarioQuery.builder().pagination(new PaginationParameters(1, 0)).build());
+        assertEquals(1, page.getData().size());
+        assertEquals(1, page.getPage().getLimit());
+        assertEquals(0, page.getPage().getOffset());
+        assertTrue(page.getPage().getTotal() >= 3);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void search_breaksNameTiesById() throws Exception {
+        Usuario first = usuarioRepository.insert(UsuarioFixture.builder()
+            .email("empate-a@test.local")
+            .name("Empate Nome")
+            .build());
+        Usuario second = usuarioRepository.insert(UsuarioFixture.builder()
+            .email("empate-b@test.local")
+            .name("Empate Nome")
+            .build());
+
+        PagedResponse<UserSummaryResponse> page0 = searchOk(
+            UsuarioQuery.builder().name("Empate Nome").pagination(new PaginationParameters(1, 0)).build());
+        PagedResponse<UserSummaryResponse> page1 = searchOk(
+            UsuarioQuery.builder().name("Empate Nome").pagination(new PaginationParameters(1, 1)).build());
+
+        assertEquals(first.getId(), page0.getData().get(0).id());
+        assertEquals(second.getId(), page1.getData().get(0).id());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void search_ordersByLastLoginDesc() throws Exception {
+        DateTime recent = DateTime.now().minusHours(1);
+        DateTime older = DateTime.now().minusDays(3);
+        usuarioRepository.insert(UsuarioFixture.builder()
+            .email("login-antigo@test.local")
+            .name("Ordem Login Antigo")
+            .lastLogin(older)
+            .build());
+        usuarioRepository.insert(UsuarioFixture.builder()
+            .email("login-recente@test.local")
+            .name("Ordem Login Recente")
+            .lastLogin(recent)
+            .build());
+        usuarioRepository.insert(UsuarioFixture.builder()
+            .email("login-nunca@test.local")
+            .name("Ordem Login Nunca")
+            .build());
+
+        PagedResponse<UserSummaryResponse> page = searchOk(
+            UsuarioQuery.builder().name("Ordem Login")
+                .sort(UsuarioQuery.Sort.LAST_LOGIN)
+                .dir(SortDirection.DESC)
+                .build());
+        assertEquals(3, page.getData().size());
+        assertEquals("login-recente@test.local", page.getData().get(0).email());
+        assertEquals("login-antigo@test.local", page.getData().get(1).email());
+        assertEquals("login-nunca@test.local", page.getData().get(2).email());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void search_ordersByActiveDesc() throws Exception {
+        usuarioRepository.insert(UsuarioFixture.builder()
+            .email("status-inativo@test.local")
+            .name("Ordem Status Inativo")
+            .active(false)
+            .build());
+        usuarioRepository.insert(UsuarioFixture.builder()
+            .email("status-ativo@test.local")
+            .name("Ordem Status Ativo")
+            .build());
+
+        PagedResponse<UserSummaryResponse> page = searchOk(
+            UsuarioQuery.builder().name("Ordem Status")
+                .sort(UsuarioQuery.Sort.ACTIVE)
+                .dir(SortDirection.DESC)
+                .build());
+        assertEquals(2, page.getData().size());
+        assertEquals("status-ativo@test.local", page.getData().get(0).email());
+        assertEquals("status-inativo@test.local", page.getData().get(1).email());
     }
 
     @Test
@@ -277,6 +450,16 @@ class UserControllerIT extends IntegrationTestBase {
         assertNull(reloaded.getPersonId());
     }
 
+    private ResultActions searchUsers(UsuarioQuery query) throws Exception {
+        return mockMvc.perform(post(BASE + "/search")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(query)));
+    }
+
+    private PagedResponse<UserSummaryResponse> searchOk(UsuarioQuery query) throws Exception {
+        return read(searchUsers(query).andExpect(status().isOk()), PAGE_TYPE);
+    }
+
     private ResultActions postUser(CreateUserRequest request) throws Exception {
         return mockMvc.perform(post(BASE)
             .contentType(MediaType.APPLICATION_JSON)
@@ -290,6 +473,10 @@ class UserControllerIT extends IntegrationTestBase {
     }
 
     private <T> T read(ResultActions actions, Class<T> type) throws Exception {
+        return objectMapper.readValue(actions.andReturn().getResponse().getContentAsString(), type);
+    }
+
+    private <T> T read(ResultActions actions, TypeReference<T> type) throws Exception {
         return objectMapper.readValue(actions.andReturn().getResponse().getContentAsString(), type);
     }
 

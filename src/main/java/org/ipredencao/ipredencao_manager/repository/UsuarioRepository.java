@@ -3,11 +3,13 @@ package org.ipredencao.ipredencao_manager.repository;
 import org.ipredencao.ipredencao_manager.jooq.tables.records.UsuarioRecord;
 import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
 import org.ipredencao.ipredencao_manager.model.auth.ProviderAutenticacao;
+import org.ipredencao.ipredencao_manager.model.pagination.SortDirection;
 import org.ipredencao.ipredencao_manager.model.user.Usuario;
 import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
 import org.ipredencao.ipredencao_manager.util.DateTimeHelper;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
+import org.jooq.SortField;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -45,9 +47,20 @@ public class UsuarioRepository {
     }
     
     public List<Usuario> find(UsuarioQuery query) {
-        return dsl.selectFrom(USUARIO)
-                .where(conditions(query))
-                .orderBy(USUARIO.NAME.asc())
+        var step = dsl.selectFrom(USUARIO).where(conditions(query));
+        List<SortField<?>> order = orderBy(query);
+        if (query.getPagination() != null) {
+            int limit = query.getPagination().getLimit() != null ? query.getPagination().getLimit() : Integer.MAX_VALUE;
+            int offset = query.getPagination().getOffset() != null ? query.getPagination().getOffset() : 0;
+            return step.orderBy(order)
+                .limit(limit)
+                .offset(offset)
+                .fetch()
+                .stream()
+                .map(UsuarioRepository::fromRepository)
+                .toList();
+        }
+        return step.orderBy(order)
                 .fetch()
                 .stream()
                 .map(UsuarioRepository::fromRepository)
@@ -64,13 +77,29 @@ public class UsuarioRepository {
             .execute();
     }
     
+    /** LAST_LOGIN (NULLS LAST) e ACTIVE; omitido cai no nome. ID desempata a página. */
+    private List<SortField<?>> orderBy(UsuarioQuery query) {
+        boolean desc = query.getDir() == SortDirection.DESC;
+        SortField<?> id = USUARIO.ID.asc();
+        return switch (query.getSort()) {
+            case LAST_LOGIN -> {
+                SortField<?> lastLogin = desc ? USUARIO.LAST_LOGIN.desc() : USUARIO.LAST_LOGIN.asc();
+                yield List.of(lastLogin.nullsLast(), USUARIO.NAME.asc(), id);
+            }
+            case ACTIVE -> {
+                SortField<?> active = desc ? USUARIO.ACTIVE.desc() : USUARIO.ACTIVE.asc();
+                yield List.of(active, USUARIO.NAME.asc(), id);
+            }
+            case null -> List.of(USUARIO.NAME.asc(), id);
+        };
+    }
+
     private Condition conditions(UsuarioQuery query) {
         List<Condition> conditions = new ArrayList<>();
 
         if (query.getId() != null) conditions.add(USUARIO.ID.eq(query.getId()));
-        if (query.getEmail() != null && !query.getEmail().isBlank()) {
-            conditions.add(DSL.lower(DSL.trim(USUARIO.EMAIL)).eq(query.getEmail().trim().toLowerCase()));
-        }
+        QueryConditions.addUnaccentedLike(conditions, USUARIO.NAME, query.getName());
+        QueryConditions.addUnaccentedLike(conditions, USUARIO.EMAIL, query.getEmail());
         if (query.getFirebaseUid() != null && !query.getFirebaseUid().isBlank()) {
             conditions.add(USUARIO.FIREBASE_UID.eq(query.getFirebaseUid()));
         }

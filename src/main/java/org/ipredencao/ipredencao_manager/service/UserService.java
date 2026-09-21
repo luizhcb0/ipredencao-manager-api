@@ -4,6 +4,9 @@ import com.google.firebase.auth.FirebaseAuthException;
 import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
 import org.ipredencao.ipredencao_manager.model.auth.ProviderAutenticacao;
 import org.ipredencao.ipredencao_manager.model.auth.UserProfile;
+import org.ipredencao.ipredencao_manager.model.pagination.PageInfo;
+import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
+import org.ipredencao.ipredencao_manager.model.pagination.PaginationParameters;
 import org.ipredencao.ipredencao_manager.model.pessoa.Pessoa;
 import org.ipredencao.ipredencao_manager.model.user.Usuario;
 import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
@@ -24,7 +27,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -57,20 +59,20 @@ public class UserService {
     @Autowired
     private SecurityUtils securityUtils;
 
-    public List<UserSummaryResponse> listUsers(Boolean active, PerfilAcesso profile, String search) {
-        UsuarioQuery.Builder builder = UsuarioQuery.builder();
-        if (active != null) {
-            builder.active(active);
-        }
-        if (profile != null) {
-            builder.accessProfile(profile);
-        }
+    public PagedResponse<UserSummaryResponse> findPaginated(UsuarioQuery query) {
+        if (query.getPagination() == null) query.setPagination(new PaginationParameters());
+        query.getPagination().applyDefaults();
 
-        return usuarioRepository.find(builder.build()).stream()
-            .filter(u -> matchesSearch(u, search))
-            .sorted(Comparator.comparing(Usuario::getName, String.CASE_INSENSITIVE_ORDER))
+        List<UserSummaryResponse> users = usuarioRepository.find(query).stream()
             .map(UserSummaryResponse::from)
             .toList();
+        long total = usuarioRepository.count(query);
+
+        return new PagedResponse<>(users, new PageInfo(
+            query.getPagination().getLimit(),
+            query.getPagination().getOffset(),
+            total
+        ));
     }
 
     public UserSummaryResponse getUser(Long id) {
@@ -340,18 +342,9 @@ public class UserService {
         }
     }
 
-    private boolean matchesSearch(Usuario usuario, String search) {
-        if (search == null || search.isBlank()) {
-            return true;
-        }
-        String term = search.trim().toLowerCase();
-        return usuario.getName().toLowerCase().contains(term)
-            || usuario.getEmail().toLowerCase().contains(term);
-    }
-
-    /** Usuário inativo no banco; Firebase habilitado com senha = CPF quando houver. */
+    /** Usuário ativo no banco; Firebase habilitado com senha = CPF quando houver. */
     @Transactional
-    public void ensureInactiveUserForPerson(Pessoa person) {
+    public void ensureUserForPerson(Pessoa person) {
         PerfilAcesso profile = profileForEligiblePerson(person);
         if (profile == null) return;
 
@@ -373,7 +366,7 @@ public class UserService {
         FirebaseIdentity identity = resolveFirebaseIdentity(
             email, person.getNome(), passwordFromCpf(person.getCpf()));
 
-        Usuario usuario = newEmailUser(identity.user().uid(), email, person.getNome(), profile, false);
+        Usuario usuario = newEmailUser(identity.user().uid(), email, person.getNome(), profile, true);
         usuario.setPersonId(person.getId());
         insertCompensating(usuario, identity);
     }

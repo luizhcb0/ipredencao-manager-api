@@ -114,7 +114,7 @@ public class FormularioPessoaService {
         ProcessarFormularioResponse persisted = Objects.requireNonNull(
             new TransactionTemplate(transactionManager).execute(status -> persistProcessedForm(request)));
         try {
-            userService.ensureInactiveUserForPerson(persisted.pessoaPrincipal());
+            userService.ensureUserForPerson(persisted.pessoaPrincipal());
             return persisted;
         } catch (Exception e) {
             logger.warn("Falha ao provisionar usuário para pessoa {}: {}",
