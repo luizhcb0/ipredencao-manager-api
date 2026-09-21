@@ -29,8 +29,8 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -82,7 +82,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
 
     @Test
     @WithMockUser(roles = "DIACONO")
-    void process_createsInactiveMemberUser() throws Exception {
+    void process_createsActiveMemberUser() throws Exception {
         long formId = createForm("Membro Novo", "membro@exemplo.com", CategoriaEnum.MEMBRO_COMUNGANTE);
 
         process(formId, null)
@@ -92,7 +92,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
 
         Usuario user = findUserByEmail("membro@exemplo.com");
         assertNotNull(user);
-        assertFalse(user.getActive());
+        assertTrue(user.getActive());
         assertEquals(PerfilAcesso.MEMBER, user.getAccessProfile());
         verify(firebaseAuthService).createUser("membro@exemplo.com", "00000000000", "Membro Novo");
         verify(firebaseAuthService, never()).setUserDisabled(any(), anyBoolean());
@@ -111,7 +111,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
 
     @Test
     @WithMockUser(roles = "DIACONO")
-    void process_createsInactiveMembershipCandidate() throws Exception {
+    void process_createsActiveMembershipCandidate() throws Exception {
         long formId = createForm("Admitendo Novo", "admitendo@exemplo.com", CategoriaEnum.AGUARDANDO_ENTREVISTA);
 
         process(formId, null).andExpect(status().isOk());
@@ -119,7 +119,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
         Usuario user = findUserByEmail("admitendo@exemplo.com");
         assertNotNull(user);
         assertEquals(PerfilAcesso.MEMBERSHIP_CANDIDATE, user.getAccessProfile());
-        assertFalse(user.getActive());
+        assertTrue(user.getActive());
     }
 
     @Test
@@ -147,7 +147,7 @@ class FormularioPessoaControllerIT extends IntegrationTestBase {
         assertNotNull(user);
         assertEquals(pessoa.getId(), user.getPersonId());
         assertEquals(PerfilAcesso.MEMBER, user.getAccessProfile());
-        assertFalse(user.getActive());
+        assertTrue(user.getActive());
     }
 
     @Test

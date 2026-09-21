@@ -1,7 +1,8 @@
 package org.ipredencao.ipredencao_manager.controller;
 
 import org.ipredencao.ipredencao_manager.config.Roles;
-import org.ipredencao.ipredencao_manager.model.auth.PerfilAcesso;
+import org.ipredencao.ipredencao_manager.model.pagination.PagedResponse;
+import org.ipredencao.ipredencao_manager.model.user.UsuarioQuery;
 import org.ipredencao.ipredencao_manager.model.user.dto.CreateUserRequest;
 import org.ipredencao.ipredencao_manager.model.user.dto.UpdateUserRequest;
 import org.ipredencao.ipredencao_manager.model.user.dto.UserSummaryResponse;
@@ -18,10 +19,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -34,12 +32,9 @@ public class UserController {
     @Autowired
     private SecurityUtils securityUtils;
 
-    @GetMapping
-    public ResponseEntity<List<UserSummaryResponse>> listUsers(
-            @RequestParam(required = false) Boolean active,
-            @RequestParam(required = false) PerfilAcesso profile,
-            @RequestParam(required = false) String search) {
-        return ResponseEntity.ok(userService.listUsers(active, profile, search));
+    @PostMapping("/search")
+    public ResponseEntity<PagedResponse<UserSummaryResponse>> searchUsers(@RequestBody UsuarioQuery query) {
+        return ResponseEntity.ok(userService.findPaginated(query));
     }
 
     @GetMapping("/{id}")
